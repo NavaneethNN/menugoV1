@@ -16,6 +16,7 @@ import {
   acceptInvitationSchema,
   createStaffWithPinSchema,
   updateStaffPinSchema,
+  updateStaffCashierPermissionSchema,
   RestaurantMemberRole,
   StaffAssignableRole
 } from '@menugo/shared';
@@ -46,6 +47,7 @@ router.get(
           staffName: restaurantMembers.staffName,
           pin: restaurantMembers.pin,
           isPasswordSet: restaurantMembers.isPasswordSet,
+          canCashier: restaurantMembers.canCashier,
           createdAt: restaurantMembers.createdAt,
           updatedAt: restaurantMembers.updatedAt,
           user: {
@@ -744,7 +746,7 @@ router.post(
       const restaurantId = req.tenant!.restaurantId;
       const callerRole = req.tenant!.role;
 
-      const { name, role: requestedRole, pin } = createStaffWithPinSchema.parse(req.body);
+      const { name, role: requestedRole, pin, canCashier } = createStaffWithPinSchema.parse(req.body);
 
       // Prevent role escalation
       if ((requestedRole as string) === 'owner') {
@@ -808,7 +810,8 @@ router.post(
           role: requestedRole,
           staffName: name,
           pin,
-          isPasswordSet: false
+          isPasswordSet: false,
+          canCashier: Boolean(canCashier)
         })
         .returning();
 
@@ -822,6 +825,7 @@ router.post(
         staffName: newMembership.staffName,
         pin: newMembership.pin,
         isPasswordSet: newMembership.isPasswordSet,
+        canCashier: newMembership.canCashier,
         createdAt: newMembership.createdAt,
         user: {
           id: staffUser.id,
@@ -945,6 +949,60 @@ router.patch(
         pin: updated.pin,
         staffName: updated.staffName,
         message: '4-digit PIN updated successfully.'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// 12. Toggle Staff Cashier Permission (Owner & Admin)
+// ---------------------------------------------------------------------------
+router.patch(
+  [
+    '/:restaurantId/members/:memberId/cashier-permission',
+    '/members/:memberId/cashier-permission',
+    '/:memberId/cashier-permission'
+  ],
+  requireAuth,
+  requireTenant(['owner', 'admin']),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const restaurantId = req.tenant!.restaurantId;
+      const memberId = req.params.memberId as string;
+      const { canCashier } = updateStaffCashierPermissionSchema.parse(req.body);
+
+      const [targetMember] = await db
+        .select()
+        .from(restaurantMembers)
+        .where(
+          and(
+            eq(restaurantMembers.id, memberId),
+            eq(restaurantMembers.restaurantId, restaurantId)
+          )
+        )
+        .limit(1);
+
+      if (!targetMember) {
+        throw new AppError('Member not found in this restaurant', 404);
+      }
+
+      const [updated] = await db
+        .update(restaurantMembers)
+        .set({ canCashier, updatedAt: new Date() })
+        .where(eq(restaurantMembers.id, memberId))
+        .returning();
+
+      if (!updated) {
+        throw new AppError('Failed to update cashier permission', 500);
+      }
+
+      res.json({
+        membershipId: updated.id,
+        canCashier: updated.canCashier,
+        staffName: updated.staffName,
+        message: `Cashier permission ${canCashier ? 'granted to' : 'revoked from'} ${updated.staffName || 'staff member'}.`
       });
     } catch (error) {
       next(error);

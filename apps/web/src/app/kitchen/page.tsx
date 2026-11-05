@@ -834,6 +834,14 @@ export default function KitchenDashboardPage() {
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-orange-400' : ''}`} />
             </button>
 
+            {/* Navigation to Cashier Desk */}
+            <Link
+              href="/admin/cashier"
+              className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 border border-slate-700 transition"
+            >
+              Cashier
+            </Link>
+
             {/* Navigation to Admin */}
             <Link
               href="/admin/orders"

@@ -244,3 +244,18 @@ export async function publishOrderUpdated(
   }
 }
 
+/**
+ * Publishes a table session event (e.g. table:session_started, table:session_closed)
+ * to the private restaurant channel for Cashier and Floor Service.
+ */
+export async function publishTableEvent(
+  restaurantId: string,
+  event: string,
+  payload: any
+): Promise<void> {
+  const provider = getRealtimeProvider();
+  if (!provider) return;
+  await provider.publishToRestaurant(restaurantId, event, payload);
+}
+
+

@@ -31,6 +31,11 @@ export const SOCKET_EVENTS = {
   ORDER_UPDATED: 'order:updated',
   ORDER_STATUS_CHANGED: 'order:status_changed',
 
+  // Table & Cashier Session events
+  TABLE_SESSION_STARTED: 'table:session_started',
+  TABLE_SESSION_CLOSED: 'table:session_closed',
+  TABLE_UPDATED: 'table:updated',
+
   // System/Notification events
   KITCHEN_ALERT: 'kitchen:alert'
 } as const;

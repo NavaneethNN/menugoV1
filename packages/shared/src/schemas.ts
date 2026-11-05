@@ -287,6 +287,7 @@ export const createOrderSchema = z.object({
   restaurantSlug: z.string().optional(),
   tableId: z.string().optional(),
   tableToken: z.string().optional(),
+  tableSessionToken: z.string().optional(),
   customerName: z.string().max(100).optional().nullable(),
   customerPhone: z.string().max(20).optional().nullable(),
   specialInstructions: z.string().max(500).optional().nullable(),
@@ -365,20 +366,26 @@ export const inviteStaffSchema = z.object({
   email: z.string().email('Valid email address is required').toLowerCase().trim(),
   role: z.enum(STAFF_ASSIGNABLE_ROLES, {
     errorMap: () => ({ message: 'Role must be admin, staff, or kitchen' })
-  })
+  }),
+  canCashier: z.boolean().default(false).optional()
 });
 
 export const addStaffSchema = z.object({
   email: z.string().email('Valid email address is required').toLowerCase().trim(),
   role: z.enum(STAFF_ASSIGNABLE_ROLES, {
     errorMap: () => ({ message: 'Role must be admin, staff, or kitchen' })
-  })
+  }),
+  canCashier: z.boolean().default(false).optional()
 });
 
 export const updateStaffRoleSchema = z.object({
   role: z.enum(STAFF_ASSIGNABLE_ROLES, {
     errorMap: () => ({ message: 'Role must be admin, staff, or kitchen' })
   })
+});
+
+export const updateStaffCashierPermissionSchema = z.object({
+  canCashier: z.boolean()
 });
 
 export const transferOwnershipSchema = z.object({
@@ -420,7 +427,8 @@ export const createStaffWithPinSchema = z.object({
   role: z.enum(STAFF_ASSIGNABLE_ROLES, {
     errorMap: () => ({ message: 'Role must be admin, staff, or kitchen' })
   }),
-  pin: z.string().regex(/^\d{4}$/, 'PIN must be exactly 4 numeric digits (0-9)')
+  pin: z.string().regex(/^\d{4}$/, 'PIN must be exactly 4 numeric digits (0-9)'),
+  canCashier: z.boolean().default(false).optional()
 });
 
 export const staffPinLoginSchema = z.object({
@@ -444,4 +452,19 @@ export const staffSetPasswordSchema = z.object({
 export const updateStaffPinSchema = z.object({
   pin: z.string().regex(/^\d{4}$/, 'PIN must be exactly 4 numeric digits (0-9)')
 });
+
+// ---------------------------------------------------------------------------
+// Cashier & Table Session Schemas
+// ---------------------------------------------------------------------------
+
+export const openTableSessionSchema = z.object({
+  customerName: z.string().max(100).optional().nullable(),
+  customerPhone: z.string().max(20).optional().nullable()
+});
+
+export const closeTableSessionSchema = z.object({
+  reason: z.string().max(255).optional().nullable(),
+  forceClose: z.boolean().default(false).optional()
+});
+
 

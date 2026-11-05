@@ -12,6 +12,7 @@ export interface TenantPermissions {
   canManageOrders: boolean;
   canUpdateOrderStatus: boolean;
   canCancelOrders: boolean;
+  canCashier: boolean;
 }
 
 export interface TenantContext {
@@ -41,7 +42,7 @@ declare global {
  * Returns strongly typed server-side permissions for a member's role.
  * No client-supplied roles are ever used.
  */
-export function getPermissionsForRole(role: RestaurantMemberRole): TenantPermissions {
+export function getPermissionsForRole(role: RestaurantMemberRole, canCashier = false): TenantPermissions {
   switch (role) {
     case 'owner':
       return {
@@ -51,7 +52,8 @@ export function getPermissionsForRole(role: RestaurantMemberRole): TenantPermiss
         canManageTables: true,
         canManageOrders: true,
         canUpdateOrderStatus: true,
-        canCancelOrders: true
+        canCancelOrders: true,
+        canCashier: true
       };
     case 'admin':
       return {
@@ -61,7 +63,8 @@ export function getPermissionsForRole(role: RestaurantMemberRole): TenantPermiss
         canManageTables: true,
         canManageOrders: true,
         canUpdateOrderStatus: true,
-        canCancelOrders: true
+        canCancelOrders: true,
+        canCashier: true
       };
     case 'kitchen':
       return {
@@ -71,7 +74,8 @@ export function getPermissionsForRole(role: RestaurantMemberRole): TenantPermiss
         canManageTables: false,
         canManageOrders: true,
         canUpdateOrderStatus: true,
-        canCancelOrders: false
+        canCancelOrders: false,
+        canCashier: Boolean(canCashier)
       };
     case 'staff':
       return {
@@ -81,7 +85,8 @@ export function getPermissionsForRole(role: RestaurantMemberRole): TenantPermiss
         canManageTables: false,
         canManageOrders: true,
         canUpdateOrderStatus: true,
-        canCancelOrders: false
+        canCancelOrders: false,
+        canCashier: Boolean(canCashier)
       };
     default:
       return {
@@ -91,7 +96,8 @@ export function getPermissionsForRole(role: RestaurantMemberRole): TenantPermiss
         canManageTables: false,
         canManageOrders: false,
         canUpdateOrderStatus: false,
-        canCancelOrders: false
+        canCancelOrders: false,
+        canCashier: false
       };
   }
 }
@@ -135,6 +141,7 @@ export function requireTenant(allowedRoles?: RestaurantMemberRole[]) {
         .select({
           membershipId: restaurantMembers.id,
           role: restaurantMembers.role,
+          canCashier: restaurantMembers.canCashier,
           restaurant: {
             id: restaurants.id,
             name: restaurants.name,
@@ -187,7 +194,7 @@ export function requireTenant(allowedRoles?: RestaurantMemberRole[]) {
         restaurant: membership.restaurant,
         membershipId: membership.membershipId,
         role,
-        permissions: getPermissionsForRole(role)
+        permissions: getPermissionsForRole(role, membership.canCashier)
       };
 
       req.restaurantId = membership.restaurant.id;

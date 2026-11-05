@@ -48,7 +48,8 @@ import {
   ShoppingBag,
   ExternalLink,
   ChevronRight,
-  ArrowLeft
+  ArrowLeft,
+  CreditCard
 } from 'lucide-react';
 
 export default function StaffServicePassPage() {
@@ -517,6 +518,16 @@ export default function StaffServicePassPage() {
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-purple-400' : ''}`} />
           </button>
+
+          {/* Link to Cashier Desk */}
+          <Link
+            href="/admin/cashier"
+            className="px-3 py-1.5 bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/80 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+            title="Cashier Desk: View all tables & close sessions"
+          >
+            <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden sm:inline">Cashier</span>
+          </Link>
 
           {/* Link to Kitchen */}
           <Link

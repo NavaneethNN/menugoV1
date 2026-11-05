@@ -104,6 +104,7 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
         staffName: restaurantMembers.staffName,
         pin: restaurantMembers.pin,
         isPasswordSet: restaurantMembers.isPasswordSet,
+        canCashier: restaurantMembers.canCashier,
         userId: restaurantMembers.userId
       })
       .from(restaurantMembers)
@@ -200,7 +201,8 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
           id: staffUser.id,
           name: displayName,
           email: staffUser.email,
-          role: member.role
+          role: member.role,
+          canCashier: member.canCashier
         },
         restaurant: {
           id: restaurant.id,
@@ -254,7 +256,8 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
         id: staffUser.id,
         name: displayName,
         email: staffUser.email,
-        role: member.role
+        role: member.role,
+        canCashier: member.canCashier
       },
       restaurant: {
         id: restaurant.id,

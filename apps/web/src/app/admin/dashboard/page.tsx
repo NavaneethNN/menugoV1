@@ -22,7 +22,8 @@ import {
   ShieldCheck,
   Layers,
   Utensils,
-  Users
+  Users,
+  CreditCard
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -235,6 +236,14 @@ export default function AdminDashboardPage() {
                 </Link>
 
                 <Link
+                  href="/admin/cashier"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition shadow-md"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  <span>Cashier Desk</span>
+                </Link>
+
+                <Link
                   href="/kitchen"
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold transition shadow-md"
                 >
@@ -254,6 +263,22 @@ export default function AdminDashboardPage() {
 
             {/* Quick Action Navigation Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Link
+                href="/admin/cashier"
+                className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition block group"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-white transition">
+                  <CreditCard className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 group-hover:text-emerald-600 transition flex items-center gap-2">
+                  <span>Cashier &amp; Tables</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-700">Live</span>
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  View all tables, live running bills, and close table sessions when customers leave.
+                </p>
+              </Link>
+
               <Link
                 href="/admin/service"
                 className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition block group"

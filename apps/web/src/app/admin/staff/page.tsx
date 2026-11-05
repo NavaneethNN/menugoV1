@@ -40,7 +40,8 @@ import {
   KeyRound,
   RotateCcw,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  CreditCard
 } from 'lucide-react';
 
 export default function AdminStaffPage() {
@@ -79,6 +80,7 @@ export default function AdminStaffPage() {
   const [pinStaffName, setPinStaffName] = useState('');
   const [pinStaffRole, setPinStaffRole] = useState<StaffAssignableRole>('kitchen');
   const [pinStaffPin, setPinStaffPin] = useState('');
+  const [pinStaffCanCashier, setPinStaffCanCashier] = useState(false);
 
   // Edit PIN Modal State
   const [pinEditTarget, setPinEditTarget] = useState<StaffMember | null>(null);
@@ -226,7 +228,8 @@ export default function AdminStaffPage() {
           body: JSON.stringify({
             name: trimmedName,
             role: pinStaffRole,
-            pin: pinStaffPin
+            pin: pinStaffPin,
+            canCashier: pinStaffCanCashier
           })
         }
       );
@@ -236,9 +239,38 @@ export default function AdminStaffPage() {
       setPinStaffName('');
       setPinStaffRole('kitchen');
       setPinStaffPin('');
+      setPinStaffCanCashier(false);
       loadStaffData();
     } catch (err: any) {
       setError(err.message || 'Failed to create staff member');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // 3b. Toggle Staff Cashier Permission
+  const handleToggleCashierPermission = async (member: StaffMember) => {
+    if (!selectedRestaurant?.id) return;
+    const newStatus = !member.canCashier;
+    const name = member.staffName || member.user.name || 'this staff member';
+
+    try {
+      setActionLoading(true);
+      setError(null);
+
+      const res = await apiRequest<{ message: string; member: any }>(
+        `/api/restaurants/${selectedRestaurant.id}/members/${member.membershipId}/cashier-permission`,
+        {
+          method: 'PATCH',
+          restaurantId: selectedRestaurant.id,
+          body: JSON.stringify({ canCashier: newStatus })
+        }
+      );
+
+      showToast(res.message || `Cashier permission updated for ${name}`);
+      loadStaffData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update cashier permission');
     } finally {
       setActionLoading(false);
     }
@@ -676,7 +708,7 @@ export default function AdminStaffPage() {
 
                   <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                     {/* Role Badge */}
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span
                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${roleInfo.badgeClass}`}
                         title={roleInfo.description}
@@ -684,10 +716,40 @@ export default function AdminStaffPage() {
                         <span className={`w-1.5 h-1.5 rounded-full ${roleInfo.dotClass}`} />
                         <span>{roleInfo.label}</span>
                       </span>
+
+                      {(member.role === 'owner' || member.role === 'admin' || member.canCashier) && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-bold"
+                          title="Cashier Permission: Can view all tables, active bills, and close table sessions"
+                        >
+                          <CreditCard className="w-3 h-3 text-emerald-600" />
+                          <span>Cashier</span>
+                        </span>
+                      )}
                     </div>
 
                     {/* Actions */}
                     <div className="flex items-center gap-2">
+                      {/* Cashier Permission Toggle for Kitchen & Waitstaff */}
+                      {canModify && !isFinal && (member.role === 'staff' || member.role === 'kitchen') && (
+                        <button
+                          onClick={() => handleToggleCashierPermission(member)}
+                          disabled={actionLoading}
+                          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition shadow-2xs ${
+                            member.canCashier
+                              ? 'border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'
+                          }`}
+                          title={
+                            member.canCashier
+                              ? 'Click to revoke Cashier permission'
+                              : 'Click to grant Cashier permission (view tables, live bills, and release tables)'
+                          }
+                        >
+                          <CreditCard className={`w-3.5 h-3.5 ${member.canCashier ? 'text-emerald-600' : 'text-slate-400'}`} />
+                          <span>{member.canCashier ? 'Cashier: Active' : '+ Cashier'}</span>
+                        </button>
+                      )}
                       {/* PIN Controls for Staff */}
                       {member.pin && canModify && (
                         <>
@@ -1247,6 +1309,28 @@ export default function AdminStaffPage() {
                   placeholder="1234"
                   className="w-full text-center font-mono text-2xl font-black tracking-widest px-3.5 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white"
                 />
+              </div>
+
+              <div>
+                <label className="flex items-start gap-3 p-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 cursor-pointer hover:bg-emerald-50 transition">
+                  <input
+                    type="checkbox"
+                    checked={pinStaffCanCashier}
+                    onChange={(e) => setPinStaffCanCashier(e.target.checked)}
+                    className="mt-1 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <CreditCard className="w-4 h-4 text-emerald-700" />
+                      <span className="font-extrabold text-sm text-emerald-950">
+                        Grant Cashier Permission
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-800 mt-0.5 leading-relaxed">
+                      Permits viewing all tables, checking live running bills, and closing/releasing table sessions when customers leave.
+                    </p>
+                  </div>
+                </label>
               </div>
 
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 space-y-1">

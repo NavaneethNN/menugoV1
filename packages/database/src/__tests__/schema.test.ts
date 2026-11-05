@@ -8,6 +8,7 @@ import {
   categories,
   products,
   restaurantTables,
+  tableSessions,
   orders,
   orderItems,
   orderStatusHistory
@@ -24,6 +25,7 @@ describe('Database Schema Domain Rules', () => {
       categories,
       products,
       restaurantTables,
+      tableSessions,
       orders,
       orderItems,
       orderStatusHistory
@@ -58,6 +60,7 @@ describe('Database Schema Domain Rules', () => {
       categories,
       products,
       restaurantTables,
+      tableSessions,
       orders,
       restaurantMembers,
       restaurantInvitations
@@ -105,6 +108,7 @@ describe('Database Schema Domain Rules', () => {
       categories,
       products,
       restaurantTables,
+      tableSessions,
       orders,
       orderItems
     ];

@@ -42,7 +42,9 @@ import {
   QrCode,
   Info,
   ChevronDown,
-  ArrowRight
+  ArrowRight,
+  Lock,
+  ShieldCheck
 } from 'lucide-react';
 
 interface PublicRestaurant {
@@ -129,6 +131,9 @@ function CustomerMenuContent() {
   // Table Verification States (from QR Code ?table=token)
   const [verifiedTable, setVerifiedTable] = useState<VerifiedTable | null>(null);
   const [tableError, setTableError] = useState<string | null>(null);
+  const [tableSession, setTableSession] = useState<{ id: string; sessionToken: string; status: string } | null>(null);
+  const [isTableOccupiedByOther, setIsTableOccupiedByOther] = useState(false);
+  const [sessionOccupiedMessage, setSessionOccupiedMessage] = useState<string | null>(null);
 
   // Filter States
   const [selectedCategory, setSelectedCategory] = useState<string | 'all'>('all');
@@ -190,6 +195,7 @@ function CustomerMenuContent() {
         restaurantSlug,
         tableToken: tableToken || undefined,
         tableId: verifiedTable.id,
+        tableSessionToken: tableSession?.sessionToken || undefined,
         customerName: customerName.trim() || undefined,
         customerPhone: customerPhone.trim() || undefined,
         specialInstructions: orderInstructions.trim() || undefined,
@@ -204,7 +210,8 @@ function CustomerMenuContent() {
       const res = await apiRequest<{ message: string; order: any; idempotent?: boolean }>('/api/orders', {
         method: 'POST',
         headers: {
-          'Idempotency-Key': idempotencyKeyRef.current
+          'Idempotency-Key': idempotencyKeyRef.current,
+          ...(tableSession?.sessionToken ? { 'x-table-session-token': tableSession.sessionToken } : {})
         },
         body: JSON.stringify(payload)
       });
@@ -248,11 +255,49 @@ function CustomerMenuContent() {
     async (token: string) => {
       if (!restaurantSlug || !token) return;
       try {
-        const res = await apiRequest<{ valid: boolean; table: VerifiedTable }>(
-          `/api/tables/verify/${token}?restaurantSlug=${restaurantSlug}`
-        );
+        const sessionKey = `menugo_session_${restaurantSlug}_${token}`;
+        const storedSessionToken =
+          typeof window !== 'undefined' ? localStorage.getItem(sessionKey) : null;
+
+        const url = `/api/tables/verify/${token}?restaurantSlug=${restaurantSlug}${
+          storedSessionToken ? `&sessionToken=${encodeURIComponent(storedSessionToken)}` : ''
+        }`;
+
+        const res = await apiRequest<{
+          valid: boolean;
+          table: VerifiedTable;
+          isOccupied?: boolean;
+          sessionActive?: boolean;
+          sessionMatches?: boolean;
+          session?: { id: string; sessionToken: string; status: string };
+          error?: string;
+          message?: string;
+        }>(url, {
+          headers: storedSessionToken ? { 'x-table-session-token': storedSessionToken } : {}
+        });
+
         if (res?.valid && res.table) {
           setVerifiedTable(res.table);
+
+          if (res.isOccupied && res.sessionMatches === false) {
+            setIsTableOccupiedByOther(true);
+            setSessionOccupiedMessage(
+              res.message || 'This table currently has an active dining session.'
+            );
+            return;
+          }
+
+          setIsTableOccupiedByOther(false);
+          setSessionOccupiedMessage(null);
+
+          if (res.session?.sessionToken) {
+            setTableSession(res.session);
+            try {
+              localStorage.setItem(sessionKey, res.session.sessionToken);
+            } catch {
+              // Ignore localStorage errors
+            }
+          }
           setTableError(null);
         }
       } catch (err: any) {
@@ -477,6 +522,61 @@ function CustomerMenuContent() {
                 <div className="w-20 h-20 bg-slate-200 rounded-2xl shrink-0" />
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 1b. Table Occupied by Another Customer (Dining Security: Menu Locked)
+  // ---------------------------------------------------------------------------
+  if (isTableOccupiedByOther) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-slate-800/95 backdrop-blur-xl border border-slate-700/80 rounded-3xl p-6 sm:p-8 text-center shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-8 h-8" />
+          </div>
+
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold mb-3">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <span>{verifiedTable ? verifiedTable.tableNumber : 'Table'} Occupied</span>
+          </div>
+
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            Dining Session in Progress
+          </h2>
+
+          <p className="text-xs sm:text-sm text-slate-300 mt-2.5 mb-6 leading-relaxed">
+            {sessionOccupiedMessage ||
+              'This table currently has an active dining session. For your security and bill accuracy, digital menu ordering is restricted to the seated customer.'}
+          </p>
+
+          <div className="bg-slate-900/60 rounded-2xl p-4 border border-slate-700/50 text-left mb-6 space-y-2">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Need Assistance?
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              If you have just been seated at this table, please ask your server or cashier to clear the table or open your new session.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => tableToken && verifyTableToken(tableToken)}
+              className="w-full py-3.5 px-5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] text-white font-bold rounded-2xl shadow-lg transition flex items-center justify-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>Refresh Status</span>
+            </button>
+
+            <Link
+              href="/staff/login"
+              className="block w-full py-2.5 text-xs font-semibold text-slate-400 hover:text-white transition"
+            >
+              Are you restaurant staff? Sign in with PIN &rarr;
+            </Link>
           </div>
         </div>
       </div>

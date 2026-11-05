@@ -13,6 +13,7 @@ export interface StaffMember {
   staffName?: string | null;
   pin?: string | null;
   isPasswordSet?: boolean;
+  canCashier?: boolean;
   createdAt: string;
   updatedAt?: string;
   user: StaffUser;

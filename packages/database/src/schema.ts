@@ -126,6 +126,7 @@ export const restaurantMembers = pgTable(
     staffName: varchar('staff_name', { length: 255 }),
     pin: varchar('pin', { length: 10 }),
     isPasswordSet: boolean('is_password_set').default(false).notNull(),
+    canCashier: boolean('can_cashier').default(false).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
   },
@@ -156,6 +157,7 @@ export const restaurantInvitations = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     status: varchar('status', { length: 50 }).default('pending').notNull(), // 'pending' | 'accepted' | 'revoked' | 'expired'
+    canCashier: boolean('can_cashier').default(false).notNull(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
@@ -258,6 +260,44 @@ export const restaurantTables = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// 6b. Table Sessions (Single Active Party Security & Cashier Flow)
+// ---------------------------------------------------------------------------
+export const tableSessions = pgTable(
+  'table_sessions',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    restaurantId: text('restaurant_id')
+      .notNull()
+      .references(() => restaurants.id, { onDelete: 'cascade' }),
+    tableId: text('table_id')
+      .notNull()
+      .references(() => restaurantTables.id, { onDelete: 'cascade' }),
+    sessionToken: varchar('session_token', { length: 100 })
+      .notNull()
+      .unique()
+      .$defaultFn(() => crypto.randomBytes(32).toString('hex')),
+    status: varchar('status', { length: 50 }).default('active').notNull(), // 'active' | 'closed'
+    customerName: varchar('customer_name', { length: 255 }),
+    customerPhone: varchar('customer_phone', { length: 50 }),
+    deviceFingerprint: text('device_fingerprint'),
+    openedAt: timestamp('opened_at', { withTimezone: true }).defaultNow().notNull(),
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+    closedByUserId: text('closed_by_user_id').references(() => user.id, {
+      onDelete: 'set null'
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('table_sessions_restaurant_idx').on(table.restaurantId),
+    index('table_sessions_table_status_idx').on(table.tableId, table.status),
+    uniqueIndex('table_sessions_token_idx').on(table.sessionToken)
+  ]
+);
+
+// ---------------------------------------------------------------------------
 // 7. Orders Table (totalAmount in integer paise)
 // ---------------------------------------------------------------------------
 export const orders = pgTable(
@@ -271,6 +311,9 @@ export const orders = pgTable(
       .notNull()
       .references(() => restaurants.id, { onDelete: 'cascade' }),
     tableId: text('table_id').references(() => restaurantTables.id, {
+      onDelete: 'set null'
+    }),
+    tableSessionId: text('table_session_id').references(() => tableSessions.id, {
       onDelete: 'set null'
     }),
     status: varchar('status', { length: 50 }).default('new').notNull(),
@@ -287,6 +330,7 @@ export const orders = pgTable(
   (table) => [
     index('orders_restaurant_idx').on(table.restaurantId),
     index('orders_table_idx').on(table.tableId),
+    index('orders_table_session_idx').on(table.tableSessionId),
     index('orders_status_idx').on(table.restaurantId, table.status),
     index('orders_restaurant_created_idx').on(table.restaurantId, table.createdAt),
     uniqueIndex('orders_idempotency_idx').on(table.restaurantId, table.idempotencyKey),
@@ -415,7 +459,24 @@ export const restaurantTablesRelations = relations(restaurantTables, ({ one, man
     fields: [restaurantTables.restaurantId],
     references: [restaurants.id]
   }),
+  sessions: many(tableSessions),
   orders: many(orders)
+}));
+
+export const tableSessionsRelations = relations(tableSessions, ({ one, many }) => ({
+  restaurant: one(restaurants, {
+    fields: [tableSessions.restaurantId],
+    references: [restaurants.id]
+  }),
+  table: one(restaurantTables, {
+    fields: [tableSessions.tableId],
+    references: [restaurantTables.id]
+  }),
+  orders: many(orders),
+  closedBy: one(user, {
+    fields: [tableSessions.closedByUserId],
+    references: [user.id]
+  })
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
@@ -426,6 +487,10 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   table: one(restaurantTables, {
     fields: [orders.tableId],
     references: [restaurantTables.id]
+  }),
+  session: one(tableSessions, {
+    fields: [orders.tableSessionId],
+    references: [tableSessions.id]
   }),
   items: many(orderItems)
 }));

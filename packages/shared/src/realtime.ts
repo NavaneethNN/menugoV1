@@ -5,6 +5,9 @@ export const REALTIME_EVENTS = {
   ORDER_CREATED: 'order:created',
   ORDER_UPDATED: 'order:updated',
   ORDER_STATUS_CHANGED: 'order:status_changed',
+  TABLE_SESSION_STARTED: 'table:session_started',
+  TABLE_SESSION_CLOSED: 'table:session_closed',
+  TABLE_UPDATED: 'table:updated',
   KITCHEN_ALERT: 'kitchen:alert'
 } as const;
 

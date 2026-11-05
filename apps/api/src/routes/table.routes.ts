@@ -1,17 +1,19 @@
 import { Router, Request, Response } from 'express';
-import { db, restaurantTables, restaurants } from '@menugo/database';
-import { eq, and, asc, ne } from 'drizzle-orm';
+import { db, restaurantTables, restaurants, tableSessions } from '@menugo/database';
+import { eq, and, asc, ne, desc } from 'drizzle-orm';
 import {
   createTableSchema,
   updateTableSchema,
   generateTableToken,
   buildCustomerTableUrl,
-  isValidTableTokenFormat
+  isValidTableTokenFormat,
+  SOCKET_EVENTS
 } from '@menugo/shared';
 import { requireAuth } from '../middleware/auth';
 import { requireTenant } from '../middleware/tenant-auth';
 import { AppError } from '../middleware/error-handler';
 import { tableVerificationRateLimiter } from '../middleware/rate-limiter';
+import { publishTableEvent } from '../lib/realtime';
 import QRCode from 'qrcode';
 import crypto from 'crypto';
 
@@ -79,8 +81,116 @@ router.get('/verify/:token', tableVerificationRateLimiter, async (req: Request, 
       throw new AppError('This table is currently disabled or inactive', 400);
     }
 
+    // Session Security: Single active dining party per table
+    const clientSessionToken =
+      (req.query.sessionToken as string) ||
+      (req.headers['x-table-session-token'] as string);
+
+    // Check if table currently has an active session
+    const [activeSession] = await db
+      .select()
+      .from(tableSessions)
+      .where(
+        and(
+          eq(tableSessions.tableId, table.id),
+          eq(tableSessions.status, 'active')
+        )
+      )
+      .orderBy(desc(tableSessions.openedAt))
+      .limit(1);
+
+    if (activeSession) {
+      // If the visiting client provides the exact active session token, allow them to view the menu
+      if (clientSessionToken && clientSessionToken === activeSession.sessionToken) {
+        res.json({
+          valid: true,
+          isOccupied: true,
+          sessionActive: true,
+          sessionMatches: true,
+          session: {
+            id: activeSession.id,
+            sessionToken: activeSession.sessionToken,
+            status: activeSession.status,
+            openedAt: activeSession.openedAt
+          },
+          table: {
+            id: table.id,
+            tableNumber: table.tableNumber,
+            capacity: table.capacity,
+            isActive: table.isActive
+          },
+          restaurant: {
+            id: restaurant.id,
+            name: restaurant.name,
+            slug: restaurant.slug,
+            currency: restaurant.currency
+          }
+        });
+        return;
+      }
+
+      // If another device / party attempts to scan the same QR while an active session exists
+      res.json({
+        valid: true,
+        isOccupied: true,
+        sessionActive: true,
+        sessionMatches: false,
+        error: 'TABLE_OCCUPIED',
+        message:
+          'This table currently has an active dining session. The menu is locked. If you are seated at this table, please ask your waiter or cashier to release the table or open a new session.',
+        table: {
+          id: table.id,
+          tableNumber: table.tableNumber,
+          capacity: table.capacity,
+          isActive: table.isActive
+        },
+        restaurant: {
+          id: restaurant.id,
+          name: restaurant.name,
+          slug: restaurant.slug,
+          currency: restaurant.currency
+        }
+      });
+      return;
+    }
+
+    // No active session exists -> create a fresh session for the table
+    const newSessionToken = crypto.randomBytes(32).toString('hex');
+    const [newSession] = await db
+      .insert(tableSessions)
+      .values({
+        id: crypto.randomUUID(),
+        restaurantId: restaurant.id,
+        tableId: table.id,
+        sessionToken: newSessionToken,
+        status: 'active',
+        deviceFingerprint: (req.headers['user-agent'] as string) || null
+      })
+      .returning();
+
+    if (!newSession) {
+      throw new AppError('Failed to initialize table session', 500);
+    }
+
+    // Real-time broadcast: table session started
+    publishTableEvent(restaurant.id, SOCKET_EVENTS.TABLE_SESSION_STARTED, {
+      tableId: table.id,
+      tableNumber: table.tableNumber,
+      sessionId: newSession.id,
+      openedAt: newSession.openedAt
+    }).catch(() => {});
+
     res.json({
       valid: true,
+      isOccupied: false,
+      sessionActive: true,
+      sessionMatches: true,
+      session: {
+        id: newSession.id,
+        sessionToken: newSession.sessionToken,
+        status: newSession.status,
+        openedAt: newSession.openedAt
+      },
       table: {
         id: table.id,
         tableNumber: table.tableNumber,

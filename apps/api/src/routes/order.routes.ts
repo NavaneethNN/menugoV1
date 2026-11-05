@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { db, orders, orderItems, products, restaurantTables, restaurants, orderStatusHistory } from '@menugo/database';
+import { db, orders, orderItems, products, restaurantTables, restaurants, orderStatusHistory, tableSessions } from '@menugo/database';
 import { eq, and, or, desc, inArray, gte, lte, count, ilike } from 'drizzle-orm';
 import { createOrderSchema, updateOrderStatusSchema, OrderStatus, validateStatusTransition } from '@menugo/shared';
 import { requireAuth } from '../middleware/auth';
@@ -123,6 +123,48 @@ router.post('/', orderCreationRateLimiter, async (req: Request, res: Response, n
 
     if (!table.isActive) {
       throw new AppError('This table is currently disabled or inactive', 400);
+    }
+
+    // 2b. Table Session Security Verification
+    const clientSessionToken =
+      validatedData.tableSessionToken ||
+      (req.headers['x-table-session-token'] as string | undefined);
+
+    let [activeSession] = await db
+      .select()
+      .from(tableSessions)
+      .where(
+        and(
+          eq(tableSessions.tableId, table.id),
+          eq(tableSessions.status, 'active')
+        )
+      )
+      .orderBy(desc(tableSessions.openedAt))
+      .limit(1);
+
+    if (activeSession) {
+      if (clientSessionToken && clientSessionToken !== activeSession.sessionToken) {
+        throw new AppError(
+          'Cannot place order: This table has an active session from another party. Please contact your waiter or cashier.',
+          403
+        );
+      }
+    } else {
+      // Auto-create active session for the table if not already created
+      const newSessionToken = clientSessionToken || crypto.randomBytes(32).toString('hex');
+      const [createdSession] = await db
+        .insert(tableSessions)
+        .values({
+          id: crypto.randomUUID(),
+          restaurantId: restaurant.id,
+          tableId: table.id,
+          sessionToken: newSessionToken,
+          status: 'active',
+          customerName: validatedData.customerName || null,
+          customerPhone: validatedData.customerPhone || null
+        })
+        .returning();
+      activeSession = createdSession;
     }
 
     // 3. Idempotency Check: prevent duplicate submissions on retry
@@ -258,6 +300,7 @@ router.post('/', orderCreationRateLimiter, async (req: Request, res: Response, n
             orderNumber,
             restaurantId: restaurant!.id,
             tableId: table!.id,
+            tableSessionId: activeSession?.id || null,
             status: 'new', // Initial status set to 'new' on the server
             totalAmount,
             specialInstructions: validatedData.specialInstructions || null,

@@ -21,6 +21,7 @@ import tableRoutes from './routes/table.routes';
 import orderRoutes from './routes/order.routes';
 import uploadRoutes from './routes/upload.routes';
 import memberRoutes from './routes/member.routes';
+import cashierRoutes from './routes/cashier.routes';
 
 dotenv.config();
 
@@ -127,11 +128,13 @@ app.use(tenantMiddleware);
 app.use('/api/health', healthRoutes);
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/restaurants', memberRoutes);
+app.use('/api/members', memberRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/tables', tableRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/cashier', cashierRoutes);
 
 // Global Error Handler
 app.use(errorHandler);
