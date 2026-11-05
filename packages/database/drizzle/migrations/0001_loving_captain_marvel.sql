@@ -1,0 +1,1 @@
+ALTER TABLE "restaurant_tables" ADD COLUMN "table_token" varchar(100);
