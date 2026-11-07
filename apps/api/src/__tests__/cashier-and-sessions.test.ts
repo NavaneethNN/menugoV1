@@ -333,11 +333,66 @@ describe('Cashier Module & Table Session Security', () => {
     assert.equal(overviewRes.body.summary.availableCount, 1);
   });
 
+  test('11b. Cashier can still inspect / print bill statement after session was closed (recent session fallback)', async () => {
+    const res = await request(app)
+      .get(`/api/cashier/tables/${table1Id}/bill`)
+      .set('Cookie', staffCookie)
+      .set('x-restaurant-id', restAId);
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.table.tableNumber, 'Table 1');
+    assert.equal(res.body.session.status, 'closed');
+    assert.equal(res.body.grandTotalPaise, 56000);
+    assert.equal(res.body.orders.length, 1);
+  });
+
   test('12. Now a new customer scans Table 1: fresh session is initiated', async () => {
     const res = await request(app).get(`/api/tables/verify/${table1Token}?restaurantSlug=${slugA}`);
     assert.equal(res.status, 200);
     assert.equal(res.body.valid, true);
     assert.equal(res.body.isOccupied, false);
     assert.notEqual(res.body.session.sessionToken, activeCustomerSessionToken, 'New session must have distinct token');
+  });
+
+  test('13. Hierarchy Security: Admin cannot modify cashier permission of the restaurant owner (403 Forbidden)', async () => {
+    // 1. Create an Admin user
+    const resAdmin = await auth.api.signUpEmail({
+      body: {
+        name: 'Admin Joe',
+        email: `admin-joe-${Date.now()}@test.com`,
+        password: 'Password123!'
+      },
+      asResponse: true
+    });
+    const adminCookie = resAdmin.headers.get('set-cookie')?.split(';')[0] || '';
+    const jsonAdmin = await resAdmin.json();
+
+    await db.insert(restaurantMembers).values({
+      id: crypto.randomUUID(),
+      restaurantId: restAId,
+      userId: jsonAdmin.user.id,
+      role: 'admin',
+      staffName: 'Admin Joe',
+      canCashier: true
+    });
+
+    // 2. Fetch Owner A membership
+    const [ownerMember] = await db
+      .select({ id: restaurantMembers.id })
+      .from(restaurantMembers)
+      .where(and(eq(restaurantMembers.restaurantId, restAId), eq(restaurantMembers.userId, ownerAId)))
+      .limit(1);
+
+    assert.ok(ownerMember);
+
+    // 3. Admin Joe attempts to revoke cashier permission from Owner A
+    const res = await request(app)
+      .patch(`/api/restaurants/${restAId}/members/${ownerMember.id}/cashier-permission`)
+      .set('Cookie', adminCookie)
+      .set('x-restaurant-id', restAId)
+      .send({ canCashier: false });
+
+    assert.equal(res.status, 403);
+    assert.match(res.body.message, /Administrators cannot modify permissions of other administrators or the owner/i);
   });
 });

@@ -8,7 +8,7 @@ import {
   orderItems,
   user
 } from '@menugo/database';
-import { eq, and, asc, desc, inArray, sql } from 'drizzle-orm';
+import { eq, and, asc, desc, inArray, sql, gte } from 'drizzle-orm';
 import {
   SOCKET_EVENTS,
   formatPaise,
@@ -249,7 +249,7 @@ router.post(
         throw new AppError(`Table ${table.tableNumber} does not have an active dining session.`, 400);
       }
 
-      // 3. Close the session atomically
+      // 3. Close the session atomically (closes any active session for this table)
       const now = new Date();
       const [closedSession] = await db
         .update(tableSessions)
@@ -259,7 +259,12 @@ router.post(
           closedByUserId: req.user!.id,
           updatedAt: now
         })
-        .where(eq(tableSessions.id, activeSession.id))
+        .where(
+          and(
+            eq(tableSessions.tableId, tableId),
+            eq(tableSessions.status, 'active')
+          )
+        )
         .returning();
 
       if (!closedSession) {
@@ -422,21 +427,61 @@ router.get(
         throw new AppError('Table not found or does not belong to this restaurant', 404);
       }
 
-      // 2. Fetch active session
-      const [activeSession] = await db
-        .select()
-        .from(tableSessions)
-        .where(
-          and(
-            eq(tableSessions.tableId, tableId),
-            eq(tableSessions.status, 'active')
-          )
-        )
-        .orderBy(desc(tableSessions.openedAt))
-        .limit(1);
+      // 2. Fetch session: explicit sessionId, active session, or most recently closed session within 2 hours
+      const targetSessionId = (req.query.sessionId as string | undefined)?.trim();
+      let targetSession: typeof tableSessions.$inferSelect | undefined;
 
-      if (!activeSession) {
-        throw new AppError(`No active dining session found for Table ${table.tableNumber}.`, 404);
+      if (targetSessionId) {
+        const [found] = await db
+          .select()
+          .from(tableSessions)
+          .where(
+            and(
+              eq(tableSessions.id, targetSessionId),
+              eq(tableSessions.tableId, tableId),
+              eq(tableSessions.restaurantId, restaurantId)
+            )
+          )
+          .limit(1);
+        targetSession = found;
+      }
+
+      if (!targetSession) {
+        // Query active session first
+        const [activeSession] = await db
+          .select()
+          .from(tableSessions)
+          .where(
+            and(
+              eq(tableSessions.tableId, tableId),
+              eq(tableSessions.status, 'active')
+            )
+          )
+          .orderBy(desc(tableSessions.openedAt))
+          .limit(1);
+        targetSession = activeSession;
+      }
+
+      if (!targetSession) {
+        // Fallback: look for the most recently closed session within the last 2 hours so receipt can still be viewed / printed
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+        const [recentClosedSession] = await db
+          .select()
+          .from(tableSessions)
+          .where(
+            and(
+              eq(tableSessions.tableId, tableId),
+              eq(tableSessions.restaurantId, restaurantId),
+              gte(tableSessions.openedAt, twoHoursAgo)
+            )
+          )
+          .orderBy(desc(tableSessions.closedAt), desc(tableSessions.openedAt))
+          .limit(1);
+        targetSession = recentClosedSession;
+      }
+
+      if (!targetSession) {
+        throw new AppError(`No active or recent dining session found for Table ${table.tableNumber}.`, 404);
       }
 
       // 3. Fetch all orders for this session
@@ -446,7 +491,7 @@ router.get(
         .where(
           and(
             eq(orders.restaurantId, restaurantId),
-            eq(orders.tableSessionId, activeSession.id)
+            eq(orders.tableSessionId, targetSession.id)
           )
         )
         .orderBy(asc(orders.createdAt));
@@ -467,9 +512,10 @@ router.get(
         .filter((o) => o.status !== 'cancelled')
         .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
+      const endTime = targetSession.closedAt ? new Date(targetSession.closedAt).getTime() : Date.now();
       const durationMinutes = Math.max(
         0,
-        Math.floor((Date.now() - new Date(activeSession.openedAt).getTime()) / 60000)
+        Math.floor((endTime - new Date(targetSession.openedAt).getTime()) / 60000)
       );
 
       res.json({
@@ -484,11 +530,13 @@ router.get(
           capacity: table.capacity
         },
         session: {
-          id: activeSession.id,
-          openedAt: activeSession.openedAt,
+          id: targetSession.id,
+          status: targetSession.status,
+          openedAt: targetSession.openedAt,
+          closedAt: targetSession.closedAt,
           durationMinutes,
-          customerName: activeSession.customerName,
-          customerPhone: activeSession.customerPhone
+          customerName: targetSession.customerName,
+          customerPhone: targetSession.customerPhone
         },
         orders: sessionOrdersList.map((o) => ({
           id: o.id,

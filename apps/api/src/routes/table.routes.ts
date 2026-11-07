@@ -156,29 +156,100 @@ router.get('/verify/:token', tableVerificationRateLimiter, async (req: Request, 
 
     // No active session exists -> create a fresh session for the table
     const newSessionToken = crypto.randomBytes(32).toString('hex');
-    const [newSession] = await db
-      .insert(tableSessions)
-      .values({
-        id: crypto.randomUUID(),
-        restaurantId: restaurant.id,
+    let sessionRecord: typeof tableSessions.$inferSelect;
+
+    try {
+      const [newSession] = await db
+        .insert(tableSessions)
+        .values({
+          id: crypto.randomUUID(),
+          restaurantId: restaurant.id,
+          tableId: table.id,
+          sessionToken: newSessionToken,
+          status: 'active',
+          deviceFingerprint: (req.headers['user-agent'] as string) || null
+        })
+        .returning();
+
+      if (!newSession) {
+        throw new AppError('Failed to initialize table session', 500);
+      }
+      sessionRecord = newSession;
+
+      // Real-time broadcast: table session started
+      publishTableEvent(restaurant.id, SOCKET_EVENTS.TABLE_SESSION_STARTED, {
         tableId: table.id,
-        sessionToken: newSessionToken,
-        status: 'active',
-        deviceFingerprint: (req.headers['user-agent'] as string) || null
-      })
-      .returning();
+        tableNumber: table.tableNumber,
+        sessionId: sessionRecord.id,
+        openedAt: sessionRecord.openedAt
+      }).catch(() => {});
+    } catch (insertErr: any) {
+      // Race condition safety: if a concurrent request created an active session simultaneously
+      const [raceActiveSession] = await db
+        .select()
+        .from(tableSessions)
+        .where(
+          and(
+            eq(tableSessions.tableId, table.id),
+            eq(tableSessions.status, 'active')
+          )
+        )
+        .limit(1);
 
-    if (!newSession) {
-      throw new AppError('Failed to initialize table session', 500);
+      if (raceActiveSession) {
+        if (clientSessionToken && clientSessionToken === raceActiveSession.sessionToken) {
+          res.json({
+            valid: true,
+            isOccupied: true,
+            sessionActive: true,
+            sessionMatches: true,
+            session: {
+              id: raceActiveSession.id,
+              sessionToken: raceActiveSession.sessionToken,
+              status: raceActiveSession.status,
+              openedAt: raceActiveSession.openedAt
+            },
+            table: {
+              id: table.id,
+              tableNumber: table.tableNumber,
+              capacity: table.capacity,
+              isActive: table.isActive
+            },
+            restaurant: {
+              id: restaurant.id,
+              name: restaurant.name,
+              slug: restaurant.slug,
+              currency: restaurant.currency
+            }
+          });
+          return;
+        }
+
+        res.json({
+          valid: true,
+          isOccupied: true,
+          sessionActive: true,
+          sessionMatches: false,
+          error: 'TABLE_OCCUPIED',
+          message:
+            'This table currently has an active dining session. The menu is locked. If you are seated at this table, please ask your waiter or cashier to release the table or open a new session.',
+          table: {
+            id: table.id,
+            tableNumber: table.tableNumber,
+            capacity: table.capacity,
+            isActive: table.isActive
+          },
+          restaurant: {
+            id: restaurant.id,
+            name: restaurant.name,
+            slug: restaurant.slug,
+            currency: restaurant.currency
+          }
+        });
+        return;
+      }
+      throw insertErr;
     }
-
-    // Real-time broadcast: table session started
-    publishTableEvent(restaurant.id, SOCKET_EVENTS.TABLE_SESSION_STARTED, {
-      tableId: table.id,
-      tableNumber: table.tableNumber,
-      sessionId: newSession.id,
-      openedAt: newSession.openedAt
-    }).catch(() => {});
 
     res.json({
       valid: true,
@@ -186,10 +257,10 @@ router.get('/verify/:token', tableVerificationRateLimiter, async (req: Request, 
       sessionActive: true,
       sessionMatches: true,
       session: {
-        id: newSession.id,
-        sessionToken: newSession.sessionToken,
-        status: newSession.status,
-        openedAt: newSession.openedAt
+        id: sessionRecord.id,
+        sessionToken: sessionRecord.sessionToken,
+        status: sessionRecord.status,
+        openedAt: sessionRecord.openedAt
       },
       table: {
         id: table.id,

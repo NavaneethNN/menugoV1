@@ -81,6 +81,8 @@ app.use(
       'Content-Type',
       'Authorization',
       'x-restaurant-id',
+      'x-table-session-token',
+      'X-Table-Session-Token',
       'idempotency-key',
       'Idempotency-Key',
       'x-test-rate-limit'

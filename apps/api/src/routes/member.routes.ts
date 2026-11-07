@@ -866,6 +866,13 @@ router.post(
         throw new AppError('Member not found in this restaurant', 404);
       }
 
+      // Privilege check: Admin cannot modify an Owner or another Admin
+      if (req.tenant!.role === 'admin') {
+        if (targetMember.role === 'owner' || targetMember.role === 'admin') {
+          throw new AppError('Administrators cannot modify permissions of other administrators or the owner.', 403);
+        }
+      }
+
       // Reset password state
       await db
         .update(restaurantMembers)
@@ -916,6 +923,13 @@ router.patch(
 
       if (!targetMember) {
         throw new AppError('Member not found in this restaurant', 404);
+      }
+
+      // Privilege check: Admin cannot modify an Owner or another Admin
+      if (req.tenant!.role === 'admin') {
+        if (targetMember.role === 'owner' || targetMember.role === 'admin') {
+          throw new AppError('Administrators cannot modify permissions of other administrators or the owner.', 403);
+        }
       }
 
       // Check if new PIN already taken by another member in this restaurant
@@ -986,6 +1000,13 @@ router.patch(
 
       if (!targetMember) {
         throw new AppError('Member not found in this restaurant', 404);
+      }
+
+      // Privilege check: Admin cannot modify an Owner or another Admin
+      if (req.tenant!.role === 'admin') {
+        if (targetMember.role === 'owner' || targetMember.role === 'admin') {
+          throw new AppError('Administrators cannot modify permissions of other administrators or the owner.', 403);
+        }
       }
 
       const [updated] = await db

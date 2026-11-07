@@ -109,7 +109,9 @@ interface TableBillData {
   };
   session: {
     id: string;
+    status?: string;
     openedAt: string;
+    closedAt?: string | null;
     durationMinutes: number;
     customerName?: string | null;
     customerPhone?: string | null;
@@ -286,7 +288,9 @@ export default function AdminCashierPage() {
         {
           method: 'POST',
           restaurantId: selectedRestaurant.id,
-          body: JSON.stringify({})
+          body: JSON.stringify({
+            forceClose: closingTable.activeSession?.unservedCount ? true : false
+          })
         }
       );
 
@@ -917,8 +921,19 @@ export default function AdminCashierPage() {
                   <p className="text-xs text-slate-500">
                     {billData.table.tableNumber} • Seated {new Date(billData.session.openedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({billData.session.durationMinutes} min)
                   </p>
+                  <div className="flex items-center justify-center gap-2 mt-1">
+                    <span
+                      className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                        billData.session.status === 'closed'
+                          ? 'bg-slate-200 text-slate-700'
+                          : 'bg-emerald-100 text-emerald-800'
+                      }`}
+                    >
+                      {billData.session.status === 'closed' ? 'Settled & Released' : 'Active Session'}
+                    </span>
+                  </div>
                   {billData.session.customerName && (
-                    <p className="text-xs text-slate-600 font-semibold">
+                    <p className="text-xs text-slate-600 font-semibold pt-0.5">
                       Guest: {billData.session.customerName}
                     </p>
                   )}
@@ -966,18 +981,20 @@ export default function AdminCashierPage() {
                     <span>Print Receipt</span>
                   </button>
 
-                  <button
-                    onClick={() => {
-                      const target = activeBillTable;
-                      setActiveBillTable(null);
-                      setBillData(null);
-                      setClosingTable(target);
-                    }}
-                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5"
-                  >
-                    <CreditCard className="w-3.5 h-3.5" />
-                    <span>Settle &amp; Release Table</span>
-                  </button>
+                  {billData.session.status !== 'closed' && (
+                    <button
+                      onClick={() => {
+                        const target = activeBillTable;
+                        setActiveBillTable(null);
+                        setBillData(null);
+                        setClosingTable(target);
+                      }}
+                      className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5"
+                    >
+                      <CreditCard className="w-3.5 h-3.5" />
+                      <span>Settle &amp; Release Table</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ) : null}
@@ -1064,3 +1081,4 @@ export default function AdminCashierPage() {
     </div>
   );
 }
+

@@ -152,19 +152,43 @@ router.post('/', orderCreationRateLimiter, async (req: Request, res: Response, n
     } else {
       // Auto-create active session for the table if not already created
       const newSessionToken = clientSessionToken || crypto.randomBytes(32).toString('hex');
-      const [createdSession] = await db
-        .insert(tableSessions)
-        .values({
-          id: crypto.randomUUID(),
-          restaurantId: restaurant.id,
-          tableId: table.id,
-          sessionToken: newSessionToken,
-          status: 'active',
-          customerName: validatedData.customerName || null,
-          customerPhone: validatedData.customerPhone || null
-        })
-        .returning();
-      activeSession = createdSession;
+      try {
+        const [createdSession] = await db
+          .insert(tableSessions)
+          .values({
+            id: crypto.randomUUID(),
+            restaurantId: restaurant.id,
+            tableId: table.id,
+            sessionToken: newSessionToken,
+            status: 'active',
+            customerName: validatedData.customerName || null,
+            customerPhone: validatedData.customerPhone || null
+          })
+          .returning();
+        activeSession = createdSession;
+      } catch {
+        // Concurrency catch: if another request created the active session concurrently
+        const [raceSession] = await db
+          .select()
+          .from(tableSessions)
+          .where(
+            and(
+              eq(tableSessions.tableId, table.id),
+              eq(tableSessions.status, 'active')
+            )
+          )
+          .limit(1);
+
+        if (raceSession) {
+          if (!clientSessionToken || clientSessionToken !== raceSession.sessionToken) {
+            throw new AppError(
+              'Cannot place order: This table has an active session from another party. Please contact your waiter or cashier.',
+              403
+            );
+          }
+          activeSession = raceSession;
+        }
+      }
     }
 
     // 3. Idempotency Check: prevent duplicate submissions on retry

@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS "table_sessions" (
 CREATE INDEX IF NOT EXISTS "table_sessions_restaurant_idx" ON "table_sessions" ("restaurant_id");
 CREATE INDEX IF NOT EXISTS "table_sessions_table_status_idx" ON "table_sessions" ("table_id", "status");
 CREATE UNIQUE INDEX IF NOT EXISTS "table_sessions_token_idx" ON "table_sessions" ("session_token");
+CREATE UNIQUE INDEX IF NOT EXISTS "table_sessions_single_active_idx" ON "table_sessions" ("table_id") WHERE status = 'active';
 
 ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "table_session_id" text;
 DO $$ BEGIN

@@ -9,7 +9,7 @@ import {
   index,
   uniqueIndex
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import crypto from 'crypto';
 
 // ---------------------------------------------------------------------------
@@ -293,7 +293,10 @@ export const tableSessions = pgTable(
   (table) => [
     index('table_sessions_restaurant_idx').on(table.restaurantId),
     index('table_sessions_table_status_idx').on(table.tableId, table.status),
-    uniqueIndex('table_sessions_token_idx').on(table.sessionToken)
+    uniqueIndex('table_sessions_token_idx').on(table.sessionToken),
+    uniqueIndex('table_sessions_single_active_idx')
+      .on(table.tableId)
+      .where(sql`status = 'active'`)
   ]
 );
 

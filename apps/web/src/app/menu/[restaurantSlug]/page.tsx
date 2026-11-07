@@ -318,6 +318,17 @@ function CustomerMenuContent() {
     }
   }, [tableToken, verifyTableToken]);
 
+  // Auto-recovery polling: When locked out by an active session, poll every 6s to detect when cashier releases the table
+  useEffect(() => {
+    if (!isTableOccupiedByOther || !tableToken) return;
+
+    const interval = setInterval(() => {
+      verifyTableToken(tableToken);
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [isTableOccupiedByOther, tableToken, verifyTableToken]);
+
   // Restore cart from localStorage on mount (strictly scoped by restaurantSlug)
   useEffect(() => {
     if (!restaurantSlug || !data?.products) return;
