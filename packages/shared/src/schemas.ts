@@ -435,7 +435,16 @@ export const staffPinLoginSchema = z.object({
   restaurantSlug: z.string().min(1, 'Restaurant slug or ID is required').optional(),
   restaurantId: z.string().min(1, 'Restaurant ID is required').optional(),
   pin: z.string().regex(/^\d{4}$/, 'PIN must be exactly 4 numeric digits (0-9)'),
-  password: z.string().regex(/^\d{4}$/, 'Password must be exactly 4 numeric digits (0-9)').optional()
+  password: z.string().regex(/^\d{4}$/, 'Password must be exactly 4 numeric digits (0-9)').optional(),
+  checkOnly: z.boolean().optional()
+}).refine((data) => Boolean(data.restaurantSlug || data.restaurantId), {
+  message: 'Either restaurantSlug or restaurantId must be provided'
+});
+
+export const staffPinCheckSchema = z.object({
+  restaurantSlug: z.string().min(1, 'Restaurant slug or ID is required').optional(),
+  restaurantId: z.string().min(1, 'Restaurant ID is required').optional(),
+  pin: z.string().regex(/^\d{4}$/, 'PIN must be exactly 4 numeric digits (0-9)')
 }).refine((data) => Boolean(data.restaurantSlug || data.restaurantId), {
   message: 'Either restaurantSlug or restaurantId must be provided'
 });

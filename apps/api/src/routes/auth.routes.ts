@@ -2,7 +2,7 @@ import express, { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { db, restaurantMembers, restaurants, user, account } from '@menugo/database';
 import { eq, and } from 'drizzle-orm';
-import { staffPinLoginSchema } from '@menugo/shared';
+import { staffPinLoginSchema, staffPinCheckSchema } from '@menugo/shared';
 import { AppError } from '../middleware/error-handler';
 import { auth } from '../lib/auth';
 import { hashPassword } from 'better-auth/crypto';
@@ -74,11 +74,31 @@ router.get('/staff-restaurants', async (_req: Request, res: Response, next: Next
 });
 
 /**
- * Staff 4-digit PIN + 4-digit Password Direct Login & First-Time Setup.
+ * Helper to safely forward session cookies from Better Auth to Express response.
+ * Handles both standard getSetCookie() (multiple cookies) and fallback string.
  */
-router.post('/staff-login', async (req: Request, res: Response, next: NextFunction) => {
+function forwardAuthCookies(authResponse: any, res: Response) {
+  const getSetCookieFn = authResponse?.headers?.getSetCookie;
+  if (typeof getSetCookieFn === 'function') {
+    const cookies = getSetCookieFn.call(authResponse.headers);
+    if (Array.isArray(cookies) && cookies.length > 0) {
+      res.setHeader('Set-Cookie', cookies);
+      return;
+    }
+  }
+  const setCookie = authResponse?.headers?.get('set-cookie');
+  if (setCookie) {
+    res.setHeader('Set-Cookie', setCookie);
+  }
+}
+
+/**
+ * Staff 4-digit PIN verification endpoint.
+ * Validates PIN and informs frontend whether staff needs first-time password setup.
+ */
+router.post('/staff-pin-check', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { restaurantSlug, restaurantId, pin, password } = staffPinLoginSchema.parse(req.body);
+    const { restaurantSlug, restaurantId, pin } = staffPinCheckSchema.parse(req.body);
 
     // 1. Resolve restaurant
     const [restaurant] = await db
@@ -137,6 +157,94 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
 
     const displayName = member.staffName || staffUser.name;
 
+    res.status(200).json({
+      valid: true,
+      firstTimeLogin: !member.isPasswordSet,
+      staffName: displayName,
+      restaurantName: restaurant.name,
+      role: member.role
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * Staff 4-digit PIN + 4-digit Password Direct Login & First-Time Setup.
+ */
+router.post('/staff-login', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { restaurantSlug, restaurantId, pin, password, checkOnly } = staffPinLoginSchema.parse(req.body);
+
+    // 1. Resolve restaurant
+    const [restaurant] = await db
+      .select({
+        id: restaurants.id,
+        name: restaurants.name,
+        slug: restaurants.slug,
+        isActive: restaurants.isActive
+      })
+      .from(restaurants)
+      .where(restaurantSlug ? eq(restaurants.slug, restaurantSlug) : eq(restaurants.id, restaurantId!))
+      .limit(1);
+
+    if (!restaurant || !restaurant.isActive) {
+      throw new AppError('Restaurant not found or is currently inactive', 404);
+    }
+
+    // 2. Resolve staff member by 4-digit PIN in this restaurant
+    const [member] = await db
+      .select({
+        id: restaurantMembers.id,
+        role: restaurantMembers.role,
+        staffName: restaurantMembers.staffName,
+        pin: restaurantMembers.pin,
+        isPasswordSet: restaurantMembers.isPasswordSet,
+        canCashier: restaurantMembers.canCashier,
+        userId: restaurantMembers.userId
+      })
+      .from(restaurantMembers)
+      .where(
+        and(
+          eq(restaurantMembers.restaurantId, restaurant.id),
+          eq(restaurantMembers.pin, pin)
+        )
+      )
+      .limit(1);
+
+    if (!member) {
+      throw new AppError('Invalid 4-digit PIN for this restaurant', 401);
+    }
+
+    // Resolve user account
+    const [staffUser] = await db
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email
+      })
+      .from(user)
+      .where(eq(user.id, member.userId))
+      .limit(1);
+
+    if (!staffUser) {
+      throw new AppError('Staff account error. Please contact the restaurant manager.', 500);
+    }
+
+    const displayName = member.staffName || staffUser.name;
+
+    // Fast-path: Explicit probe / checkOnly mode
+    if (checkOnly) {
+      res.status(200).json({
+        valid: true,
+        firstTimeLogin: !member.isPasswordSet,
+        staffName: displayName,
+        restaurantName: restaurant.name,
+        role: member.role
+      });
+      return;
+    }
+
     // 3. Case A: First-time login (Password NOT set yet)
     if (!member.isPasswordSet) {
       // If no password provided, prompt staff to create their 4-digit password
@@ -180,13 +288,8 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
         asResponse: true
       });
 
-      // Forward Set-Cookie header to browser
-      const setCookies = typeof authResponse.headers.getSetCookie === 'function'
-        ? authResponse.headers.getSetCookie()
-        : [authResponse.headers.get('set-cookie')].filter(Boolean) as string[];
-      if (setCookies && setCookies.length > 0) {
-        res.setHeader('Set-Cookie', setCookies);
-      }
+      // Forward Set-Cookie headers safely to browser
+      forwardAuthCookies(authResponse, res);
 
       const redirectTo =
         member.role === 'kitchen'
@@ -217,17 +320,8 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
     }
 
     // 4. Case B: Returning staff login (Password already set)
-    // If no password provided, prompt returning staff to enter their 4-digit password
     if (!password) {
-      res.status(200).json({
-        firstTimeLogin: false,
-        requiresPassword: true,
-        staffName: displayName,
-        restaurantName: restaurant.name,
-        role: member.role,
-        message: `Welcome back, ${displayName}! Please enter your 4-digit password.`
-      });
-      return;
+      throw new AppError('Please enter your 4-digit password', 400);
     }
 
     // Verify 4-digit password using Better Auth signInEmail
@@ -248,13 +342,8 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
       throw new AppError('Invalid 4-digit password', 401);
     }
 
-    // Forward Set-Cookie header to browser
-    const setCookies = typeof authResponse.headers.getSetCookie === 'function'
-      ? authResponse.headers.getSetCookie()
-      : [authResponse.headers.get('set-cookie')].filter(Boolean) as string[];
-    if (setCookies && setCookies.length > 0) {
-      res.setHeader('Set-Cookie', setCookies);
-    }
+    // Forward Set-Cookie headers safely to browser
+    forwardAuthCookies(authResponse, res);
 
     const redirectTo =
       member.role === 'kitchen'

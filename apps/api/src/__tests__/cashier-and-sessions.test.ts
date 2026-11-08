@@ -1,15 +1,18 @@
-import { test, describe, before } from 'node:test';
+import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
 import { app } from '../index';
 import { auth } from '../lib/auth';
-import { db, restaurants, restaurantMembers, restaurantTables, tableSessions, categories, products, orders } from '@menugo/database';
+import { db, restaurants, restaurantMembers, restaurantTables, tableSessions, categories, products, orders, pool } from '@menugo/database';
 import { eq, and } from 'drizzle-orm';
 import crypto from 'crypto';
 
 process.env.NODE_ENV = 'test';
 
 describe('Cashier Module & Table Session Security', () => {
+  after(async () => {
+    await pool.end().catch(() => {});
+  });
   let ownerACookie: string;
   let ownerAId: string;
   let restAId: string;

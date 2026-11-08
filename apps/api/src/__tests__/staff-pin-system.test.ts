@@ -160,7 +160,7 @@ describe('Staff 4-Digit PIN & Password System', () => {
   });
 
   describe('3. Subsequent Logins with 4-Digit PIN & Password', () => {
-    it('Subsequent login probe without password returns 200 with requiresPassword: true', async () => {
+    it('Subsequent login without password returns 400 Bad Request', async () => {
       const res = await request(app)
         .post('/api/auth/staff-login')
         .send({
@@ -168,11 +168,8 @@ describe('Staff 4-Digit PIN & Password System', () => {
           pin: staffPin
         });
 
-      assert.strictEqual(res.status, 200);
-      assert.strictEqual(res.body.firstTimeLogin, false);
-      assert.strictEqual(res.body.requiresPassword, true);
-      assert.strictEqual(res.body.staffName, 'Chef Ramesh');
-      assert.ok(res.body.message.includes('Chef Ramesh'));
+      assert.strictEqual(res.status, 400);
+      assert.ok(res.body.error.includes('password'));
     });
 
     it('Subsequent login with incorrect password returns 401 Unauthorized', async () => {
@@ -254,6 +251,78 @@ describe('Staff 4-Digit PIN & Password System', () => {
         });
       assert.strictEqual(newLoginRes.status, 200);
       assert.strictEqual(newLoginRes.body.firstTimeLogin, true);
+    });
+  });
+
+  describe('5. Dedicated Staff PIN Check & Fast Probe Endpoint', () => {
+    const activeStaffPin = '9152';
+
+    it('Verifies PIN via /api/auth/staff-pin-check for first-time staff', async () => {
+      const res = await request(app)
+        .post('/api/auth/staff-pin-check')
+        .send({
+          restaurantSlug: restaurant.slug,
+          pin: activeStaffPin
+        });
+
+      assert.strictEqual(res.status, 200);
+      assert.strictEqual(res.body.valid, true);
+      assert.strictEqual(res.body.firstTimeLogin, true);
+      assert.strictEqual(res.body.staffName, 'Chef Ramesh');
+      assert.strictEqual(res.body.restaurantName, 'The Spice Grill');
+      assert.strictEqual(res.body.role, 'kitchen');
+    });
+
+    it('Verifies PIN via checkOnly: true on /api/auth/staff-login without password requirement', async () => {
+      const res = await request(app)
+        .post('/api/auth/staff-login')
+        .send({
+          restaurantSlug: restaurant.slug,
+          pin: activeStaffPin,
+          checkOnly: true
+        });
+
+      assert.strictEqual(res.status, 200);
+      assert.strictEqual(res.body.valid, true);
+      assert.strictEqual(res.body.firstTimeLogin, true);
+      assert.strictEqual(res.body.staffName, 'Chef Ramesh');
+    });
+
+    it('Correctly identifies returning staff on /api/auth/staff-pin-check after password is set', async () => {
+      // First, set the password
+      await request(app)
+        .post('/api/auth/staff-login')
+        .send({
+          restaurantSlug: restaurant.slug,
+          pin: activeStaffPin,
+          password: '5566'
+        });
+
+      // Now check PIN again
+      const res = await request(app)
+        .post('/api/auth/staff-pin-check')
+        .send({
+          restaurantSlug: restaurant.slug,
+          pin: activeStaffPin
+        });
+
+      assert.strictEqual(res.status, 200);
+      assert.strictEqual(res.body.valid, true);
+      assert.strictEqual(res.body.firstTimeLogin, false); // Returning staff!
+      assert.strictEqual(res.body.staffName, 'Chef Ramesh');
+      assert.strictEqual(res.body.role, 'kitchen');
+    });
+
+    it('Rejects unknown PIN with 401 Unauthorized on /api/auth/staff-pin-check', async () => {
+      const res = await request(app)
+        .post('/api/auth/staff-pin-check')
+        .send({
+          restaurantSlug: restaurant.slug,
+          pin: '0000'
+        });
+
+      assert.strictEqual(res.status, 401);
+      assert.strictEqual(res.body.error, 'Invalid 4-digit PIN for this restaurant');
     });
   });
 });

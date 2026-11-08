@@ -47,6 +47,7 @@ export type StaffAssignableRole = schemas.StaffAssignableRole;
 
 export type CreateStaffWithPinInput = z.infer<typeof schemas.createStaffWithPinSchema>;
 export type StaffPinLoginInput = z.infer<typeof schemas.staffPinLoginSchema>;
+export type StaffPinCheckInput = z.infer<typeof schemas.staffPinCheckSchema>;
 export type StaffSetPasswordInput = z.infer<typeof schemas.staffSetPasswordSchema>;
 export type UpdateStaffPinInput = z.infer<typeof schemas.updateStaffPinSchema>;
 
