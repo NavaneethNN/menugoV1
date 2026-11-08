@@ -160,7 +160,7 @@ describe('Staff 4-Digit PIN & Password System', () => {
   });
 
   describe('3. Subsequent Logins with 4-Digit PIN & Password', () => {
-    it('Subsequent login without password returns 400 Bad Request', async () => {
+    it('Subsequent login probe without password returns 200 with requiresPassword: true', async () => {
       const res = await request(app)
         .post('/api/auth/staff-login')
         .send({
@@ -168,8 +168,11 @@ describe('Staff 4-Digit PIN & Password System', () => {
           pin: staffPin
         });
 
-      assert.strictEqual(res.status, 400);
-      assert.ok(res.body.error.includes('password'));
+      assert.strictEqual(res.status, 200);
+      assert.strictEqual(res.body.firstTimeLogin, false);
+      assert.strictEqual(res.body.requiresPassword, true);
+      assert.strictEqual(res.body.staffName, 'Chef Ramesh');
+      assert.ok(res.body.message.includes('Chef Ramesh'));
     });
 
     it('Subsequent login with incorrect password returns 401 Unauthorized', async () => {

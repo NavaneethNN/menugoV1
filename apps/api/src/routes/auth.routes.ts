@@ -181,9 +181,11 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
       });
 
       // Forward Set-Cookie header to browser
-      const setCookie = authResponse.headers.get('set-cookie');
-      if (setCookie) {
-        res.setHeader('Set-Cookie', setCookie);
+      const setCookies = typeof authResponse.headers.getSetCookie === 'function'
+        ? authResponse.headers.getSetCookie()
+        : [authResponse.headers.get('set-cookie')].filter(Boolean) as string[];
+      if (setCookies && setCookies.length > 0) {
+        res.setHeader('Set-Cookie', setCookies);
       }
 
       const redirectTo =
@@ -215,8 +217,17 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
     }
 
     // 4. Case B: Returning staff login (Password already set)
+    // If no password provided, prompt returning staff to enter their 4-digit password
     if (!password) {
-      throw new AppError('Please enter your 4-digit password', 400);
+      res.status(200).json({
+        firstTimeLogin: false,
+        requiresPassword: true,
+        staffName: displayName,
+        restaurantName: restaurant.name,
+        role: member.role,
+        message: `Welcome back, ${displayName}! Please enter your 4-digit password.`
+      });
+      return;
     }
 
     // Verify 4-digit password using Better Auth signInEmail
@@ -238,9 +249,11 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
     }
 
     // Forward Set-Cookie header to browser
-    const setCookie = authResponse.headers.get('set-cookie');
-    if (setCookie) {
-      res.setHeader('Set-Cookie', setCookie);
+    const setCookies = typeof authResponse.headers.getSetCookie === 'function'
+      ? authResponse.headers.getSetCookie()
+      : [authResponse.headers.get('set-cookie')].filter(Boolean) as string[];
+    if (setCookies && setCookies.length > 0) {
+      res.setHeader('Set-Cookie', setCookies);
     }
 
     const redirectTo =

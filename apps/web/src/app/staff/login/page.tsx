@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiRequest } from '@/lib/api';
+import { authClient } from '@/lib/auth-client';
 import {
   KeyRound,
   Lock,
@@ -104,11 +105,20 @@ function StaffLoginContent() {
     if (activeInput === 'pin') {
       setPin((prev) => (prev.length < 4 ? prev + digit : prev));
     } else if (activeInput === 'password') {
-      setPassword((prev) => (prev.length < 4 ? prev + digit : prev));
+      setPassword((prev) => {
+        if (prev.length < 4) {
+          const next = prev + digit;
+          if (next.length === 4 && step === 'setup_password') {
+            setActiveInput('confirm');
+          }
+          return next;
+        }
+        return prev;
+      });
     } else if (activeInput === 'confirm') {
       setConfirmPassword((prev) => (prev.length < 4 ? prev + digit : prev));
     }
-  }, [activeInput]);
+  }, [activeInput, step]);
 
   const handleNumpadDelete = useCallback(() => {
     setError(null);
@@ -117,9 +127,15 @@ function StaffLoginContent() {
     } else if (activeInput === 'password') {
       setPassword((prev) => prev.slice(0, -1));
     } else if (activeInput === 'confirm') {
-      setConfirmPassword((prev) => prev.slice(0, -1));
+      setConfirmPassword((prev) => {
+        if (prev.length === 0 && step === 'setup_password') {
+          setActiveInput('password');
+          return prev;
+        }
+        return prev.slice(0, -1);
+      });
     }
-  }, [activeInput]);
+  }, [activeInput, step]);
 
   const handleNumpadClear = () => {
     setError(null);
@@ -128,24 +144,8 @@ function StaffLoginContent() {
     else if (activeInput === 'confirm') setConfirmPassword('');
   };
 
-  // Keyboard shortcut listener for desktop/physical keypads
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (['INPUT', 'SELECT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
-        return;
-      }
-      if (e.key >= '0' && e.key <= '9') {
-        handleNumpadPress(e.key);
-      } else if (e.key === 'Backspace') {
-        handleNumpadDelete();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNumpadDelete, handleNumpadPress]);
-
   // 2. Submit Step 1: Check 4-digit PIN
-  const handleCheckPin = async (e?: React.FormEvent) => {
+  const handleCheckPin = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!selectedSlug) {
       setError('Please select your restaurant');
@@ -169,14 +169,16 @@ function StaffLoginContent() {
         })
       });
 
+      // Populate staffInfo so the greeting banner shows in both setup and enter_password steps
+      setStaffInfo({
+        staffName: res.staffName,
+        restaurantName: res.restaurantName,
+        role: res.role,
+        message: res.message
+      });
+
       if (res.firstTimeLogin) {
         // First-time login: Prompt staff to set password
-        setStaffInfo({
-          staffName: res.staffName,
-          restaurantName: res.restaurantName,
-          role: res.role,
-          message: res.message
-        });
         setStep('setup_password');
         setActiveInput('password');
         setPassword('');
@@ -193,10 +195,10 @@ function StaffLoginContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pin, selectedSlug]);
 
   // 3. Submit Step 2: Set 4-digit password on first login
-  const handleSetPasswordAndLogin = async (e?: React.FormEvent) => {
+  const handleSetPasswordAndLogin = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (password.length !== 4) {
       setError('Password must be exactly 4 numeric digits');
@@ -221,18 +223,23 @@ function StaffLoginContent() {
       });
 
       setSuccessMsg(`Welcome, ${res.user.name}! Logging you in...`);
+      try {
+        await authClient.getSession();
+      } catch {
+        // Ignore session refresh errors
+      }
       setTimeout(() => {
-        router.push(res.redirectTo || '/kitchen');
-      }, 700);
+        window.location.href = res.redirectTo || '/kitchen';
+      }, 500);
     } catch (err: any) {
       setError(err.message || 'Failed to set password');
     } finally {
       setLoading(false);
     }
-  };
+  }, [confirmPassword, password, pin, selectedSlug]);
 
   // 4. Submit Step 3: Returning staff login with PIN + Password
-  const handleReturningLogin = async (e?: React.FormEvent) => {
+  const handleReturningLogin = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (password.length !== 4) {
       setError('Please enter your 4-digit password');
@@ -252,17 +259,57 @@ function StaffLoginContent() {
         })
       });
 
-      setSuccessMsg(`Welcome back, ${res.user.name}!`);
+      setSuccessMsg(`Welcome back, ${res.user.name}! Logging you in...`);
+      try {
+        await authClient.getSession();
+      } catch {
+        // Ignore session refresh errors
+      }
       setTimeout(() => {
-        router.push(res.redirectTo || '/kitchen');
-      }, 600);
+        window.location.href = res.redirectTo || '/kitchen';
+      }, 500);
     } catch (err: any) {
       setError(err.message || 'Invalid 4-digit password');
       setPassword('');
     } finally {
       setLoading(false);
     }
-  };
+  }, [password, pin, selectedSlug]);
+
+  // Keyboard shortcut listener for desktop/physical keypads
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+      if (e.key >= '0' && e.key <= '9') {
+        handleNumpadPress(e.key);
+      } else if (e.key === 'Backspace') {
+        handleNumpadDelete();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (step === 'enter_pin' && pin.length === 4) {
+          handleCheckPin();
+        } else if (step === 'setup_password' && password.length === 4 && confirmPassword.length === 4) {
+          handleSetPasswordAndLogin();
+        } else if (step === 'enter_password' && password.length === 4) {
+          handleReturningLogin();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    handleNumpadDelete,
+    handleNumpadPress,
+    step,
+    pin,
+    password,
+    confirmPassword,
+    handleCheckPin,
+    handleSetPasswordAndLogin,
+    handleReturningLogin
+  ]);
 
   return (
     <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
@@ -448,14 +495,19 @@ function StaffLoginContent() {
               >
                 {[0, 1, 2, 3].map((idx) => {
                   const val = password[idx] || '';
+                  const isActive = activeInput === 'password' && password.length === idx;
                   return (
                     <div
                       key={idx}
                       className={`w-12 h-14 rounded-xl border flex items-center justify-center text-xl font-black ${
-                        val ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-300 border-slate-300'
+                        val
+                          ? 'bg-slate-900 text-white border-slate-900'
+                          : isActive
+                          ? 'bg-white text-orange-600 border-orange-500 ring-2 ring-orange-200'
+                          : 'bg-white text-slate-300 border-slate-300'
                       }`}
                     >
-                      {val ? '•' : ''}
+                      {val ? '•' : isActive ? '|' : ''}
                     </div>
                   );
                 })}
@@ -475,14 +527,19 @@ function StaffLoginContent() {
               >
                 {[0, 1, 2, 3].map((idx) => {
                   const val = confirmPassword[idx] || '';
+                  const isActive = activeInput === 'confirm' && confirmPassword.length === idx;
                   return (
                     <div
                       key={idx}
                       className={`w-12 h-14 rounded-xl border flex items-center justify-center text-xl font-black ${
-                        val ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-300 border-slate-300'
+                        val
+                          ? 'bg-slate-900 text-white border-slate-900'
+                          : isActive
+                          ? 'bg-white text-orange-600 border-orange-500 ring-2 ring-orange-200'
+                          : 'bg-white text-slate-300 border-slate-300'
                       }`}
                     >
-                      {val ? '•' : ''}
+                      {val ? '•' : isActive ? '|' : ''}
                     </div>
                   );
                 })}
@@ -530,8 +587,10 @@ function StaffLoginContent() {
                 onClick={() => {
                   setStep('enter_pin');
                   setActiveInput('pin');
+                  setPassword('');
+                  setConfirmPassword('');
                 }}
-                className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl transition"
+                className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl transition cursor-pointer"
               >
                 Back
               </button>
@@ -556,6 +615,18 @@ function StaffLoginContent() {
         {/* STEP 3: Returning Staff (Enter 4-Digit Password) */}
         {step === 'enter_password' && (
           <form onSubmit={handleReturningLogin} className="space-y-5">
+            {staffInfo && (
+              <div className="p-3.5 bg-orange-50 border border-orange-200 rounded-2xl text-slate-800 text-xs">
+                <span className="font-extrabold block text-sm text-slate-900 mb-0.5">
+                  👋 Welcome back, {staffInfo.staffName}!
+                </span>
+                <p className="text-slate-600 text-xs">
+                  Role: <span className="font-bold text-orange-700 capitalize">{staffInfo.role}</span> &bull; Restaurant:{' '}
+                  <span className="font-bold text-slate-800">{staffInfo.restaurantName}</span>
+                </p>
+              </div>
+            )}
+
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
@@ -566,8 +637,9 @@ function StaffLoginContent() {
                   onClick={() => {
                     setStep('enter_pin');
                     setActiveInput('pin');
+                    setPassword('');
                   }}
-                  className="text-[11px] font-bold text-orange-600 hover:text-orange-700"
+                  className="text-[11px] font-bold text-orange-600 hover:text-orange-700 cursor-pointer"
                 >
                   Change PIN
                 </button>
@@ -640,8 +712,9 @@ function StaffLoginContent() {
                 onClick={() => {
                   setStep('enter_pin');
                   setActiveInput('pin');
+                  setPassword('');
                 }}
-                className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl transition"
+                className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl transition cursor-pointer"
               >
                 Back
               </button>
