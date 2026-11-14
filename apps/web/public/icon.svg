@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ea580c" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#7c2d12" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Rounded App Background -->
+  <rect width="512" height="512" rx="120" fill="url(#bgGradient)" filter="url(#dropShadow)" />
+
+  <!-- Inner Soft Glow Outline -->
+  <rect x="12" y="12" width="488" height="488" rx="110" fill="none" stroke="#ffffff" stroke-width="4" stroke-opacity="0.25" />
+
+  <!-- Bold Modern 'M' Monogram with Dining Curve -->
+  <g fill="#ffffff">
+    <path d="M 120 376 L 120 160 C 120 148 130 138 142 138 L 176 138 C 188 138 198 145 204 156 L 256 250 L 308 156 C 314 145 324 138 336 138 L 370 138 C 382 138 392 148 392 160 L 392 376 C 392 387 383 396 372 396 L 334 396 C 323 396 314 387 314 376 L 314 260 L 278 324 C 270 338 250 338 242 324 L 206 260 L 206 376 C 206 387 197 396 186 396 L 148 396 C 137 396 128 387 128 376 Z" />
+    <!-- Fork & Spark Accent -->
+    <circle cx="390" cy="120" r="22" fill="#ffffff" />
+    <circle cx="340" cy="90" r="12" fill="#ffffff" opacity="0.8" />
+  </g>
+</svg>

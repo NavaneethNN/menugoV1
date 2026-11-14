@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from '@/lib/auth-client';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, getApiBaseUrl } from '@/lib/api';
 import {
   UtensilsCrossed,
   Plus,
@@ -270,7 +270,7 @@ export default function AdminProductsPage() {
         formData.append('purpose', 'products');
 
         const directRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/uploads/direct`,
+          `${getApiBaseUrl()}/api/uploads/direct`,
           {
             method: 'POST',
             credentials: 'include',

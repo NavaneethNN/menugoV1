@@ -7,7 +7,8 @@ import dotenv from 'dotenv';
 import { toNodeHandler } from 'better-auth/node';
 
 import { auth } from './lib/auth';
-import { initializeSocket } from './lib/socket';
+import { initializeSocket, getIO } from './lib/socket';
+import { pool } from '@menugo/database';
 import { errorHandler } from './middleware/error-handler';
 import { tenantMiddleware } from './middleware/tenant';
 import { authRateLimiter } from './middleware/rate-limiter';
@@ -148,8 +149,47 @@ const isTestEnv =
   process.argv.includes('--test') ||
   process.argv.some((arg) => arg.includes('.test.ts'));
 
+// Graceful shutdown handling for container orchestrators (Kubernetes, ECS, Railway, Render)
+function setupGracefulShutdown() {
+  const shutdown = async (signal: string) => {
+    console.log(`\n🛑 Received ${signal}. Initiating graceful shutdown...`);
+
+    // Force exit after 10s timeout to prevent zombie processes
+    const forceExitTimer = setTimeout(() => {
+      console.error('⚠️ Forcing process exit after shutdown timeout.');
+      process.exit(1);
+    }, 10000);
+    forceExitTimer.unref();
+
+    try {
+      server.close(() => {
+        console.log('🔒 HTTP server closed to new requests.');
+      });
+
+      const io = getIO();
+      if (io) {
+        await new Promise<void>((resolve) => io.close(() => resolve()));
+        console.log('⚡ WebSocket server connections closed.');
+      }
+
+      await pool.end();
+      console.log('🐘 Database connection pool ended.');
+
+      process.exit(0);
+    } catch (err) {
+      console.error('Error during shutdown:', err);
+      process.exit(1);
+    }
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+}
+
 // Only bind server port in standalone process mode (not inside Vercel serverless functions or tests)
 if (!isTestEnv && !process.env.VERCEL) {
+  setupGracefulShutdown();
+
   server.listen(PORT, () => {
     console.log(`================================================`);
     console.log(`🚀 MenuGo API running on http://localhost:${PORT}`);

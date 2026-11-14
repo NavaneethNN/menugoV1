@@ -1,7 +1,11 @@
 import { createAuthClient } from 'better-auth/react';
+import { getApiBaseUrl } from './api';
+
+const resolvedBaseUrl =
+  getApiBaseUrl() || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5001');
 
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+  baseURL: resolvedBaseUrl
 });
 
 export const {

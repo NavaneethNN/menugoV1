@@ -1,4 +1,15 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+/**
+ * Resolves the authoritative API base URL across browser and SSR execution contexts.
+ * - If NEXT_PUBLIC_API_URL is explicitly set (including empty string "" for relative reverse-proxy), it is honored.
+ * - In browser execution without explicit variable, uses relative "" (same domain proxy).
+ * - In Node/SSR execution without explicit variable, defaults to port 5001.
+ */
+export function getApiBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL !== undefined) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '');
+  }
+  return typeof window !== 'undefined' ? '' : 'http://localhost:5001';
+}
 
 interface RequestOptions extends RequestInit {
   restaurantId?: string;
@@ -11,7 +22,8 @@ export async function apiRequest<T = any>(
 ): Promise<T> {
   const { restaurantId, params, headers, ...rest } = options;
 
-  let url = `${API_URL}${path.startsWith('/') ? path : `/${path}`}`;
+  const baseUrl = getApiBaseUrl();
+  let url = `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
 
   if (params) {
     const searchParams = new URLSearchParams();

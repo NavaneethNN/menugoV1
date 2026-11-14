@@ -40,6 +40,15 @@ export function errorHandler(
     return;
   }
 
+  // CORS Origin Blocked error
+  if (err.message && typeof err.message === 'string' && err.message.startsWith('CORS origin not allowed')) {
+    res.status(403).json({
+      error: 'Forbidden',
+      message: 'Cross-origin request rejected'
+    });
+    return;
+  }
+
   // Fallback 500 error: Sanitize error output in production to prevent information disclosure
   const isProduction = process.env.NODE_ENV === 'production';
   const publicErrorMessage = isProduction ? 'Internal Server Error' : err.message || 'Internal Server Error';

@@ -11,8 +11,10 @@ const secret =
   process.env.BETTER_AUTH_SECRET ||
   'default-development-secret-key-32-chars-long-menugo';
 
-if (process.env.NODE_ENV === 'production' && secret.includes('default-development-secret')) {
-  console.error('FATAL: BETTER_AUTH_SECRET must be set to a secure 32+ character random secret in production!');
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (isProduction && (!process.env.BETTER_AUTH_SECRET || secret.includes('default-development-secret'))) {
+  throw new Error('FATAL: BETTER_AUTH_SECRET must be set to a secure 32+ character random secret in production!');
 }
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -38,9 +40,9 @@ const trustedOrigins = Array.from(
   ].filter((o): o is string => Boolean(o)))
 );
 
-const isProduction = process.env.NODE_ENV === 'production';
 const cookieSameSite = (process.env.AUTH_COOKIE_SAME_SITE as 'lax' | 'strict' | 'none') ||
   (isProduction && !process.env.AUTH_COOKIE_DOMAIN ? 'none' : 'lax');
+const useSecureCookies = isProduction || cookieSameSite === 'none';
 
 export const auth = betterAuth({
   secret,
@@ -70,10 +72,10 @@ export const auth = betterAuth({
   },
   trustedOrigins,
   advanced: {
-    useSecureCookies: isProduction,
+    useSecureCookies,
     defaultCookieAttributes: {
       sameSite: cookieSameSite,
-      secure: isProduction,
+      secure: useSecureCookies,
       httpOnly: true,
       domain: process.env.AUTH_COOKIE_DOMAIN || undefined,
       path: '/'

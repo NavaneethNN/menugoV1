@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
+import { getApiBaseUrl } from './api';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = getApiBaseUrl() || 'http://localhost:5001';
 
 export interface ServerSessionUser {
   id: string;

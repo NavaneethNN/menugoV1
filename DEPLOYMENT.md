@@ -107,7 +107,28 @@ flowchart TD
   NODE_ENV="production"
   ```
 
-*(Alternatively, if running `@menugo/api` as a persistent container on Railway, Render, Fly.io, or AWS ECS, deploy using `npm run start` in `apps/api`).*
+*(Alternatively, if running `@menugo/api` as a persistent container on Railway, Render, Fly.io, or AWS ECS, deploy using `npm run start:prod` in `apps/api` or via Docker).*
+
+### D. Hosting with Docker & Containers (Railway, Render, AWS ECS, Fly.io)
+
+MenuGo includes production-ready multi-stage Dockerfiles for both services:
+
+#### 1. Backend API Service (`apps/api/Dockerfile`)
+- Builds a lightweight Alpine container running Node.js 22 with non-root security.
+- Exposes port `5001`.
+- Built-in liveness probe on `/api/health/live`.
+- Built-in graceful shutdown on `SIGTERM` / `SIGINT` (closes sockets, pool, and HTTP connections).
+
+#### 2. Web Frontend Service (`apps/web/Dockerfile`)
+- Builds Next.js in optimized standalone output mode.
+- Non-root `nextjs` user with port `3000`.
+- Built-in HTTP health check.
+
+#### 3. Single-Server / Local Compose Deployment
+Run the entire production stack with Docker Compose:
+```bash
+docker compose up -d --build
+```
 
 ---
 

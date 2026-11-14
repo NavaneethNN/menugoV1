@@ -1,9 +1,11 @@
 import { io, Socket } from 'socket.io-client';
+import { getApiBaseUrl } from './api';
 
 let socket: Socket | null = null;
 
 export function getSocket(token?: string): Socket {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const API_URL =
+    getApiBaseUrl() || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5001');
   if (!socket) {
     socket = io(API_URL, {
       withCredentials: true,
