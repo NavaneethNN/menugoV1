@@ -10,6 +10,10 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'signin';
+  const business = searchParams.get('business') || searchParams.get('type') || 'restaurant';
+  const isCinema = business === 'cinema';
+  const redirectParam = searchParams.get('redirect');
+  const targetUrl = redirectParam || (isCinema ? '/cinema/onboarding' : '/admin/dashboard');
 
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [name, setName] = useState('');
@@ -37,7 +41,7 @@ function LoginForm() {
           return;
         }
 
-        router.push('/admin/dashboard');
+        router.push(targetUrl);
       } else {
         const res = await signIn.email({
           email,
@@ -50,7 +54,7 @@ function LoginForm() {
           return;
         }
 
-        router.push('/admin/dashboard');
+        router.push(targetUrl);
       }
     } catch (err: any) {
       setError(err?.message || 'Authentication failed. Please check backend server.');
@@ -63,12 +67,20 @@ function LoginForm() {
     <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
       {/* Header */}
       <div className="bg-slate-900 p-8 text-white text-center relative">
-        <div className="w-12 h-12 bg-orange-600 rounded-2xl flex items-center justify-center font-black text-2xl mx-auto mb-3 shadow-lg shadow-orange-500/20">
-          M
+        <div
+          className={`w-12 h-12 ${
+            isCinema ? 'bg-indigo-600 shadow-indigo-500/20' : 'bg-orange-600 shadow-orange-500/20'
+          } rounded-2xl flex items-center justify-center font-black text-2xl mx-auto mb-3 shadow-lg`}
+        >
+          {isCinema ? '🎬' : 'M'}
         </div>
-        <h2 className="text-2xl font-bold">MenuGo Staff & Admin</h2>
+        <h2 className="text-2xl font-bold">
+          {isCinema ? 'MenuGo Cinema Console' : 'MenuGo Staff & Admin'}
+        </h2>
         <p className="text-slate-400 text-sm mt-1">
-          {mode === 'signup' ? 'Create restaurant manager account' : 'Sign in to access your restaurant dashboard'}
+          {mode === 'signup'
+            ? (isCinema ? 'Create cinema theatre manager account' : 'Create restaurant manager account')
+            : (isCinema ? 'Sign in to access your cinema theatre dashboard' : 'Sign in to access your restaurant dashboard')}
         </p>
       </div>
 
@@ -138,7 +150,11 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-orange-600/20 disabled:opacity-50"
+            className={`w-full mt-2 ${
+              isCinema
+                ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
+                : 'bg-orange-600 hover:bg-orange-700 shadow-orange-600/20'
+            } text-white font-semibold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-50`}
           >
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -159,7 +175,7 @@ function LoginForm() {
               <button
                 type="button"
                 onClick={() => setMode('signin')}
-                className="font-bold text-orange-600 hover:underline"
+                className={`font-bold ${isCinema ? 'text-indigo-600' : 'text-orange-600'} hover:underline`}
               >
                 Sign In
               </button>
@@ -170,11 +186,30 @@ function LoginForm() {
               <button
                 type="button"
                 onClick={() => setMode('signup')}
-                className="font-bold text-orange-600 hover:underline"
+                className={`font-bold ${isCinema ? 'text-indigo-600' : 'text-orange-600'} hover:underline`}
               >
-                Register Restaurant
+                {isCinema ? 'Register Cinema Theatre' : 'Register Restaurant'}
               </button>
             </p>
+          )}
+        </div>
+
+        {/* Business Switcher */}
+        <div className="mt-4 text-center text-xs text-slate-500">
+          {isCinema ? (
+            <Link
+              href={`/admin/login${mode === 'signup' ? '?mode=signup&business=restaurant' : '?business=restaurant'}`}
+              className="text-orange-600 hover:underline font-semibold"
+            >
+              ← Switch to Restaurant Management
+            </Link>
+          ) : (
+            <Link
+              href={`/admin/login${mode === 'signup' ? '?mode=signup&business=cinema&redirect=/cinema/onboarding' : '?business=cinema&redirect=/cinema/onboarding'}`}
+              className="text-indigo-600 hover:underline font-semibold"
+            >
+              🎬 Switch to Cinema Theatre Console →
+            </Link>
           )}
         </div>
 
