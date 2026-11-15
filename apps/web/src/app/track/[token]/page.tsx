@@ -179,13 +179,16 @@ export default function OrderTrackingPage() {
   }
 
   const statusInfo = getStatusDisplayInfo(order.status);
-  const normalizedStatus = useMemo(() => {
-    if (order.status === 'pending') return 'new';
-    if (isCinema && order.status === 'preparing') return 'accepted';
-    if (isCinema && order.status === 'served') return 'delivered';
-    if (!isCinema && order.status === 'delivered') return 'served';
-    return order.status;
-  }, [order.status, isCinema]);
+  const normalizedStatus: OrderStatus =
+    order.status === 'pending'
+      ? 'new'
+      : isCinema && order.status === 'preparing'
+      ? 'accepted'
+      : isCinema && order.status === 'served'
+      ? 'delivered'
+      : !isCinema && order.status === 'delivered'
+      ? 'served'
+      : order.status;
   const currentStepIdx = steps.findIndex((s) => s.status === normalizedStatus);
   const isCancelled = order.status === 'cancelled';
   const isServed = order.status === 'served' || order.status === 'delivered';
