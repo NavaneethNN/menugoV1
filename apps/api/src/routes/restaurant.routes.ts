@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { db, restaurants, restaurantMembers, categories, products, restaurantTables } from '@menugo/database';
+import { db, restaurants, restaurantMembers, categories, products, restaurantTables, cinemaQrCodes } from '@menugo/database';
 import { eq, and, asc, ne } from 'drizzle-orm';
 import { createRestaurantSchema, updateRestaurantSchema } from '@menugo/shared';
 import { requireAuth } from '../middleware/auth';
@@ -123,6 +123,7 @@ router.get('/by-slug/:slug', async (req: Request, res: Response, next) => {
         logoUrl: restaurants.logoUrl,
         coverImageUrl: restaurants.coverImageUrl,
         currency: restaurants.currency,
+        tenantType: restaurants.tenantType,
         settings: restaurants.settings
       })
       .from(restaurants)
@@ -131,6 +132,44 @@ router.get('/by-slug/:slug', async (req: Request, res: Response, next) => {
 
     if (!restaurant) {
       throw new AppError('Restaurant not found or inactive', 404);
+    }
+
+    // Segregation: If tenant is a cinema theatre, do not serve dine-in restaurant menu
+    if (restaurant.tenantType === 'cinema') {
+      const [qr] = await db
+        .select({
+          token: cinemaQrCodes.token,
+          theatreToken: cinemaQrCodes.theatreToken
+        })
+        .from(cinemaQrCodes)
+        .where(
+          and(
+            eq(cinemaQrCodes.theatreId, restaurant.id),
+            eq(cinemaQrCodes.status, 'active')
+          )
+        )
+        .limit(1);
+
+      const theatreToken = qr?.theatreToken || qr?.token || null;
+
+      return res.json({
+        isCinema: true,
+        theatreToken,
+        restaurant: {
+          id: restaurant.id,
+          name: restaurant.name,
+          slug: restaurant.slug,
+          phone: restaurant.phone,
+          email: restaurant.email,
+          address: restaurant.address,
+          logoUrl: restaurant.logoUrl,
+          coverImageUrl: restaurant.coverImageUrl,
+          currency: restaurant.currency,
+          settings: restaurant.settings
+        },
+        categories: [],
+        products: []
+      });
     }
 
     // Fetch active categories (only customer-safe fields)
@@ -194,6 +233,7 @@ router.get('/public/:slug', async (req: Request, res: Response, next) => {
         logoUrl: restaurants.logoUrl,
         coverImageUrl: restaurants.coverImageUrl,
         currency: restaurants.currency,
+        tenantType: restaurants.tenantType,
         settings: restaurants.settings
       })
       .from(restaurants)
@@ -202,6 +242,44 @@ router.get('/public/:slug', async (req: Request, res: Response, next) => {
 
     if (!restaurant) {
       throw new AppError('Restaurant not found or inactive', 404);
+    }
+
+    // Segregation: If tenant is a cinema theatre, do not serve dine-in restaurant menu
+    if (restaurant.tenantType === 'cinema') {
+      const [qr] = await db
+        .select({
+          token: cinemaQrCodes.token,
+          theatreToken: cinemaQrCodes.theatreToken
+        })
+        .from(cinemaQrCodes)
+        .where(
+          and(
+            eq(cinemaQrCodes.theatreId, restaurant.id),
+            eq(cinemaQrCodes.status, 'active')
+          )
+        )
+        .limit(1);
+
+      const theatreToken = qr?.theatreToken || qr?.token || null;
+
+      return res.json({
+        isCinema: true,
+        theatreToken,
+        restaurant: {
+          id: restaurant.id,
+          name: restaurant.name,
+          slug: restaurant.slug,
+          phone: restaurant.phone,
+          email: restaurant.email,
+          address: restaurant.address,
+          logoUrl: restaurant.logoUrl,
+          coverImageUrl: restaurant.coverImageUrl,
+          currency: restaurant.currency,
+          settings: restaurant.settings
+        },
+        categories: [],
+        products: []
+      });
     }
 
     res.json({ restaurant });

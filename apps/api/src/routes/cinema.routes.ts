@@ -5410,12 +5410,20 @@ const handleGetCinemaOrderStatus = async (
           : String(show.startTime).substring(0, 20)
         : null);
 
+    const [theatreQr] = await db
+      .select({ token: cinemaQrCodes.token, theatreToken: cinemaQrCodes.theatreToken })
+      .from(cinemaQrCodes)
+      .where(and(eq(cinemaQrCodes.theatreId, orderRecord.restaurantId), eq(cinemaQrCodes.status, 'active')))
+      .limit(1);
+    const activeTheatreToken = theatreQr?.theatreToken || theatreQr?.token || null;
+
     res.json({
       success: true,
       order: {
         id: orderRecord.id,
         orderNumber: orderRecord.orderNumber,
         theatreId: orderRecord.restaurantId,
+        theatreToken: activeTheatreToken,
         screenId: orderRecord.screenId,
         movieId: orderRecord.movieId,
         showId: orderRecord.showId,
@@ -5443,7 +5451,8 @@ const handleGetCinemaOrderStatus = async (
               slug: theatre.slug,
               currency: theatre.currency,
               logoUrl: theatre.logoUrl,
-              address: theatre.address
+              address: theatre.address,
+              theatreToken: activeTheatreToken
             }
           : null,
         screen: screen

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { db, orders, orderItems, products, restaurantTables, restaurants, orderStatusHistory, tableSessions } from '@menugo/database';
+import { db, orders, orderItems, products, restaurantTables, restaurants, orderStatusHistory, tableSessions, cinemaQrCodes } from '@menugo/database';
 import { eq, and, or, desc, inArray, gte, lte, count, ilike } from 'drizzle-orm';
 import { createOrderSchema, updateOrderStatusSchema, OrderStatus, validateStatusTransition } from '@menugo/shared';
 import { requireAuth } from '../middleware/auth';
@@ -505,6 +505,26 @@ router.get('/status/:token', orderTrackingRateLimiter, async (req: Request, res:
       .from(orderItems)
       .where(eq(orderItems.orderId, orderRecord.order.id));
 
+    // For cinema orders, fetch active theatre QR token so client can navigate directly back to cinema menu
+    let cinemaTheatreToken: string | null = null;
+    if (orderRecord.order.orderType === 'cinema' || Boolean(orderRecord.order.seatNumber)) {
+      const [qr] = await db
+        .select({
+          token: cinemaQrCodes.token,
+          theatreToken: cinemaQrCodes.theatreToken
+        })
+        .from(cinemaQrCodes)
+        .where(
+          and(
+            eq(cinemaQrCodes.theatreId, orderRecord.order.restaurantId),
+            eq(cinemaQrCodes.status, 'active')
+          )
+        )
+        .limit(1);
+
+      cinemaTheatreToken = qr?.theatreToken || qr?.token || null;
+    }
+
     // Requirements 3 & 7: Return strictly customer-visible fields.
     // Never expose internal UUIDs, staff names, internal notes, or member information.
     res.json({
@@ -523,7 +543,8 @@ router.get('/status/:token', orderTrackingRateLimiter, async (req: Request, res:
             seatRow: orderRecord.order.seatRow || null,
             seatNumber: orderRecord.order.seatNumber || null,
             showDate: orderRecord.order.showDate || null,
-            showtime: orderRecord.order.showtime || null
+            showtime: orderRecord.order.showtime || null,
+            theatreToken: cinemaTheatreToken
           }
         : null,
       items: items.map((item) => ({

@@ -233,7 +233,15 @@ function CustomerMenuContent() {
     try {
       setLoading(true);
       setError(null);
-      const res = await apiRequest<MenuData>(`/api/restaurants/by-slug/${restaurantSlug}`);
+      const res = await apiRequest<any>(`/api/restaurants/by-slug/${restaurantSlug}`);
+      if (res.isCinema) {
+        if (res.theatreToken) {
+          router.replace(`/cinema/${res.theatreToken}`);
+        } else {
+          router.replace('/');
+        }
+        return;
+      }
       setData(res);
     } catch (err: any) {
       setError(

@@ -55,6 +55,7 @@ interface TrackedOrder {
     seatNumber?: string | null;
     showDate?: string | null;
     showtime?: string | null;
+    theatreToken?: string | null;
   } | null;
   items: TrackedOrderItem[];
 }
@@ -289,7 +290,9 @@ export default function OrderTrackingPage() {
               </span>
               <h2 className="text-3xl font-black text-white tracking-tight">Order #{order.orderNumber}</h2>
               <p className="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
-                Your dishes have been served to your table. Enjoy your meal!
+                {isCinema
+                  ? 'Your snacks and drinks have been delivered to your seat. Enjoy the movie!'
+                  : 'Your dishes have been served to your table. Enjoy your meal!'}
               </p>
             </div>
           ) : (
@@ -389,7 +392,19 @@ export default function OrderTrackingPage() {
         </div>
 
         {/* Return to Menu Button */}
-        {order.restaurant?.slug && (
+        {isCinema ? (
+          order.cinema?.theatreToken ? (
+            <div className="text-center pt-2">
+              <Link
+                href={`/cinema/${order.cinema.theatreToken}`}
+                className="inline-flex items-center gap-2 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Cinema Concessions Menu</span>
+              </Link>
+            </div>
+          ) : null
+        ) : order.restaurant?.slug ? (
           <div className="text-center pt-2">
             <Link
               href={`/menu/${order.restaurant.slug}`}
@@ -399,7 +414,7 @@ export default function OrderTrackingPage() {
               <span>Back to Restaurant Menu</span>
             </Link>
           </div>
-        )}
+        ) : null}
       </main>
     </div>
   );
