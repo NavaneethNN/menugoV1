@@ -11,7 +11,7 @@ import path from 'path';
  */
 export async function applyMigrations(): Promise<void> {
   console.log('================================================');
-  console.log('🚀 MenuGo Safe Database Migration Runner');
+  console.log('[MIGRATION] MenuGo Safe Database Migration Runner');
   console.log('================================================');
 
   if (!process.env.DATABASE_URL) {
@@ -19,20 +19,20 @@ export async function applyMigrations(): Promise<void> {
   }
 
   const migrationsFolder = path.resolve(__dirname, '../drizzle/migrations');
-  console.log(`📁 Loading migrations from: ${migrationsFolder}`);
+  console.log(`[DIR] Loading migrations from: ${migrationsFolder}`);
 
   try {
     // 1. Verify connection
     const client = await pool.connect();
-    console.log('✅ Connection to Neon PostgreSQL established successfully.');
+    console.log('[DB] Connection to Neon PostgreSQL established successfully.');
     client.release();
 
     // 2. Execute pending migrations within transaction
-    console.log('⏳ Applying pending schema migrations...');
+    console.log('[MIGRATE] Applying pending schema migrations...');
     await migrate(db, { migrationsFolder });
-    console.log('✅ All migrations applied successfully!');
+    console.log('[SUCCESS] All migrations applied successfully!');
   } catch (error: any) {
-    console.error('❌ Migration failed:', error?.message || error);
+    console.error('[ERROR] Migration failed:', error?.message || error);
     process.exit(1);
   } finally {
     await pool.end();

@@ -246,11 +246,11 @@ function LoginForm() {
                 <span>
                   {isCinema
                     ? mode === 'signup'
-                      ? 'Create Cinema Account & Continue →'
-                      : 'Sign In to Cinema Console →'
+                      ? 'Create Cinema Account & Continue'
+                      : 'Sign In to Cinema Console'
                     : mode === 'signup'
-                    ? 'Create Account & Continue →'
-                    : 'Sign In →'}
+                    ? 'Create Account & Continue'
+                    : 'Sign In'}
                 </span>
                 <ArrowRight className="w-4 h-4" />
               </>
@@ -301,7 +301,7 @@ function LoginForm() {
               className="text-indigo-600 hover:underline font-semibold inline-flex items-center gap-1.5"
             >
               <Film className="w-3.5 h-3.5 text-indigo-500" />
-              <span>Switch to Cinema Theatre Console &rarr;</span>
+              <span>Switch to Cinema Theatre Console</span>
             </Link>
           )}
         </div>

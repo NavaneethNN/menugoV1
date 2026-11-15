@@ -460,7 +460,7 @@ export default function CinemaAdminReportsPage() {
             </span>
             <DollarSign className="w-4 h-4 text-indigo-400" />
           </div>
-          <div className="mt-2 text-xl sm:text-2xl font-black text-white tracking-tight">
+          <div className="mt-2 text-lg sm:text-xl lg:text-2xl font-black text-white tracking-tight truncate">
             {formatCurrency(summary?.grossSales || 0)}
           </div>
           <div className="mt-1 text-[11px] text-slate-400">
@@ -476,7 +476,7 @@ export default function CinemaAdminReportsPage() {
             </span>
             <TrendingUp className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="mt-2 text-xl sm:text-2xl font-black text-white tracking-tight">
+          <div className="mt-2 text-lg sm:text-xl lg:text-2xl font-black text-white tracking-tight truncate">
             {formatCurrency(summary?.netSales || 0)}
           </div>
           <div className="mt-1 text-[11px] text-slate-400">
@@ -492,7 +492,7 @@ export default function CinemaAdminReportsPage() {
             </span>
             <RotateCcw className="w-4 h-4 text-violet-400" />
           </div>
-          <div className="mt-2 text-xl sm:text-2xl font-black text-white tracking-tight">
+          <div className="mt-2 text-lg sm:text-xl lg:text-2xl font-black text-white tracking-tight truncate">
             {formatCurrency(summary?.totalRefunds || 0)}
           </div>
           <div className="mt-1 text-[11px] text-slate-400">Authorized by admin</div>
@@ -506,7 +506,7 @@ export default function CinemaAdminReportsPage() {
             </span>
             <PieChart className="w-4 h-4 text-cyan-400" />
           </div>
-          <div className="mt-2 text-xl sm:text-2xl font-black text-white tracking-tight">
+          <div className="mt-2 text-lg sm:text-xl lg:text-2xl font-black text-white tracking-tight truncate">
             {formatCurrency(summary?.avgOrderValue || 0)}
           </div>
           <div className="mt-1 text-[11px] text-slate-400">Per paid cinema basket</div>
@@ -520,7 +520,7 @@ export default function CinemaAdminReportsPage() {
             </span>
             <Truck className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="mt-2 text-xl sm:text-2xl font-black text-white tracking-tight">
+          <div className="mt-2 text-lg sm:text-xl lg:text-2xl font-black text-white tracking-tight truncate">
             {summary?.deliveredOrders || 0}
           </div>
           <div className="mt-1 text-[11px] text-slate-400">
@@ -536,7 +536,7 @@ export default function CinemaAdminReportsPage() {
             </span>
             <XCircle className="w-4 h-4 text-rose-400" />
           </div>
-          <div className="mt-2 text-xl sm:text-2xl font-black text-white tracking-tight">
+          <div className="mt-2 text-lg sm:text-xl lg:text-2xl font-black text-white tracking-tight truncate">
             {summary?.cancelledOrders || 0}
           </div>
           <div className="mt-1 text-[11px] text-slate-400">

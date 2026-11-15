@@ -441,19 +441,19 @@ export default function CinemaDeliveryPage() {
                   </div>
 
                   {/* Seat & Screen Focus Card */}
-                  <div className="my-3 p-3.5 rounded-xl bg-gradient-to-r from-sky-950/60 to-indigo-950/60 border border-sky-800/40 flex items-center justify-between">
-                    <div>
-                      <div className="text-[11px] font-semibold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Tv className="w-3.5 h-3.5" />
-                        {order.screenName || 'Screen'} {order.screenType ? `(${order.screenType})` : ''}
+                  <div className="my-3 p-3.5 rounded-xl bg-gradient-to-r from-sky-950/60 to-indigo-950/60 border border-sky-800/40 flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] font-semibold text-sky-400 uppercase tracking-wider flex items-center gap-1.5 truncate">
+                        <Tv className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{order.screenName || 'Screen'} {order.screenType ? `(${order.screenType})` : ''}</span>
                       </div>
-                      <div className="text-2xl font-black text-white mt-0.5 tracking-tight flex items-center gap-1.5">
-                        <Armchair className="w-5 h-5 text-sky-400" />
-                        <span>Row {order.seatRow || '-'} • Seat {order.seatNumber || '-'}</span>
+                      <div className="text-xl sm:text-2xl font-black text-white mt-0.5 tracking-tight flex items-center gap-1.5 truncate">
+                        <Armchair className="w-5 h-5 text-sky-400 shrink-0" />
+                        <span className="truncate">Row {order.seatRow || '-'} • Seat {order.seatNumber || '-'}</span>
                       </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <div className="text-[10px] text-slate-400 truncate max-w-[120px] font-medium">
                         {order.movieTitle || 'Movie'}
                       </div>
@@ -471,15 +471,15 @@ export default function CinemaDeliveryPage() {
                     {order.items?.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between text-xs py-1 border-b border-slate-800/60 last:border-0"
+                        className="flex items-center justify-between text-xs py-1 border-b border-slate-800/60 last:border-0 gap-2"
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-md bg-slate-800 text-sky-400 font-bold text-[11px] flex items-center justify-center">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className="w-5 h-5 rounded-md bg-slate-800 text-sky-400 font-bold text-[11px] flex items-center justify-center shrink-0">
                             {item.quantity}x
                           </span>
-                          <span className="text-white font-medium">{item.productName}</span>
+                          <span className="text-white font-medium truncate">{item.productName}</span>
                         </div>
-                        <span className="text-slate-400">₹{item.subtotal}</span>
+                        <span className="text-slate-400 shrink-0">₹{item.subtotal}</span>
                       </div>
                     ))}
                   </div>

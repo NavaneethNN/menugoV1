@@ -402,7 +402,7 @@ export default function CinemaAdminScreensPage() {
                 {/* Card Top */}
                 <div className="p-6 space-y-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         {getScreenTypeBadge(sc.screenType)}
                         <span
@@ -415,12 +415,12 @@ export default function CinemaAdminScreensPage() {
                           {isActive ? 'Active' : 'Inactive'}
                         </span>
                       </div>
-                      <h3 className="text-lg font-black text-white tracking-tight">
+                      <h3 className="text-lg font-black text-white tracking-tight truncate">
                         {sc.screenName}
                       </h3>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => handleOpenEditModal(sc)}
                         title="Edit screen"

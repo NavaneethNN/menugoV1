@@ -1291,7 +1291,7 @@ export function CustomerCinemaOrderingView({
           <button
             type="button"
             onClick={() => setIsCategoryModalOpen(true)}
-            className="fixed bottom-6 right-4 sm:right-6 z-30 bg-slate-900 text-white rounded-full px-4 py-2.5 shadow-xl flex items-center gap-2 font-black text-xs hover:bg-black transition-all hover:scale-105 active:scale-95 border border-slate-700/80"
+            className={`fixed ${totalCartCount > 0 ? 'bottom-24' : 'bottom-6'} right-4 sm:right-6 z-30 bg-slate-900 text-white rounded-full px-4 py-2.5 shadow-xl flex items-center gap-2 font-black text-xs hover:bg-black transition-all hover:scale-105 active:scale-95 border border-slate-700/80`}
           >
             <UtensilsCrossed className="w-4 h-4 text-red-400" />
             <span>Menu ({categories.length})</span>

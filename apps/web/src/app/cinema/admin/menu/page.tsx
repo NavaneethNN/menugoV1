@@ -936,15 +936,15 @@ export default function CinemaMenuPage() {
                   </div>
 
                   {/* Price and Actions */}
-                  <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                    <div>
+                  <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1 truncate">
                       <span className="text-xs text-slate-400">Price: </span>
                       <span className="text-base font-black text-white">
                         {formatPaise(product.price, currency)}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => openEditProductModal(product)}
                         title="Edit Item"

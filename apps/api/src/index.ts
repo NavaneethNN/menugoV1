@@ -160,28 +160,28 @@ const isTestEnv =
 // Graceful shutdown handling for container orchestrators (Kubernetes, ECS, Railway, Render)
 function setupGracefulShutdown() {
   const shutdown = async (signal: string) => {
-    console.log(`\n🛑 Received ${signal}. Initiating graceful shutdown...`);
+    console.log(`\n[SHUTDOWN] Received ${signal}. Initiating graceful shutdown...`);
 
     // Force exit after 10s timeout to prevent zombie processes
     const forceExitTimer = setTimeout(() => {
-      console.error('⚠️ Forcing process exit after shutdown timeout.');
+      console.error('[SHUTDOWN] Forcing process exit after shutdown timeout.');
       process.exit(1);
     }, 10000);
     forceExitTimer.unref();
 
     try {
       server.close(() => {
-        console.log('🔒 HTTP server closed to new requests.');
+        console.log('[SHUTDOWN] HTTP server closed to new requests.');
       });
 
       const io = getIO();
       if (io) {
         await new Promise<void>((resolve) => io.close(() => resolve()));
-        console.log('⚡ WebSocket server connections closed.');
+        console.log('[WEBSOCKET] WebSocket server connections closed.');
       }
 
       await pool.end();
-      console.log('🐘 Database connection pool ended.');
+      console.log('[DATABASE] Database connection pool ended.');
 
       process.exit(0);
     } catch (err) {
@@ -200,9 +200,9 @@ if (!isTestEnv && !process.env.VERCEL) {
 
   server.listen(PORT, () => {
     console.log(`================================================`);
-    console.log(`🚀 MenuGo API running on http://localhost:${PORT}`);
-    console.log(`⚡ WebSocket server active on port ${PORT}`);
-    console.log(`🔐 Better Auth mounted at /api/auth/*`);
+    console.log(`[STARTUP] MenuGo API running on http://localhost:${PORT}`);
+    console.log(`[WEBSOCKET] WebSocket server active on port ${PORT}`);
+    console.log(`[AUTH] Better Auth mounted at /api/auth/*`);
     console.log(`================================================`);
   });
 }

@@ -197,16 +197,16 @@ export default function OrderTrackingPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-orange-500 selection:text-white pb-12">
       {/* Top Header */}
-      <header className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className={`w-8 h-8 rounded-lg ${order.cinema ? 'bg-indigo-600' : 'bg-orange-600'} flex items-center justify-center text-white`}>
+      <header className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <div className={`w-8 h-8 rounded-lg ${order.cinema ? 'bg-indigo-600' : 'bg-orange-600'} flex items-center justify-center text-white shrink-0`}>
             {order.cinema ? <Film className="w-4 h-4" /> : <UtensilsCrossed className="w-4 h-4" />}
           </div>
-          <div>
-            <h1 className="text-sm font-extrabold text-white leading-tight">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-sm font-extrabold text-white leading-tight truncate">
               {order.restaurant?.name || (order.cinema ? 'Cinema Order Tracker' : 'Restaurant Order Tracker')}
             </h1>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-400 truncate">
               {order.cinema?.seatNumber
                 ? `Seat ${order.cinema.seatNumber}${order.cinema.seatRow ? ` (Row ${order.cinema.seatRow})` : ''}`
                 : order.table?.tableNumber
@@ -217,7 +217,7 @@ export default function OrderTrackingPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Live Status Pill */}
           <span
             className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
@@ -364,14 +364,14 @@ export default function OrderTrackingPage() {
           <div className="divide-y divide-slate-800/80">
             {order.items?.map((item, idx) => (
               <div key={idx} className="py-2.5 first:pt-0 flex justify-between items-start gap-3">
-                <div className="flex items-start gap-2.5">
-                  <span className="font-bold text-orange-400 text-sm">{item.quantity}×</span>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-200">{item.productName}</p>
-                    {item.notes && <p className="text-xs text-amber-300 italic mt-0.5">Note: {item.notes}</p>}
+                <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                  <span className="font-bold text-orange-400 text-sm shrink-0">{item.quantity}×</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-200 truncate">{item.productName}</p>
+                    {item.notes && <p className="text-xs text-amber-300 italic mt-0.5 break-words">Note: {item.notes}</p>}
                   </div>
                 </div>
-                <span className="font-mono text-xs font-semibold text-slate-300">
+                <span className="font-mono text-xs font-semibold text-slate-300 shrink-0">
                   {formatPaise(item.subtotal)}
                 </span>
               </div>

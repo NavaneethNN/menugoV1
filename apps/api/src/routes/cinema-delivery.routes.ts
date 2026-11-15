@@ -304,8 +304,13 @@ router.post(
           throw new AppError('Order must be ready, accepted, or assigned for delivery before being marked as delivered', 400);
         }
 
-        if (userRole === 'delivery' && order.deliveryStaffId && order.deliveryStaffId !== userId) {
-          throw new AppError('Only the assigned delivery runner or theatre administrator can mark this order as delivered', 403);
+        if (userRole === 'delivery') {
+          if (!order.deliveryStaffId || order.status !== 'assigned_for_delivery') {
+            throw new AppError('Order must be accepted and assigned for delivery before being marked as delivered', 400);
+          }
+          if (order.deliveryStaffId !== userId) {
+            throw new AppError('Only the assigned delivery runner or theatre administrator can mark this order as delivered', 403);
+          }
         }
 
         const transition = validateStatusTransition(order.status as OrderStatus, 'delivered', userRole);

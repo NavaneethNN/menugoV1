@@ -842,7 +842,7 @@ export default function CinemaKitchenDashboardPage() {
           </div>
         ) : viewMode === 'columns' && activeTab === 'all' ? (
           /* Kanban Column View */
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start min-w-[900px]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start min-w-0 md:min-w-[900px]">
             {/* Column 1: NEW / INCOMING */}
             <div className="flex flex-col bg-slate-900/70 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
               <div className="bg-blue-950/60 border-b border-blue-900/60 px-4 py-3 flex items-center justify-between">
@@ -1025,15 +1025,15 @@ function CinemaOrderCard({
         {/* Card Header: Prominent Seat Location & Wait Timer */}
         <div className="flex items-start justify-between gap-2 mb-3">
           {/* Prominent Auditorium & Seat Badge */}
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-950/80 border border-indigo-700/60 text-indigo-300 font-black text-xs uppercase tracking-tight">
               <Tv className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
               <span className="truncate">{screenDisplay}</span>
             </div>
 
-            <div className="text-base font-black text-white mt-1 tracking-tight flex items-center gap-1.5">
+            <div className="text-base font-black text-white mt-1 tracking-tight flex items-center gap-1.5 truncate">
               <Armchair className="w-4 h-4 text-indigo-400 shrink-0" />
-              <span>{seatDisplay}</span>
+              <span className="truncate">{seatDisplay}</span>
             </div>
           </div>
 

@@ -773,7 +773,7 @@ export default function CinemaShowsPage() {
                   </div>
 
                   {/* Details */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
@@ -802,7 +802,7 @@ export default function CinemaShowsPage() {
                       )}
                     </div>
 
-                    <h3 className="text-lg font-black text-white tracking-tight">{show.movieTitle}</h3>
+                    <h3 className="text-lg font-black text-white tracking-tight truncate">{show.movieTitle}</h3>
 
                     <div className="flex items-center gap-3 text-xs text-slate-400">
                       <span>{show.movieLanguage}</span>
