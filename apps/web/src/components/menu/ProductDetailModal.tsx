@@ -43,12 +43,12 @@ interface ProductDetailModalProps {
 }
 
 const PRESET_NOTE_CHIPS = [
-  '🌶️ Less Spicy',
-  '🌶️🌶️ Extra Spicy',
-  '🧅 No Onion / Garlic',
-  '🧀 Extra Crispy',
-  '🍋 Extra Lemon',
-  '🌱 Less Oil'
+  'Less Spicy',
+  'Extra Spicy',
+  'No Onion / Garlic',
+  'Extra Crispy',
+  'Extra Lemon',
+  'Less Oil'
 ];
 
 export function ProductDetailModal({

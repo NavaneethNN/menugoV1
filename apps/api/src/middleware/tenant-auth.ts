@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { db, restaurants, restaurantMembers } from '@menugo/database';
 import { eq, and } from 'drizzle-orm';
-import { RestaurantMemberRole } from '@menugo/shared';
+import { RestaurantMemberRole, TenantType } from '@menugo/shared';
 import { requireAuth, AuthenticatedUser } from './auth';
 
 export interface TenantPermissions {
@@ -23,9 +23,10 @@ export interface TenantContext {
     slug: string;
     currency: string;
     isActive: boolean;
+    tenantType: TenantType;
   };
   membershipId: string;
-  role: RestaurantMemberRole;
+  role: RestaurantMemberRole | 'delivery' | string;
   permissions: TenantPermissions;
 }
 
@@ -42,7 +43,7 @@ declare global {
  * Returns strongly typed server-side permissions for a member's role.
  * No client-supplied roles are ever used.
  */
-export function getPermissionsForRole(role: RestaurantMemberRole, canCashier = false): TenantPermissions {
+export function getPermissionsForRole(role: RestaurantMemberRole | 'delivery' | string, canCashier = false): TenantPermissions {
   switch (role) {
     case 'owner':
       return {
@@ -76,6 +77,17 @@ export function getPermissionsForRole(role: RestaurantMemberRole, canCashier = f
         canUpdateOrderStatus: true,
         canCancelOrders: false,
         canCashier: Boolean(canCashier)
+      };
+    case 'delivery':
+      return {
+        canManageRestaurant: false,
+        canManageStaff: false,
+        canManageMenu: false,
+        canManageTables: false,
+        canManageOrders: true,
+        canUpdateOrderStatus: true,
+        canCancelOrders: false,
+        canCashier: false
       };
     case 'staff':
       return {
@@ -111,7 +123,10 @@ export function getPermissionsForRole(role: RestaurantMemberRole, canCashier = f
  * 5. Attaches strongly-typed req.tenant context.
  * 6. Enforces role restrictions if allowedRoles is provided.
  */
-export function requireTenant(allowedRoles?: RestaurantMemberRole[]) {
+export function requireTenant(
+  allowedRoles?: (RestaurantMemberRole | 'delivery' | string)[],
+  allowedTenantTypes?: TenantType | readonly TenantType[]
+) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     // 1. Ensure user is authenticated first
     if (!req.user) {
@@ -122,32 +137,40 @@ export function requireTenant(allowedRoles?: RestaurantMemberRole[]) {
     }
 
     try {
-      // 2. Resolve target restaurant identifier from explicit context
+      // 2. Resolve target restaurant/cinema identifier from explicit context
       const targetRestaurantId =
+        (req.headers['x-theatre-id'] as string) ||
+        (req.headers['x-tenant-id'] as string) ||
         (req.headers['x-restaurant-id'] as string) ||
         req.params.restaurantId ||
-        (req.query.restaurantId as string);
+        req.params.theatreId ||
+        req.params.tenantId ||
+        (req.query.restaurantId as string) ||
+        (req.query.theatreId as string) ||
+        (req.query.tenantId as string);
 
       if (!targetRestaurantId || typeof targetRestaurantId !== 'string') {
         res.status(400).json({
           error: 'Bad Request',
-          message: 'Missing restaurant context: specify x-restaurant-id header or restaurantId parameter.'
+          message: 'Missing tenant context: specify x-restaurant-id, x-theatre-id, or restaurantId parameter.'
         });
         return;
       }
 
-      // 3. Query database to verify that the user is an authorized member of THIS restaurant
+      // 3. Query database to verify that the user is an authorized member of THIS tenant
       const [membership] = await db
         .select({
           membershipId: restaurantMembers.id,
           role: restaurantMembers.role,
+          status: restaurantMembers.status,
           canCashier: restaurantMembers.canCashier,
           restaurant: {
             id: restaurants.id,
             name: restaurants.name,
             slug: restaurants.slug,
             currency: restaurants.currency,
-            isActive: restaurants.isActive
+            isActive: restaurants.isActive,
+            tenantType: restaurants.tenantType
           }
         })
         .from(restaurantMembers)
@@ -161,10 +184,20 @@ export function requireTenant(allowedRoles?: RestaurantMemberRole[]) {
         .limit(1);
 
       if (!membership) {
-        // IDOR protection: User has NO membership in the requested restaurant
+        // IDOR protection: User has NO membership in the requested tenant
         res.status(403).json({
           error: 'Forbidden',
-          message: 'Access denied: You are not an authorized member of this restaurant.'
+          message: 'Access denied: You are not an authorized member of this tenant.'
+        });
+        return;
+      }
+
+      // Check member active account status (Task 19 Requirement 1 & 4)
+      if (membership.status === 'inactive') {
+        res.status(403).json({
+          success: false,
+          error: 'Forbidden',
+          message: 'Your staff account has been deactivated by an administrator.'
         });
         return;
       }
@@ -172,39 +205,76 @@ export function requireTenant(allowedRoles?: RestaurantMemberRole[]) {
       if (!membership.restaurant.isActive) {
         res.status(403).json({
           error: 'Forbidden',
-          message: 'Restaurant account is currently inactive.'
+          message: 'Tenant account is currently inactive.'
         });
         return;
       }
 
-      const role = membership.role as RestaurantMemberRole;
+      const tenantType = (membership.restaurant.tenantType || 'restaurant') as TenantType;
 
-      // 4. Verify role authorization if required
+      // 4. Validate tenant business type if restricted (prevent cross-module access)
+      if (allowedTenantTypes) {
+        const allowedTypesList = Array.isArray(allowedTenantTypes)
+          ? allowedTenantTypes
+          : [allowedTenantTypes];
+        if (!allowedTypesList.includes(tenantType)) {
+          res.status(403).json({
+            success: false,
+            error: 'Forbidden',
+            message: `Cross-module access denied: Target tenant is a "${tenantType}", but this endpoint requires "${allowedTypesList.join(' or ')}".`
+          });
+          return;
+        }
+      }
+
+      const role = membership.role as RestaurantMemberRole | 'delivery';
+
+      // 5. Verify role authorization if required
       if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(role)) {
         res.status(403).json({
+          success: false,
           error: 'Forbidden',
           message: `Insufficient permissions. Requires one of: ${allowedRoles.join(', ')}.`
         });
         return;
       }
 
-      // 5. Attach resolved tenant context
+      // 6. Attach resolved tenant context
       req.tenant = {
         restaurantId: membership.restaurant.id,
-        restaurant: membership.restaurant,
+        restaurant: {
+          ...membership.restaurant,
+          tenantType
+        },
         membershipId: membership.membershipId,
         role,
         permissions: getPermissionsForRole(role, membership.canCashier)
       };
 
       req.restaurantId = membership.restaurant.id;
-      req.restaurantRole = role;
+      req.restaurantRole = role as RestaurantMemberRole;
 
       next();
     } catch (error) {
       next(error);
     }
   };
+}
+
+/**
+ * Dedicated cinema tenant authorization middleware.
+ * Enforces both role checks and tenant_type = 'cinema'.
+ */
+export function requireCinemaTenant(allowedRoles?: (RestaurantMemberRole | 'delivery' | string)[]) {
+  return requireTenant(allowedRoles, 'cinema');
+}
+
+/**
+ * Dedicated restaurant tenant authorization middleware.
+ * Enforces both role checks and tenant_type = 'restaurant'.
+ */
+export function requireRestaurantTenant(allowedRoles?: RestaurantMemberRole[]) {
+  return requireTenant(allowedRoles, 'restaurant');
 }
 
 /**

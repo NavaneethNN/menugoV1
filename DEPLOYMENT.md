@@ -1,6 +1,6 @@
-# MenuGo V1.0 — Production Deployment & Operations Guide
+# MenuGo — Production Deployment & Operations Guide
 
-This guide provides end-to-end instructions for deploying, migrating, monitoring, and maintaining the MenuGo platform in production.
+This guide provides end-to-end instructions for deploying, migrating, monitoring, and maintaining the MenuGo platform in production for both **Restaurant Dine-In** and **Cinema Seat Delivery** operations.
 
 ---
 
@@ -9,13 +9,20 @@ This guide provides end-to-end instructions for deploying, migrating, monitoring
 ```mermaid
 flowchart TD
     subgraph Clients["Edge & Clients"]
-        Browser["Dine-In Customer (Mobile Safari / Chrome)"]
-        StaffBrowser["Restaurant Staff / Kitchen Display (Tablet / Desktop)"]
+        DineInCust["Restaurant Customer<br/>(Mobile Table QR)"]
+        CinemaCust["Cinema Seat Customer<br/>(Mobile Seat QR)"]
+        RestStaff["Restaurant Staff / KDS<br/>(Tablet / POS)"]
+        CinemaStaff["Cinema Kitchen & Delivery Staff<br/>(KDS & Seat Delivery PWA)"]
     end
 
-    subgraph Vercel["Vercel Hosting Platform"]
-        Web["Next.js 14 Web Application (apps/web)<br/>Edge CDN & Static Pages"]
-        API["Express 5 API (apps/api)<br/>Serverless Function / Container"]
+    subgraph Hosting["Application Hosting (Vercel / Containers)"]
+        Web["Next.js 14 Web Application (apps/web)<br/>Edge CDN, SSR & Static Pages"]
+        API["Express 5 API (apps/api)<br/>REST Endpoints & Webhook Handlers"]
+    end
+
+    subgraph PaymentGateways["Payment Gateways (Merchant Accounts)"]
+        Razorpay["Razorpay Gateway<br/>(S2S Webhooks & Orders API)"]
+        Paytm["Paytm Gateway<br/>(S2S Webhooks & InitiateTxn API)"]
     end
 
     subgraph Cloudflare["Cloudflare"]
@@ -28,12 +35,18 @@ flowchart TD
         Postgres["PostgreSQL Database (Compute)"]
     end
 
-    Browser -->|HTTPS| Web
-    StaffBrowser -->|HTTPS| Web
+    DineInCust -->|HTTPS| Web
+    CinemaCust -->|HTTPS| Web
+    RestStaff -->|Session Auth / Orders| API
+    CinemaStaff -->|Session Auth / KDS / Delivery| API
     Web -->|API Requests| API
-    StaffBrowser -->|Session Auth / Orders| API
-    Browser -->|Direct Image Upload (Presigned PUT)| R2
-    Browser -->|Fetch Food Photos| CDN
+
+    CinemaCust -->|UPI / Netbanking / Cards| Razorpay
+    CinemaCust -->|UPI / Paytm Wallet| Paytm
+    Razorpay -->|POST S2S Webhooks| API
+    Paytm -->|POST S2S Webhooks| API
+
+    Web -->|Fetch Photos| CDN
     API -->|Generate Presigned URL / Safe Delete| R2
     API -->|Pooled Queries (SSL)| PgBouncer
     PgBouncer --> Postgres
@@ -50,7 +63,7 @@ flowchart TD
    postgresql://[user]:[password]@[endpoint]-pooler.[region].aws.neon.tech/[dbname]?sslmode=require
    ```
 3. Ensure `-pooler` is included in the host name. This directs connections to PgBouncer to prevent connection exhaustion.
-4. Set `DB_POOL_MAX=10` in serverless environments.
+4. Set `DB_POOL_MAX=10` in serverless / container environments.
 
 ### B. Image Storage: Cloudflare R2
 1. Create a bucket named `menugo-media` in Cloudflare Dashboard.
@@ -92,6 +105,7 @@ flowchart TD
 - **Environment Variables**:
   ```env
   DATABASE_URL="postgresql://...-pooler.neon.tech/neondb?sslmode=require"
+  DB_POOL_MAX="10"
   BETTER_AUTH_SECRET="[secure-random-32-chars-string]"
   BETTER_AUTH_URL="https://api.yourdomain.com"
   AUTH_COOKIE_DOMAIN=".yourdomain.com"
@@ -99,6 +113,7 @@ flowchart TD
   NEXT_PUBLIC_APP_URL="https://app.yourdomain.com"
   APP_URL="https://app.yourdomain.com"
   TRUSTED_ORIGINS="https://app.yourdomain.com,https://yourdomain.com"
+  ENCRYPTION_KEY="[64-hex-chars-aes-256-gcm-master-key]"
   R2_ACCOUNT_ID="[cloudflare-account-id]"
   R2_ACCESS_KEY_ID="[r2-access-key-id]"
   R2_SECRET_ACCESS_KEY="[r2-secret-access-key]"
@@ -107,108 +122,160 @@ flowchart TD
   NODE_ENV="production"
   ```
 
-*(Alternatively, if running `@menugo/api` as a persistent container on Railway, Render, Fly.io, or AWS ECS, deploy using `npm run start:prod` in `apps/api` or via Docker).*
+---
 
-### D. Hosting with Docker & Containers (Railway, Render, AWS ECS, Fly.io)
+## 3. Environment Variables Reference
 
-MenuGo includes production-ready multi-stage Dockerfiles for both services:
+| Variable | Scope | Description | Format / Example |
+| :--- | :--- | :--- | :--- |
+| `DATABASE_URL` | API | Neon PostgreSQL pooled connection string | `postgresql://...@...-pooler.neon.tech/neondb?sslmode=require` |
+| `DB_POOL_MAX` | API | Max DB pool connections | `10` |
+| `BETTER_AUTH_SECRET` | API | Cryptographic session signing key | 32+ char random base64 string |
+| `BETTER_AUTH_URL` | API | Authoritative API URL for auth | `https://api.yourdomain.com` |
+| `AUTH_COOKIE_DOMAIN` | API | Shared domain for cross-subdomain auth | `.yourdomain.com` |
+| `AUTH_COOKIE_SAME_SITE`| API | Cookie SameSite attribute | `lax` (or `none` for cross-site) |
+| `ENCRYPTION_KEY` | API | AES-256-GCM master key for merchant secrets | 64-hex character string (`openssl rand -hex 32`) |
+| `NEXT_PUBLIC_API_URL` | Web & API | Publicly reachable API base URL | `https://api.yourdomain.com` |
+| `NEXT_PUBLIC_APP_URL` | Web & API | Publicly reachable Web base URL | `https://app.yourdomain.com` |
+| `APP_URL` | API | Canonical web app URL for auth callbacks | `https://app.yourdomain.com` |
+| `TRUSTED_ORIGINS` | API | Comma-separated CORS origins | `https://app.yourdomain.com,https://yourdomain.com` |
+| `R2_ACCOUNT_ID` | API | Cloudflare account ID | Hex string |
+| `R2_ACCESS_KEY_ID` | API | Cloudflare R2 access key ID | String |
+| `R2_SECRET_ACCESS_KEY`| API | Cloudflare R2 secret access key | String |
+| `R2_BUCKET_NAME` | API | R2 bucket name | `menugo-media` |
+| `R2_PUBLIC_URL` | API | Public delivery URL for media | `https://media.yourdomain.com` |
+| `NODE_ENV` | All | Application environment | `production` |
 
-#### 1. Backend API Service (`apps/api/Dockerfile`)
-- Builds a lightweight Alpine container running Node.js 22 with non-root security.
-- Exposes port `5001`.
-- Built-in liveness probe on `/api/health/live`.
-- Built-in graceful shutdown on `SIGTERM` / `SIGINT` (closes sockets, pool, and HTTP connections).
-
-#### 2. Web Frontend Service (`apps/web/Dockerfile`)
-- Builds Next.js in optimized standalone output mode.
-- Non-root `nextjs` user with port `3000`.
-- Built-in HTTP health check.
-
-#### 3. Single-Server / Local Compose Deployment
-Run the entire production stack with Docker Compose:
-```bash
-docker compose up -d --build
-```
+> [!CAUTION]
+> **Encryption Key Persistence**: `ENCRYPTION_KEY` encrypts theatre Razorpay and Paytm credentials in `cinema_payment_accounts`. If this key is lost or rotated without re-encrypting existing database rows, all existing cinema payment integrations will fail to decrypt. Back up this key securely.
 
 ---
 
-## 3. Database Migration Procedure
+## 4. Database Migration Procedure
 
-> [!IMPORTANT]
-> **Human Approval Rule**: Never run migrations against the production database without prior review and sign-off. Always create a Neon branch/snapshot before migrating.
+All cinema migrations (`0005` to `0016`) are **additive and non-destructive**. They add cinema tables (`cinema_screens`, `cinema_seats`, `cinema_shows`, `cinema_payment_accounts`, etc.) and optional cinema columns to `orders` and `restaurants` without altering or locking existing restaurant records.
 
-### Safe Migration Steps
+### Safe Migration Execution Steps
 1. **Create Pre-Migration Branch**:
-   In Neon Console, click **New Branch** from `main` named `pre-migration-backup-YYYY-MM-DD`. This creates an instant snapshot for instantaneous rollback.
+   In the Neon Console, create a new branch from `main` named `pre-migration-backup-YYYY-MM-DD`. This creates an instant point-in-time snapshot.
 2. **Review Pending Migrations**:
-   Inspect pending SQL scripts in `packages/database/drizzle/migrations`.
-3. **Execute Migration**:
+   Inspect migration SQL files in `packages/database/drizzle/migrations/` (migrations 0005 through 0016).
+3. **Execute Transactional Migration**:
    ```bash
-   # Run safe, transactional migration runner
    npm run migrate --workspace=@menugo/database
    ```
 4. **Verify Database Health**:
    ```bash
-   # Verify that DB readiness probe reports healthy
    curl -i https://api.yourdomain.com/api/health/ready
    ```
 
 ---
 
-## 4. Rollback Procedures
+## 5. Payment Gateway Webhook Configuration
+
+Each cinema theatre operates its own Razorpay and/or Paytm merchant account. The API dynamically resolves merchant credentials, decrypts secrets, verifies cryptographic signatures, and enforces idempotency.
+
+### Razorpay Webhook Setup
+1. Log in to the [Razorpay Dashboard](https://dashboard.razorpay.com).
+2. Navigate to **Settings** $\to$ **Webhooks** $\to$ **Add New Webhook**.
+3. Set **Webhook URL**:
+   ```
+   https://api.yourdomain.com/api/cinema/payments/webhook/{theatreId}/razorpay
+   ```
+   *(Replace `{theatreId}` with the theatre's UUID displayed in Cinema Admin Settings).*
+4. Set **Secret**: Enter a secure random string (copy this into the Cinema Admin Settings Webhook Secret field).
+5. Select Active Events:
+   - `order.paid`
+   - `payment.captured`
+   - `payment.failed`
+   - `refund.processed`
+6. Save and verify.
+
+### Paytm Webhook / S2S Callback Setup
+1. Log in to the [Paytm Merchant Dashboard](https://dashboard.paytm.com).
+2. Navigate to **Developer Settings** $\to$ **Webhook URL**.
+3. Set **Callback / Webhook URL**:
+   ```
+   https://api.yourdomain.com/api/cinema/payments/webhook/{theatreId}/paytm
+   ```
+4. Paytm signs server-to-server notifications using the theatre's `Merchant Key` (`CHECKSUMHASH`).
+5. Ensure the theatre's `MID`, `Merchant Key`, and `Website Name` (`DEFAULT` or custom) are saved in Cinema Admin Settings.
+
+### Webhook Reliability Features
+- **Signature Verification**: Every incoming webhook payload is cryptographically validated using HMAC-SHA256 (Razorpay) or Paytm checksum algorithms.
+- **Idempotency Guarantee**: Events are deduplicated via `cinema_webhook_events`. Repeated gateway retries return `200 OK` without duplicate processing.
+- **Out-of-Order Protection**: Delayed failure notifications arriving after an order has already been marked `PAID` are safely acknowledged and ignored.
+
+---
+
+## 6. Domain Routing Architecture
+
+| Route Pattern | Service | Access / Role | Description |
+| :--- | :--- | :--- | :--- |
+| `/` | Web | Public | Platform home & portal switcher |
+| `/menu/[restaurantSlug]` | Web | Public | Restaurant customer digital menu |
+| `/cinema/[theatreToken]` | Web | Public | Cinema customer show & screen selector |
+| `/cinema/[theatreToken]/[screenToken]` | Web | Public | Direct screen/seat customer ordering |
+| `/cinema/track/[token]` | Web | Public | Live cinema order tracking by token |
+| `/cinema/kitchen` | Web | Kitchen / Admin | Cinema Kitchen Display System (KDS) |
+| `/cinema/delivery` | Web | Delivery / Admin | Cinema Seat Delivery dispatch interface |
+| `/cinema/admin/*` | Web | Cinema Admin / Owner | Cinema management dashboards |
+| `/admin/*` | Web | Restaurant Admin / Owner | Restaurant management dashboards |
+| `/api/health/*` | API | Public | Liveness (`/live`) and DB readiness (`/ready`) |
+| `/api/cinema/public/*` | API | Public | Public theatre, show, and seat availability |
+| `/api/cinema/payments/webhook/:theatreId/:provider` | API | Gateway Webhooks | S2S payment notifications |
+| `/api/cinema/*` | API | Cinema Staff / Admin | Protected cinema operations API |
+| `/api/*` | API | Restaurant Staff / Admin | Protected restaurant operations API |
+
+---
+
+## 7. Monitoring, Logging & Observability
+
+### Logging Guidelines (Compliance & Privacy)
+- **Zero Secrets Logging**: Never log encryption keys, merchant secrets (`keySecret`), webhook secrets, database connection strings, or authorization headers.
+- **Payment Security (RBI & PCI-DSS)**: Never log credit/debit card PAN numbers, CVVs, expiry dates, or UPI PINs.
+- **PII Protection**: Customer phone numbers and emails are only logged in sanitized transaction audit records.
+
+### Health Probes & Monitoring Checks
+- **Liveness Probe**: `GET /api/health/live` (monitored every 10–30s by load balancers; returns `200` with uptime).
+- **Readiness Probe**: `GET /api/health/ready` (executes `SELECT 1` ping; returns `200` when DB is connected, `503` if degraded).
+- **Payment Ledger Reconciliation**: Query `cinema_payment_transactions` and `cinema_refunds` to cross-check captured gateway amounts against MenuGo order records.
+
+---
+
+## 8. Rollback Procedures
 
 ### Application Rollback
-- In Vercel Dashboard, navigate to **Deployments** $\to$ select the previous green deployment $\to$ click **Promote to Production** (instant zero-downtime rollback).
+- **Vercel**: In Vercel Dashboard $\to$ **Deployments**, locate the last known healthy deployment and click **Promote to Production** (instant zero-downtime rollback).
+- **Docker / Containers**: Redeploy the previous container image tag.
 
 ### Database Rollback
-- Because Neon supports point-in-time recovery and instant branching:
-  1. In Neon Console, restore database state to the point in time immediately before the migration.
-  2. Alternatively, switch the connection endpoint to the `pre-migration-backup` branch.
+- Neon PostgreSQL supports instant point-in-time recovery and zero-copy branching:
+  1. If an issue occurs immediately after migration, restore compute to the `pre-migration-backup` branch.
+  2. Because cinema migrations are non-destructive, rolling back the application code while leaving cinema tables in place does NOT impact existing restaurant dine-in tables or operations.
 
 ---
 
-## 5. Secret Rotation Procedures
+## 9. Pre-Flight Deployment Smoke Testing
 
-### Better Auth Secret (`BETTER_AUTH_SECRET`)
-1. Generate a new secret:
-   ```bash
-   openssl rand -base64 32
-   ```
-2. Update `BETTER_AUTH_SECRET` in the Vercel/host dashboard for `apps/api`.
-3. Redeploy the API.
-4. *Impact*: Active sessions will be invalidated; staff and owners will be prompted to log in again.
-
-### Cloudflare R2 Credentials
-1. In Cloudflare Dashboard $\to$ **R2** $\to$ **Manage R2 API Tokens**, create a new token.
-2. Update `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` in API environment variables.
-3. Verify upload functionality via smoke test.
-4. Revoke the previous R2 API token in Cloudflare Dashboard.
-
-### Neon Database Credentials
-1. In Neon Console $\to$ **Users / Roles**, rotate the password for the application user.
-2. Update `DATABASE_URL` in API environment variables.
-3. Test readiness probe: `curl https://api.yourdomain.com/api/health/ready`.
-
----
-
-## 6. Deployment Smoke Testing
-
-MenuGo includes an automated smoke test suite that verifies critical production operations in under 2 seconds:
+Run the automated smoke test script against staging or production:
 
 ```bash
 # Run against local API server
 npm run smoke
 
-# Run against production or staging endpoint
+# Run against remote staging or production API
 npx tsx scripts/smoke-test.ts --url https://api.yourdomain.com
 ```
 
-### Smoke Test Matrix
-- ✅ Liveness probe (`/api/health/live`)
-- ✅ Readiness probe & DB connectivity (`/api/health/ready`)
-- ✅ Unauthenticated session rejection (`/api/auth/me` $\to$ 401)
-- ✅ Invalid login sanitization without stack traces (`/api/auth/sign-in/email`)
-- ✅ Public menu 404 handling (`/api/restaurants/by-slug/:slug`)
-- ✅ Table QR token format rejection (Malformed: 400, Unassigned: 404)
-- ✅ Security headers (`X-Content-Type-Options: nosniff`)
-
+### Smoke Test Verification Matrix (10 Checks)
+1. ✅ Health Liveness Probe (`/api/health/live`)
+2. ✅ Health Readiness Probe & DB Connection (`/api/health/ready`)
+3. ✅ Unauthenticated Session Rejection (`/api/auth/me` $\to$ 401)
+4. ✅ Invalid Login Rejection & Sanitization (`/api/auth/sign-in/email`)
+5. ✅ Public Restaurant Menu 404 Handling (`/api/restaurants/by-slug/:slug`)
+6. ✅ Invalid Table QR Token Rejection (Malformed: 400)
+7. ✅ Unassigned Table QR Token Rejection (48-hex: 404)
+8. ✅ Cinema Protected Route Authentication Check (`/api/cinema/screens` $\to$ 401)
+9. ✅ Cinema Public Theatre QR Lookup (Nonexistent Token $\to$ 404)
+10. ✅ Cinema Payment Webhook Rejection for Unknown Theatre (404)

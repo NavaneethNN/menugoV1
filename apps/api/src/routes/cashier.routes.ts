@@ -16,7 +16,7 @@ import {
   openTableSessionSchema
 } from '@menugo/shared';
 import { requireAuth } from '../middleware/auth';
-import { requireTenant, requireTenantPermission } from '../middleware/tenant-auth';
+import { requireTenant, requireRestaurantTenant, requireTenantPermission } from '../middleware/tenant-auth';
 import { AppError } from '../middleware/error-handler';
 import { publishTableEvent } from '../lib/realtime';
 import crypto from 'crypto';
@@ -26,7 +26,7 @@ const router = Router();
 // Centralized Cashier Authorization:
 // Caller must be an authenticated member of this restaurant with canCashier permission.
 router.use(requireAuth);
-router.use(requireTenant());
+router.use(requireRestaurantTenant());
 router.use(requireTenantPermission('canCashier'));
 
 // ===========================================================================

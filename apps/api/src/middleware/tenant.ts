@@ -11,7 +11,10 @@ export async function tenantMiddleware(
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  const headerId = req.headers['x-restaurant-id'];
+  const headerId =
+    req.headers['x-theatre-id'] ||
+    req.headers['x-tenant-id'] ||
+    req.headers['x-restaurant-id'];
   if (typeof headerId === 'string' && headerId.trim()) {
     req.restaurantId = headerId.trim();
   }

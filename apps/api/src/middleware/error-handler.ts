@@ -22,6 +22,7 @@ export function errorHandler(
   // Zod validation error
   if (err instanceof ZodError) {
     res.status(400).json({
+      success: false,
       error: 'Validation Error',
       details: err.errors.map((e) => ({
         field: e.path.join('.'),
@@ -34,6 +35,7 @@ export function errorHandler(
   // Known AppError
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
+      success: false,
       error: err.message,
       message: err.message
     });

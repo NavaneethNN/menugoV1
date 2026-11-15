@@ -871,7 +871,7 @@ export default function KitchenDashboardPage() {
             <Flame className="w-5 h-5 text-yellow-300 animate-bounce shrink-0" />
             <div>
               <p className="font-black text-xs sm:text-sm tracking-wide">
-                🔥 NEW ORDER #{newOrderToast.orderNumber} RECEIVED!
+                NEW ORDER #{newOrderToast.orderNumber} RECEIVED!
               </p>
               <p className="text-[11px] text-orange-100 font-medium">
                 {newOrderToast.tableNumber ? `Table ${newOrderToast.tableNumber}` : 'Dine-in Order'} • Added to queue instantly (0ms delay)

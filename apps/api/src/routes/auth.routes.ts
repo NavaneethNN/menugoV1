@@ -25,7 +25,8 @@ router.get('/me', requireAuth, async (req: Request, res: Response, next: NextFun
           name: restaurants.name,
           slug: restaurants.slug,
           isActive: restaurants.isActive,
-          currency: restaurants.currency
+          currency: restaurants.currency,
+          tenantType: restaurants.tenantType
         }
       })
       .from(restaurantMembers)

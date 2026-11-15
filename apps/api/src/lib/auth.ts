@@ -5,7 +5,9 @@ import * as dotenv from 'dotenv';
 import path from 'path';
 
 dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const secret =
   process.env.BETTER_AUTH_SECRET ||

@@ -41,7 +41,8 @@ import {
   RotateCcw,
   Sparkles,
   ExternalLink,
-  CreditCard
+  CreditCard,
+  Info
 } from 'lucide-react';
 
 export default function AdminStaffPage() {
@@ -1334,7 +1335,10 @@ export default function AdminStaffPage() {
               </div>
 
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 space-y-1">
-                <span className="font-extrabold block">💡 How First Login Works:</span>
+                <span className="font-extrabold flex items-center gap-1.5 text-amber-950">
+                  <Info className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>How First Login Works:</span>
+                </span>
                 <p className="text-amber-800 leading-relaxed">
                   Give this 4-digit PIN to the staff member. When they log in for the first time at <strong>/staff/login</strong>, they will be prompted to set their own secret 4-digit password. Every subsequent time, they enter both to log in directly.
                 </p>

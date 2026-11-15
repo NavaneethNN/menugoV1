@@ -153,13 +153,15 @@ export function setMockR2Client(mockClient: S3Client | null): void {
   cachedClient = mockClient;
 }
 
+export type UploadPurpose = 'products' | 'restaurants' | 'theatres' | 'movies';
+
 /**
  * Generates an unpredictable, restaurant-scoped object key.
  * Pattern: ${restaurantId}/${purpose}/${randomUUID()}.${extension}
  */
 export function generateR2ObjectKey(
   restaurantId: string,
-  purpose: 'products' | 'restaurants',
+  purpose: UploadPurpose,
   mimeType: AllowedImageMimeType
 ): string {
   const ext = MIME_TO_EXTENSION[mimeType];
@@ -172,7 +174,7 @@ export function generateR2ObjectKey(
  */
 export async function generatePresignedUploadUrl(params: {
   restaurantId: string;
-  purpose: 'products' | 'restaurants';
+  purpose: UploadPurpose;
   mimeType: AllowedImageMimeType;
   fileSize?: number;
   expiresInSeconds?: number;
@@ -224,7 +226,7 @@ export async function generatePresignedUploadUrl(params: {
  */
 export async function uploadBufferToR2(params: {
   restaurantId: string;
-  purpose: 'products' | 'restaurants';
+  purpose: UploadPurpose;
   buffer: Buffer;
   mimeType?: string;
 }): Promise<{

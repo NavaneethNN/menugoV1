@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signIn, signUp } from '@/lib/auth-client';
-import { Lock, Mail, User, ArrowRight, Loader2, Sparkles, KeyRound } from 'lucide-react';
+import { Lock, Mail, User, ArrowRight, Loader2, Sparkles, KeyRound, Film } from 'lucide-react';
 
 function LoginForm() {
   const router = useRouter();
@@ -72,7 +72,7 @@ function LoginForm() {
             isCinema ? 'bg-indigo-600 shadow-indigo-500/20' : 'bg-orange-600 shadow-orange-500/20'
           } rounded-2xl flex items-center justify-center font-black text-2xl mx-auto mb-3 shadow-lg`}
         >
-          {isCinema ? '🎬' : 'M'}
+          {isCinema ? <Film className="w-6 h-6 text-white" /> : 'M'}
         </div>
         <h2 className="text-2xl font-bold">
           {isCinema ? 'MenuGo Cinema Console' : 'MenuGo Staff & Admin'}
@@ -206,9 +206,10 @@ function LoginForm() {
           ) : (
             <Link
               href={`/admin/login${mode === 'signup' ? '?mode=signup&business=cinema&redirect=/cinema/onboarding' : '?business=cinema&redirect=/cinema/onboarding'}`}
-              className="text-indigo-600 hover:underline font-semibold"
+              className="text-indigo-600 hover:underline font-semibold flex items-center justify-center gap-1.5"
             >
-              🎬 Switch to Cinema Theatre Console →
+              <Film className="w-4 h-4 text-indigo-500" />
+              <span>Switch to Cinema Theatre Console &rarr;</span>
             </Link>
           )}
         </div>

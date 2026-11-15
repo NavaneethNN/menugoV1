@@ -518,6 +518,14 @@ router.get('/status/:token', orderTrackingRateLimiter, async (req: Request, res:
       updatedAt: orderRecord.order.updatedAt,
       restaurant: orderRecord.restaurant || null,
       table: orderRecord.table || null,
+      cinema: (orderRecord.order.orderType === 'cinema' || Boolean(orderRecord.order.seatNumber))
+        ? {
+            seatRow: orderRecord.order.seatRow || null,
+            seatNumber: orderRecord.order.seatNumber || null,
+            showDate: orderRecord.order.showDate || null,
+            showtime: orderRecord.order.showtime || null
+          }
+        : null,
       items: items.map((item) => ({
         productName: item.productName,
         quantity: item.quantity,

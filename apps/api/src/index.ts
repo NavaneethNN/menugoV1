@@ -23,8 +23,13 @@ import orderRoutes from './routes/order.routes';
 import uploadRoutes from './routes/upload.routes';
 import memberRoutes from './routes/member.routes';
 import cashierRoutes from './routes/cashier.routes';
+import cinemaRoutes from './routes/cinema.routes';
+
+import path from 'path';
 
 dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express();
 const server = http.createServer(app);
@@ -82,6 +87,8 @@ app.use(
       'Content-Type',
       'Authorization',
       'x-restaurant-id',
+      'x-theatre-id',
+      'x-tenant-id',
       'x-table-session-token',
       'X-Table-Session-Token',
       'idempotency-key',
@@ -138,6 +145,7 @@ app.use('/api/uploads', uploadRoutes);
 app.use('/api/tables', tableRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/cashier', cashierRoutes);
+app.use('/api/cinema', cinemaRoutes);
 
 // Global Error Handler
 app.use(errorHandler);

@@ -10,7 +10,7 @@ import {
   SOCKET_EVENTS
 } from '@menugo/shared';
 import { requireAuth } from '../middleware/auth';
-import { requireTenant } from '../middleware/tenant-auth';
+import { requireTenant, requireRestaurantTenant } from '../middleware/tenant-auth';
 import { AppError } from '../middleware/error-handler';
 import { tableVerificationRateLimiter } from '../middleware/rate-limiter';
 import { publishTableEvent } from '../lib/realtime';
@@ -289,7 +289,7 @@ router.get('/public/verify/:token', (req, res, next) => {
 // Authenticated Table Management (Tenant-Scoped)
 // ===========================================================================
 router.use(requireAuth);
-router.use(requireTenant(['owner', 'admin', 'staff', 'kitchen']));
+router.use(requireRestaurantTenant(['owner', 'admin', 'staff', 'kitchen']));
 
 // List all tables for the active restaurant
 router.get('/', async (req: Request, res: Response, next) => {

@@ -1227,8 +1227,9 @@ function CustomerMenuContent() {
                                 </span>
                               ) : null}
                               {product.sortOrder <= 2 && (
-                                <span className="text-[10px] font-bold text-amber-900 bg-amber-50 border border-amber-200/80 px-2 py-0.2 rounded-full">
-                                  ★ Bestseller
+                                <span className="text-[10px] font-bold text-amber-900 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                  <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                                  <span>Bestseller</span>
                                 </span>
                               )}
                             </div>

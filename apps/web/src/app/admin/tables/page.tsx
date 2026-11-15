@@ -25,7 +25,8 @@ import {
   Download,
   Copy,
   Check,
-  Users
+  Users,
+  AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -766,7 +767,10 @@ export default function AdminTablesPage() {
             </h3>
 
             <div className="mt-3 p-3.5 bg-amber-50/80 border border-amber-200 rounded-2xl text-xs text-amber-900 leading-relaxed space-y-1">
-              <p className="font-bold">⚠️ Warning: Revokes Previous Printed QR Codes</p>
+              <p className="font-bold flex items-center gap-1.5 text-amber-950">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Warning: Revokes Previous Printed QR Codes</span>
+              </p>
               <p>
                 Generating a new QR token will immediately invalidate any previously printed table
                 stands or stickers. Customers scanning old QR codes will be denied access.

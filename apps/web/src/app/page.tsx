@@ -29,13 +29,18 @@ import {
   Ticket,
   Building2,
   UtensilsCrossed,
+  Utensils,
+  Coffee,
   Layers,
-  ChevronRight
+  ChevronRight,
+  Menu,
+  X
 } from 'lucide-react';
 
 export default function HomePage() {
   // Active business view: 'restaurant' (Option A) | 'cinema' (Option B)
   const [activeBusiness, setActiveBusiness] = useState<'restaurant' | 'cinema'>('restaurant');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900 selection:bg-orange-500 selection:text-white">
@@ -85,7 +90,7 @@ export default function HomePage() {
                 ? 'bg-gradient-to-tr from-indigo-600 to-violet-600 shadow-indigo-500/25'
                 : 'bg-gradient-to-tr from-orange-600 to-amber-500 shadow-orange-500/25'
             }`}>
-              {activeBusiness === 'cinema' ? '🎬' : 'M'}
+              {activeBusiness === 'cinema' ? <Film className="w-5 h-5 text-white" /> : 'M'}
             </div>
             <div className="flex flex-col">
               <span className="text-2xl font-black tracking-tight text-slate-900 leading-none">
@@ -156,11 +161,11 @@ export default function HomePage() {
           </nav>
 
           {/* Actions & Login */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {activeBusiness === 'restaurant' ? (
               <Link
                 href="/staff/login"
-                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-orange-600 bg-slate-50 hover:bg-orange-50/80 border border-slate-200/80 px-3.5 py-2.5 rounded-xl transition-all"
+                className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-orange-600 bg-slate-50 hover:bg-orange-50/80 border border-slate-200/80 px-3 py-2 rounded-xl transition-all"
                 title="Fast 4-digit PIN workstation login"
               >
                 <KeyRound className="w-3.5 h-3.5 text-orange-600" />
@@ -169,7 +174,7 @@ export default function HomePage() {
             ) : (
               <Link
                 href="/cinema/onboarding"
-                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 px-3.5 py-2.5 rounded-xl transition-all"
+                className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 px-3 py-2 rounded-xl transition-all"
               >
                 <Film className="w-3.5 h-3.5 text-indigo-600" />
                 <span>Cinema Setup</span>
@@ -182,7 +187,7 @@ export default function HomePage() {
                   ? '/admin/login?business=cinema&redirect=/cinema/onboarding'
                   : '/admin/login'
               }
-              className="text-xs sm:text-sm font-bold text-slate-700 hover:text-slate-950 px-3 sm:px-4 py-2.5 transition-colors"
+              className="text-xs sm:text-sm font-bold text-slate-700 hover:text-slate-950 px-2.5 sm:px-3.5 py-2 transition-colors whitespace-nowrap"
             >
               Sign In
             </Link>
@@ -193,7 +198,7 @@ export default function HomePage() {
                   ? '/cinema/onboarding'
                   : '/admin/login?mode=signup&business=restaurant'
               }
-              className={`text-xs sm:text-sm font-bold text-white px-4 sm:px-5 py-2.5 rounded-xl transition-all shadow-md hover:-translate-y-0.5 ${
+              className={`text-xs sm:text-sm font-bold text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all shadow-md hover:-translate-y-0.5 whitespace-nowrap ${
                 activeBusiness === 'cinema'
                   ? 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 shadow-indigo-600/20'
                   : 'bg-orange-600 hover:bg-orange-700 active:bg-orange-800 shadow-orange-600/20'
@@ -201,8 +206,108 @@ export default function HomePage() {
             >
               {activeBusiness === 'cinema' ? 'Register Cinema' : 'Get Started'}
             </Link>
+
+            {/* Mobile Hamburger Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition"
+              aria-label="Toggle mobile menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Dropdown Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-slate-200 bg-white/98 backdrop-blur-xl px-4 py-5 space-y-4 shadow-xl animate-in slide-in-from-top-2 duration-150">
+            {/* Business Toggle for Mobile */}
+            <div className="p-1 bg-slate-100 rounded-2xl border border-slate-200 grid grid-cols-2 gap-1">
+              <button
+                onClick={() => {
+                  setActiveBusiness('restaurant');
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                  activeBusiness === 'restaurant'
+                    ? 'bg-white text-orange-700 shadow-xs'
+                    : 'text-slate-600'
+                }`}
+              >
+                <UtensilsCrossed className="w-3.5 h-3.5 text-orange-600" />
+                <span>Restaurants</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveBusiness('cinema');
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                  activeBusiness === 'cinema'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600'
+                }`}
+              >
+                <Film className="w-3.5 h-3.5" />
+                <span>Cinema</span>
+              </button>
+            </div>
+
+            {/* Navigation Links */}
+            <div className="space-y-1 pt-1">
+              <a
+                href="#business-selection"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+              >
+                Business Models
+              </a>
+              <a
+                href="#how-it-works"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+              >
+                How It Works
+              </a>
+              <a
+                href="#features"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+              >
+                Platform Features
+              </a>
+              <Link
+                href="/menu/demo-cafe"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-orange-600 hover:bg-orange-50 transition"
+              >
+                <Eye className="w-4 h-4" />
+                <span>View Live Demo</span>
+              </Link>
+            </div>
+
+            {/* Quick Setup Link for Mobile */}
+            <div className="pt-2 border-t border-slate-100">
+              {activeBusiness === 'restaurant' ? (
+                <Link
+                  href="/staff/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-orange-600" />
+                  <span>Staff Workstation PIN Login</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/cinema/onboarding"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs font-bold text-indigo-700"
+                >
+                  <Film className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Register Cinema Theatre</span>
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="flex-1">
@@ -494,7 +599,7 @@ export default function HomePage() {
                       <div className="bg-slate-900/90 p-3 rounded-2xl border border-slate-800 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-600 to-orange-700 flex items-center justify-center text-lg shadow">
-                            🍛
+                            <UtensilsCrossed className="w-5 h-5 text-white" />
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5">
@@ -515,7 +620,7 @@ export default function HomePage() {
                       <div className="bg-slate-900/90 p-3 rounded-2xl border border-slate-800 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-700 to-amber-900 flex items-center justify-center text-lg shadow">
-                            🫓
+                            <Utensils className="w-5 h-5 text-white" />
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5">
@@ -538,8 +643,9 @@ export default function HomePage() {
                           <ShoppingBag className="w-4 h-4" />
                           <span>3 Items • ₹470</span>
                         </div>
-                        <span className="bg-white text-orange-600 px-3 py-1 rounded-lg">
-                          Order Placed ✓
+                        <span className="bg-white text-orange-600 px-3 py-1 rounded-lg flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          <span>Order Placed</span>
                         </span>
                       </div>
                     </div>
@@ -976,14 +1082,17 @@ export default function HomePage() {
                       {/* Movie Show Context */}
                       <div className="p-2.5 rounded-xl bg-indigo-950/50 border border-indigo-900/60 flex items-center justify-between text-xs">
                         <span className="text-slate-400">Showtime: <strong className="text-white">6:30 PM Show</strong></span>
-                        <span className="text-emerald-400 font-bold">Ordering Open ✓</span>
+                        <span className="text-emerald-400 font-bold flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          <span>Ordering Open</span>
+                        </span>
                       </div>
 
                       {/* Item 1: Popcorn */}
                       <div className="bg-slate-900/90 p-3 rounded-2xl border border-slate-800 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-xl shadow">
-                            🍿
+                            <Popcorn className="w-6 h-6 text-white" />
                           </div>
                           <div>
                             <span className="font-bold text-sm text-slate-100">Caramel Popcorn (L)</span>
@@ -999,7 +1108,7 @@ export default function HomePage() {
                       <div className="bg-slate-900/90 p-3 rounded-2xl border border-slate-800 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-600 to-rose-800 flex items-center justify-center text-xl shadow">
-                            🥤
+                            <Coffee className="w-6 h-6 text-white" />
                           </div>
                           <div>
                             <span className="font-bold text-sm text-slate-100">Cold Beverage Duo</span>
@@ -1017,8 +1126,9 @@ export default function HomePage() {
                           <CreditCard className="w-4 h-4" />
                           <span>Razorpay/Paytm Paid: ₹470</span>
                         </div>
-                        <span className="bg-white text-indigo-900 px-3 py-1 rounded-lg">
-                          Paid &amp; Sent ✓
+                        <span className="bg-white text-indigo-900 px-3 py-1 rounded-lg flex items-center gap-1">
+                          <Check className="w-3 h-3 text-indigo-600" />
+                          <span>Paid &amp; Sent</span>
                         </span>
                       </div>
                     </div>
@@ -1070,8 +1180,9 @@ export default function HomePage() {
                         <span className="text-xs font-bold text-white bg-indigo-950 border border-indigo-800 px-3 py-1.5 rounded-lg flex-1 text-center">
                           Ready for Delivery
                         </span>
-                        <span className="text-xs font-bold text-emerald-300 bg-emerald-950 border border-emerald-800 px-3 py-1.5 rounded-lg flex-1 text-center">
-                          Mark Delivered ✓
+                        <span className="text-xs font-bold text-emerald-300 bg-emerald-950 border border-emerald-800 px-3 py-1.5 rounded-lg flex-1 text-center flex items-center justify-center gap-1">
+                          <Check className="w-3 h-3" />
+                          <span>Mark Delivered</span>
                         </span>
                       </div>
                     </div>
@@ -1436,7 +1547,7 @@ export default function HomePage() {
           </div>
 
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
-            <p>© {new Date().getFullYear()} MenuGo Technologies. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} MenuGo Technologies. All rights reserved.</p>
             <p className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
               <span>Multi-Tenant Cloud QR Architecture • Instant WebSockets</span>

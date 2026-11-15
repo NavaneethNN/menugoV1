@@ -51,10 +51,10 @@ interface CartDrawerProps {
 }
 
 const ORDER_INSTRUCTION_PRESETS = [
-  '🥤 Serve beverages first',
-  '🔥 Bring everything piping hot',
-  '🍽️ Extra plates & napkins',
-  '🧂 Less salt / light seasoning'
+  'Serve beverages first',
+  'Bring everything piping hot',
+  'Extra plates & napkins',
+  'Less salt / light seasoning'
 ];
 
 export function CartDrawer({

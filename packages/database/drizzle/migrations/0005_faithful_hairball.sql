@@ -1,0 +1,2 @@
+ALTER TABLE "restaurants" ADD COLUMN "tenant_type" varchar(50) DEFAULT 'restaurant' NOT NULL;--> statement-breakpoint
+CREATE INDEX "restaurant_tenant_type_idx" ON "restaurants" USING btree ("tenant_type");

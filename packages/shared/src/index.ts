@@ -51,3 +51,58 @@ export type StaffPinCheckInput = z.infer<typeof schemas.staffPinCheckSchema>;
 export type StaffSetPasswordInput = z.infer<typeof schemas.staffSetPasswordSchema>;
 export type UpdateStaffPinInput = z.infer<typeof schemas.updateStaffPinSchema>;
 
+export type CreateCinemaProfileInput = z.infer<typeof schemas.createCinemaProfileSchema>;
+export type UpdateCinemaProfileInput = z.infer<typeof schemas.updateCinemaProfileSchema>;
+export type CinemaProfile = z.infer<typeof schemas.cinemaProfileSchema>;
+export type UpdateCinemaOnboardingStageInput = z.infer<typeof schemas.updateCinemaOnboardingStageSchema>;
+
+export type CreateCinemaScreenInput = z.infer<typeof schemas.createCinemaScreenSchema>;
+export type UpdateCinemaScreenInput = z.infer<typeof schemas.updateCinemaScreenSchema>;
+export type CinemaScreen = z.infer<typeof schemas.cinemaScreenSchema>;
+
+export type CreateCinemaRowInput = z.infer<typeof schemas.createCinemaRowSchema>;
+export type UpdateCinemaRowInput = z.infer<typeof schemas.updateCinemaRowSchema>;
+export type CinemaRow = z.infer<typeof schemas.cinemaRowSchema>;
+
+export type CreateCinemaSeatInput = z.infer<typeof schemas.createCinemaSeatSchema>;
+export type UpdateCinemaSeatInput = z.infer<typeof schemas.updateCinemaSeatSchema>;
+export type CinemaSeat = z.infer<typeof schemas.cinemaSeatSchema>;
+export type BatchCreateCinemaRowsInput = z.infer<typeof schemas.batchCreateCinemaRowsSchema>;
+
+export type CreateCinemaMovieInput = z.infer<typeof schemas.createCinemaMovieSchema>;
+export type UpdateCinemaMovieInput = z.infer<typeof schemas.updateCinemaMovieSchema>;
+export type UpdateCinemaMoviePosterInput = z.infer<typeof schemas.updateCinemaMoviePosterSchema>;
+export type CinemaMovie = z.infer<typeof schemas.cinemaMovieSchema>;
+
+export type CreateCinemaShowInput = z.infer<typeof schemas.createCinemaShowSchema>;
+export type UpdateCinemaShowInput = z.infer<typeof schemas.updateCinemaShowSchema>;
+export type CancelCinemaShowInput = z.infer<typeof schemas.cancelCinemaShowSchema>;
+export type CopyCinemaScheduleInput = z.infer<typeof schemas.copyCinemaScheduleSchema>;
+export type CinemaShow = z.infer<typeof schemas.cinemaShowSchema>;
+
+export type GenerateCinemaScreenQrInput = z.infer<typeof schemas.generateCinemaScreenQrSchema>;
+export type RevokeCinemaQrInput = z.infer<typeof schemas.revokeCinemaQrSchema>;
+export type CinemaQrCode = z.infer<typeof schemas.cinemaQrCodeSchema>;
+
+export type CinemaCartItem = z.infer<typeof schemas.cinemaCartItemSchema>;
+export type CinemaCartContext = z.infer<typeof schemas.cinemaCartContextSchema>;
+export type AddCinemaCartItemInput = z.infer<typeof schemas.addCinemaCartItemSchema>;
+export type UpdateCinemaCartItemQuantityInput = z.infer<typeof schemas.updateCinemaCartItemQuantitySchema>;
+export type CalculateCinemaCheckoutInput = z.infer<typeof schemas.calculateCinemaCheckoutSchema>;
+export type PrepareCinemaOrderInput = z.infer<typeof schemas.prepareCinemaOrderSchema>;
+
+export type ConfigurePaymentProviderInput = z.infer<typeof schemas.configurePaymentProviderSchema>;
+export type UpdatePaymentCredentialsInput = z.infer<typeof schemas.updatePaymentCredentialsSchema>;
+export type CinemaPaymentAccount = z.infer<typeof schemas.cinemaPaymentAccountSchema>;
+export type CinemaPaymentTransaction = z.infer<typeof schemas.cinemaPaymentTransactionSchema>;
+export type InitiateCinemaRefundInput = z.infer<typeof schemas.initiateCinemaRefundSchema>;
+export type CreateCinemaPaymentOrderInput = z.infer<typeof schemas.createCinemaPaymentOrderSchema>;
+export type VerifyCinemaPaymentInput = z.infer<typeof schemas.verifyCinemaPaymentSchema>;
+
+
+
+
+
+
+
+

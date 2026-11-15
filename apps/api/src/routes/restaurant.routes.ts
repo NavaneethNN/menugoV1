@@ -43,6 +43,7 @@ router.post('/', requireAuth, async (req: Request, res: Response, next) => {
           coverImageKey: validatedData.coverImageKey || null,
           coverImageUrl: validatedData.coverImageUrl || null,
           currency: validatedData.currency || 'INR',
+          tenantType: validatedData.tenantType || 'restaurant',
           isActive: validatedData.isActive ?? true,
           settings: validatedData.settings || {}
         })
@@ -77,10 +78,12 @@ router.post('/', requireAuth, async (req: Request, res: Response, next) => {
   }
 });
 
-// Get all restaurants for current logged-in user
+// Get all restaurants/theatres for current logged-in user (supports ?tenantType=restaurant|cinema)
 router.get('/my', requireAuth, async (req: Request, res: Response, next) => {
   try {
-    const userMemberships = await db
+    const requestedType = (req.query.tenantType || req.query.type) as string | undefined;
+
+    const query = db
       .select({
         membershipId: restaurantMembers.id,
         role: restaurantMembers.role,
@@ -88,8 +91,16 @@ router.get('/my', requireAuth, async (req: Request, res: Response, next) => {
       })
       .from(restaurantMembers)
       .innerJoin(restaurants, eq(restaurantMembers.restaurantId, restaurants.id))
-      .where(eq(restaurantMembers.userId, req.user!.id));
+      .where(
+        requestedType
+          ? and(
+              eq(restaurantMembers.userId, req.user!.id),
+              eq(restaurants.tenantType, requestedType)
+            )
+          : eq(restaurantMembers.userId, req.user!.id)
+      );
 
+    const userMemberships = await query;
     res.json(userMemberships);
   } catch (error) {
     next(error);

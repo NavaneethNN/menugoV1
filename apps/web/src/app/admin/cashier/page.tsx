@@ -667,8 +667,9 @@ export default function AdminCashierPage() {
                         <span className="text-xl font-black text-slate-900 tracking-tight">
                           {table.tableNumber}
                         </span>
-                        <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-lg">
-                          👥 {table.capacity} Seats
+                        <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                          <Users className="w-3 h-3 text-slate-400" />
+                          <span>{table.capacity} Seats</span>
                         </span>
                       </div>
 
@@ -715,12 +716,14 @@ export default function AdminCashierPage() {
                           <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                             <span>Placed Orders ({session.orders.length})</span>
                             {session.unservedCount > 0 ? (
-                              <span className="text-amber-600 font-extrabold">
-                                ⏳ {session.unservedCount} in kitchen
+                              <span className="text-amber-600 font-extrabold flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-amber-500" />
+                                <span>{session.unservedCount} in kitchen</span>
                               </span>
                             ) : (
-                              <span className="text-emerald-600 font-extrabold">
-                                ✓ All served
+                              <span className="text-emerald-600 font-extrabold flex items-center gap-1">
+                                <Check className="w-3 h-3 text-emerald-500" />
+                                <span>All served</span>
                               </span>
                             )}
                           </div>

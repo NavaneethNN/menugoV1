@@ -17,24 +17,32 @@ export interface StatusTransitionResult {
  */
 export const ALLOWED_FORWARD_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
   new: ['accepted', 'preparing'],
-  pending: ['accepted', 'preparing'],
+  pending: ['confirmed', 'accepted', 'preparing'],
+  confirmed: ['accepted', 'preparing'],
   accepted: ['preparing'],
   preparing: ['ready'],
-  ready: ['served'],
+  ready: ['assigned_for_delivery', 'delivered', 'served'],
+  assigned_for_delivery: ['delivered', 'served'],
+  delivered: [],
   served: [],
+  rejected: [],
   cancelled: []
 };
 
 /**
  * Roles authorized to trigger specific target status transitions.
  */
-export const ROLE_PERMISSIONS_FOR_TARGET_STATUS: Record<OrderStatus, readonly RestaurantMemberRole[]> = {
+export const ROLE_PERMISSIONS_FOR_TARGET_STATUS: Record<OrderStatus, readonly (RestaurantMemberRole | 'delivery')[]> = {
   new: [],
   pending: [],
+  confirmed: ['owner', 'admin', 'staff', 'kitchen'],
   accepted: ['owner', 'admin', 'kitchen', 'staff'],
   preparing: ['owner', 'admin', 'kitchen', 'staff'],
   ready: ['owner', 'admin', 'kitchen'], // Kitchen or management signals dishes are cooked
-  served: ['owner', 'admin', 'staff', 'kitchen'], // Floor staff or management delivers to table
+  assigned_for_delivery: ['owner', 'admin', 'staff', 'kitchen', 'delivery'],
+  delivered: ['owner', 'admin', 'staff', 'kitchen', 'delivery'],
+  served: ['owner', 'admin', 'staff', 'kitchen', 'delivery'], // Floor staff or delivery delivers to table/seat
+  rejected: ['owner', 'admin'],
   cancelled: ['owner', 'admin'] // Only owner or admin can cancel orders
 };
 
@@ -49,7 +57,7 @@ export const ROLE_PERMISSIONS_FOR_TARGET_STATUS: Record<OrderStatus, readonly Re
 export function validateStatusTransition(
   currentStatus: OrderStatus,
   targetStatus: OrderStatus,
-  role: RestaurantMemberRole
+  role: RestaurantMemberRole | 'delivery' | string
 ): StatusTransitionResult {
   // 1. Same status is a no-op / invalid transition
   if (currentStatus === targetStatus) {
@@ -68,24 +76,32 @@ export function validateStatusTransition(
       error: 'Cannot update order: order has already been served and completed'
     };
   }
-  if (currentStatus === 'cancelled') {
+  if (currentStatus === 'delivered') {
     return {
       valid: false,
       errorCode: 'TERMINAL_STATE',
-      error: 'Cannot update order: order has already been cancelled'
+      error: 'Cannot update order: order has already been delivered to customer'
+    };
+  }
+  if (currentStatus === 'cancelled' || currentStatus === 'rejected') {
+    return {
+      valid: false,
+      errorCode: 'TERMINAL_STATE',
+      error: `Cannot update order: order has already been ${currentStatus}`
     };
   }
 
-  // 3. Cancellation transition
-  if (targetStatus === 'cancelled') {
+  // 3. Cancellation / Rejection transition
+  if (targetStatus === 'cancelled' || targetStatus === 'rejected') {
     if (role !== 'owner' && role !== 'admin') {
+      const actionWord = targetStatus === 'cancelled' ? 'cancel' : 'reject';
       return {
         valid: false,
         errorCode: 'FORBIDDEN_ROLE',
-        error: `Role "${role}" is not permitted to cancel orders. Only owner or admin can cancel.`
+        error: `Role "${role}" is not permitted to ${actionWord} orders. Only owner or admin can cancel.`
       };
     }
-    // Cancellation is allowed from any non-terminal state by owner or admin
+    // Cancellation/Rejection is allowed from any non-terminal state by owner or admin
     return { valid: true };
   }
 
@@ -101,7 +117,7 @@ export function validateStatusTransition(
 
   // 5. Validate role authorization for target status
   const permittedRoles = ROLE_PERMISSIONS_FOR_TARGET_STATUS[targetStatus] || [];
-  if (!permittedRoles.includes(role)) {
+  if (!permittedRoles.includes(role as any)) {
     return {
       valid: false,
       errorCode: 'FORBIDDEN_ROLE',
@@ -118,13 +134,25 @@ export function validateStatusTransition(
  */
 export function getAllowedNextStatuses(
   currentStatus: OrderStatus,
-  role: RestaurantMemberRole
+  role: RestaurantMemberRole | 'delivery' | string,
+  orderType: 'restaurant' | 'cinema' = 'restaurant'
 ): OrderStatus[] {
   if (isTerminalOrderStatus(currentStatus)) {
     return [];
   }
 
-  const potentialNext: OrderStatus[] = [...(ALLOWED_FORWARD_TRANSITIONS[currentStatus] || [])];
+  let potentialNext: OrderStatus[] = [...(ALLOWED_FORWARD_TRANSITIONS[currentStatus] || [])];
+
+  if (orderType === 'cinema') {
+    // Cinema orders transition via delivery workflow ('assigned_for_delivery' -> 'delivered') and never use restaurant 'served'
+    potentialNext = potentialNext.filter((status) => status !== 'served');
+  } else {
+    // Restaurant orders (or default) transition to 'served' and never use cinema seat delivery statuses
+    potentialNext = potentialNext.filter(
+      (status) => status !== 'assigned_for_delivery' && status !== 'delivered'
+    );
+  }
+
   if (role === 'owner' || role === 'admin') {
     potentialNext.push('cancelled');
   }
@@ -136,14 +164,19 @@ export function getAllowedNextStatuses(
  * Checks whether an order is open / active (non-terminal).
  */
 export function isOpenOrderStatus(status: OrderStatus): boolean {
-  return status !== 'served' && status !== 'cancelled';
+  return !isTerminalOrderStatus(status);
 }
 
 /**
  * Checks whether an order status is terminal (cannot transition further).
  */
 export function isTerminalOrderStatus(status: OrderStatus): boolean {
-  return status === 'served' || status === 'cancelled';
+  return (
+    status === 'served' ||
+    status === 'delivered' ||
+    status === 'cancelled' ||
+    status === 'rejected'
+  );
 }
 
 /**
@@ -165,6 +198,13 @@ export function getStatusDisplayInfo(status: OrderStatus) {
         badgeClass: 'bg-amber-100 text-amber-800 border-amber-200',
         dotClass: 'bg-amber-500'
       };
+    case 'confirmed':
+      return {
+        label: 'Confirmed (Paid)',
+        description: 'Payment captured, awaiting kitchen preparation',
+        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+        dotClass: 'bg-indigo-500'
+      };
     case 'accepted':
       return {
         label: 'Accepted',
@@ -181,10 +221,24 @@ export function getStatusDisplayInfo(status: OrderStatus) {
       };
     case 'ready':
       return {
-        label: 'Ready to Serve',
-        description: 'Cooking complete, ready for table delivery',
+        label: 'Ready for Delivery',
+        description: 'Cooking complete, ready for seat delivery',
         badgeClass: 'bg-purple-100 text-purple-800 border-purple-200',
         dotClass: 'bg-purple-500'
+      };
+    case 'assigned_for_delivery':
+      return {
+        label: 'Assigned for Delivery',
+        description: 'Delivery staff assigned to deliver to seat',
+        badgeClass: 'bg-sky-100 text-sky-800 border-sky-200',
+        dotClass: 'bg-sky-500'
+      };
+    case 'delivered':
+      return {
+        label: 'Delivered',
+        description: 'Delivered to customer at seat (Completed)',
+        badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        dotClass: 'bg-emerald-500'
       };
     case 'served':
       return {
@@ -192,6 +246,13 @@ export function getStatusDisplayInfo(status: OrderStatus) {
         description: 'Delivered to table (Completed)',
         badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
         dotClass: 'bg-emerald-500'
+      };
+    case 'rejected':
+      return {
+        label: 'Rejected',
+        description: 'Order rejected by management',
+        badgeClass: 'bg-rose-100 text-rose-800 border-rose-200',
+        dotClass: 'bg-rose-500'
       };
     case 'cancelled':
       return {

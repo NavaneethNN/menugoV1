@@ -746,7 +746,7 @@ export default function StaffServicePassPage() {
                         {urgency === 'urgent' && (
                           <div className="p-2.5 rounded-xl bg-rose-950/80 border border-rose-700/80 text-rose-200 text-xs font-bold flex items-center gap-2 mb-3 animate-pulse">
                             <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                            <span>⚠️ {waitMinutes}m on Pass — Hot food waiting for table delivery!</span>
+                            <span>{waitMinutes}m on Pass — Hot food waiting for table delivery!</span>
                           </div>
                         )}
 

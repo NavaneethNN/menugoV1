@@ -123,4 +123,25 @@ describe('Deployment Smoke Tests (Task 22)', () => {
       assert.strictEqual(res.headers['x-content-type-options'], 'nosniff');
     });
   });
+
+  // 7. Cinema Module Smoke Checks (Task 22)
+  describe('7. Cinema Module Production Smoke Checks', () => {
+    it('Cinema protected routes reject unauthenticated requests with 401', async () => {
+      const res = await request(app).get('/api/cinema/screens');
+      assert.strictEqual(res.status, 401);
+    });
+
+    it('Cinema public theatre lookup rejects nonexistent QR token with 404', async () => {
+      const res = await request(app).get('/api/cinema/public/theatres/nonexistent-token-xyz');
+      assert.strictEqual(res.status, 404);
+    });
+
+    it('Cinema payment webhook rejects nonexistent theatre with 404', async () => {
+      const fakeId = '00000000-0000-0000-0000-000000000000';
+      const res = await request(app)
+        .post(`/api/cinema/payments/webhook/${fakeId}/paytm`)
+        .send({ ORDERID: 'test-order-1' });
+      assert.strictEqual(res.status, 404);
+    });
+  });
 });

@@ -125,6 +125,37 @@ async function main() {
     }
   });
 
+  // 8. Cinema Protected API Route Authentication Smoke Check
+  await runCheck('8. Cinema Protected Route Rejects Unauthenticated Callers (/api/cinema/screens)', async () => {
+    const res = await fetch(`${targetUrl}/api/cinema/screens`);
+    if (res.status !== 401) {
+      throw new Error(`Expected HTTP 401 Unauthorized, got ${res.status}`);
+    }
+  });
+
+  // 9. Cinema Public Theatre Lookup
+  await runCheck('9. Cinema Public Theatre QR Lookup (Nonexistent Token: 404)', async () => {
+    const res = await fetch(`${targetUrl}/api/cinema/public/theatres/smoke-nonexistent-token-xyz`);
+    if (res.status !== 404) {
+      throw new Error(`Expected HTTP 404 Not Found, got ${res.status}`);
+    }
+  });
+
+  // 10. Cinema Payment Webhook Endpoint Reachability
+  await runCheck('10. Cinema Payment Webhook Rejection for Unknown Theatre (404)', async () => {
+    const fakeTheatreId = '00000000-0000-0000-0000-000000000000';
+    const res = await fetch(`${targetUrl}/api/cinema/payments/webhook/${fakeTheatreId}/paytm`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ ORDERID: 'smoke-test-order-1' })
+    });
+    if (res.status !== 404) {
+      throw new Error(`Expected HTTP 404 Not Found, got ${res.status}`);
+    }
+  });
+
   // Summary
   console.log('\n================================================');
   const passedCount = results.filter((r) => r.passed).length;

@@ -141,6 +141,18 @@ export function sanitizeRestaurantOrderPayload(
     status: order.status as OrderStatus,
     tableId: order.tableId || null,
     tableNumber: order.table?.tableNumber || (order.tableNumber ? String(order.tableNumber) : null),
+    orderType: order.orderType || 'restaurant',
+    screenId: order.screenId || null,
+    screenName: order.screen?.name || order.screenName || null,
+    showId: order.showId || null,
+    movieId: order.movieId || null,
+    movieTitle: order.movie?.title || order.movieTitle || null,
+    showDate: order.showDate || null,
+    showtime: order.showtime || null,
+    seatRow: order.seatRow || null,
+    seatNumber: order.seatNumber || null,
+    paymentStatus: order.paymentStatus || null,
+    paymentMethod: order.paymentMethod || null,
     totalAmount: Number(order.totalAmount || 0),
     itemCount: Array.isArray(items)
       ? items.reduce((acc, it) => acc + (Number(it.quantity) || 1), 0)

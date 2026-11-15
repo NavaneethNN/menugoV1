@@ -34,7 +34,7 @@ const presignedUrlRequestSchema = z.object({
   fileType: z.string().refine(isValidImageMimeType, {
     message: `Unsupported file type. Allowed formats: ${ALLOWED_IMAGE_MIME_TYPES.join(', ')}`
   }),
-  purpose: z.enum(['products', 'restaurants']).default('products'),
+  purpose: z.enum(['products', 'restaurants', 'theatres', 'movies']).default('products'),
   fileSize: z
     .number()
     .int()
@@ -54,11 +54,11 @@ router.post('/presigned-url', uploadRateLimiter, async (req: Request, res: Respo
     const validated = presignedUrlRequestSchema.parse(req.body);
 
     // Permission check based on purpose
-    if (validated.purpose === 'products' && !tenant.permissions.canManageMenu) {
-      throw new AppError('Forbidden: Only owner or admin can upload product images', 403);
+    if (['products', 'movies'].includes(validated.purpose) && !tenant.permissions.canManageMenu) {
+      throw new AppError('Forbidden: Only owner or admin can upload product or movie images', 403);
     }
-    if (validated.purpose === 'restaurants' && !tenant.permissions.canManageRestaurant) {
-      throw new AppError('Forbidden: Only owner can upload restaurant assets', 403);
+    if (['restaurants', 'theatres'].includes(validated.purpose) && !tenant.permissions.canManageRestaurant) {
+      throw new AppError('Forbidden: Only owner can upload brand assets', 403);
     }
 
     const result = await generatePresignedUploadUrl({
@@ -86,14 +86,17 @@ router.post(
   async (req: Request, res: Response, next) => {
     try {
       const tenant = req.tenant!;
-      const purpose = req.body.purpose === 'restaurants' ? 'restaurants' : 'products';
+      const rawPurpose = req.body.purpose;
+      const purpose = ['restaurants', 'theatres', 'movies'].includes(rawPurpose)
+        ? rawPurpose
+        : 'products';
 
       // Permission check based on purpose
-      if (purpose === 'products' && !tenant.permissions.canManageMenu) {
-        throw new AppError('Forbidden: Only owner or admin can upload product images', 403);
+      if (['products', 'movies'].includes(purpose) && !tenant.permissions.canManageMenu) {
+        throw new AppError('Forbidden: Only owner or admin can upload product or movie images', 403);
       }
-      if (purpose === 'restaurants' && !tenant.permissions.canManageRestaurant) {
-        throw new AppError('Forbidden: Only owner can upload restaurant assets', 403);
+      if (['restaurants', 'theatres'].includes(purpose) && !tenant.permissions.canManageRestaurant) {
+        throw new AppError('Forbidden: Only owner can upload brand assets', 403);
       }
 
       if (!req.file) {

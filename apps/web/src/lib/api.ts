@@ -13,6 +13,8 @@ export function getApiBaseUrl(): string {
 
 interface RequestOptions extends RequestInit {
   restaurantId?: string;
+  theatreId?: string;
+  tenantId?: string;
   params?: Record<string, string | number | boolean | undefined>;
 }
 
@@ -20,7 +22,7 @@ export async function apiRequest<T = any>(
   path: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const { restaurantId, params, headers, ...rest } = options;
+  const { restaurantId, theatreId, tenantId, params, headers, ...rest } = options;
 
   const baseUrl = getApiBaseUrl();
   let url = `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
@@ -43,8 +45,11 @@ export async function apiRequest<T = any>(
     ...(headers as Record<string, string>)
   };
 
-  if (restaurantId) {
-    customHeaders['x-restaurant-id'] = restaurantId;
+  const resolvedTenantId = theatreId || tenantId || restaurantId;
+  if (resolvedTenantId) {
+    customHeaders['x-restaurant-id'] = resolvedTenantId;
+    if (theatreId) customHeaders['x-theatre-id'] = theatreId;
+    if (tenantId) customHeaders['x-tenant-id'] = tenantId;
   }
 
   const res = await fetch(url, {

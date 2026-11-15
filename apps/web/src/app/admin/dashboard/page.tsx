@@ -23,7 +23,9 @@ import {
   Layers,
   Utensils,
   Users,
-  CreditCard
+  CreditCard,
+  Film,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -34,6 +36,7 @@ export default function AdminDashboardPage() {
   const initialLoadedRef = useRef(false);
 
   const [restaurants, setRestaurants] = useState<any[]>([]);
+  const [cinemaTheatres, setCinemaTheatres] = useState<any[]>([]);
   const [selectedMembership, setSelectedMembership] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -60,16 +63,21 @@ export default function AdminDashboardPage() {
         setLoading(true);
       }
       const data = await apiRequest('/api/restaurants/my');
-      setRestaurants(data);
-      if (data.length > 0) {
+      const restaurantOnly = data.filter((r: any) => (r.restaurant?.tenantType || 'restaurant') === 'restaurant');
+      const cinemaOnly = data.filter((r: any) => r.restaurant?.tenantType === 'cinema');
+
+      setRestaurants(restaurantOnly);
+      setCinemaTheatres(cinemaOnly);
+
+      if (restaurantOnly.length > 0) {
         if (selectRestaurantId) {
-          const match = data.find((r: any) => r.restaurant.id === selectRestaurantId);
-          setSelectedMembership(match || data[0]);
+          const match = restaurantOnly.find((r: any) => r.restaurant.id === selectRestaurantId);
+          setSelectedMembership(match || restaurantOnly[0]);
         } else {
           setSelectedMembership((prev: any) => {
-            if (!prev) return data[0];
-            const found = data.find((r: any) => r.restaurant.id === prev.restaurant?.id);
-            return found || data[0];
+            if (!prev) return restaurantOnly[0];
+            const found = restaurantOnly.find((r: any) => r.restaurant.id === prev.restaurant?.id);
+            return found || restaurantOnly[0];
           });
         }
       } else {
@@ -96,46 +104,60 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col">
       {/* Top Navbar */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2">
+      <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-20">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <Link href="/" className="flex items-center gap-2 shrink-0">
             <div className="w-8 h-8 rounded-lg bg-orange-600 text-white font-bold flex items-center justify-center">
               M
             </div>
-            <span className="font-extrabold text-xl text-slate-900">
-              Menu<span className="text-orange-600">Go</span> Admin
+            <span className="font-extrabold text-base sm:text-xl text-slate-900 leading-none">
+              Menu<span className="text-orange-600">Go</span>
             </span>
           </Link>
 
           {/* Restaurant switcher */}
           {restaurants.length > 0 && (
-            <select
-              value={selectedRestaurant?.id || ''}
-              onChange={(e) => {
-                const found = restaurants.find((r) => r.restaurant.id === e.target.value);
-                if (found) setSelectedMembership(found);
-              }}
-              className="ml-4 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-orange-500"
+            <div className="relative max-w-[140px] sm:max-w-[200px]">
+              <select
+                value={selectedRestaurant?.id || ''}
+                onChange={(e) => {
+                  const found = restaurants.find((r) => r.restaurant.id === e.target.value);
+                  if (found) setSelectedMembership(found);
+                }}
+                className="w-full px-2.5 sm:px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-orange-500 truncate"
+              >
+                {restaurants.map((item) => (
+                  <option key={item.restaurant.id} value={item.restaurant.id}>
+                    {item.restaurant.name} ({item.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Switch to Cinema Dashboard if user has cinema accounts */}
+          {cinemaTheatres.length > 0 && (
+            <Link
+              href="/cinema/admin/dashboard"
+              className="px-2.5 sm:px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-lg text-xs font-semibold hover:bg-indigo-100 transition flex items-center gap-1.5 shrink-0"
             >
-              {restaurants.map((item) => (
-                <option key={item.restaurant.id} value={item.restaurant.id}>
-                  {item.restaurant.name} ({item.role})
-                </option>
-              ))}
-            </select>
+              <Film className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="hidden sm:inline">Cinema Console</span>
+            </Link>
           )}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-xl text-sm font-semibold hover:bg-orange-100 transition shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-xl text-xs sm:text-sm font-semibold hover:bg-orange-100 transition shadow-sm whitespace-nowrap"
           >
-            <Plus className="w-4 h-4" />
-            <span>New Restaurant</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">New Restaurant</span>
+            <span className="sm:hidden">New</span>
           </button>
 
-          <span className="text-sm font-medium text-slate-600 hidden sm:inline">
+          <span className="text-xs sm:text-sm font-medium text-slate-600 hidden md:inline max-w-[150px] truncate">
             {session?.user?.name || session?.user?.email}
           </span>
 
@@ -147,7 +169,7 @@ export default function AdminDashboardPage() {
             className="p-2 text-slate-500 hover:text-red-600 transition rounded-lg hover:bg-slate-100"
             title="Sign Out"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </header>
@@ -155,22 +177,50 @@ export default function AdminDashboardPage() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6">
         {restaurants.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 shadow-sm max-w-xl mx-auto p-8">
-            <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mx-auto mb-4">
-              <Store className="w-8 h-8" />
+          cinemaTheatres.length > 0 ? (
+            <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 shadow-sm max-w-xl mx-auto p-8">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-4">
+                <Film className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900">Cinema Account Detected</h3>
+              <p className="text-slate-600 text-sm mt-2 max-w-md mx-auto leading-relaxed">
+                You are registered as a Cinema Theatre administrator ({cinemaTheatres[0]?.restaurant?.name}).
+                Auditorium screens, row seating layouts, and daily movie show schedules are managed in the Cinema Console.
+              </p>
+              <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  href="/cinema/admin/dashboard"
+                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-sm shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2"
+                >
+                  <Film className="w-4 h-4" />
+                  <span>Go to Cinema Console</span>
+                </Link>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-xl text-xs transition"
+                >
+                  Register a Restaurant
+                </button>
+              </div>
             </div>
-            <h3 className="text-2xl font-black text-slate-900">Welcome to MenuGo!</h3>
-            <p className="text-slate-600 text-sm mt-2 max-w-md mx-auto leading-relaxed">
-              You haven&apos;t registered any restaurants yet. Set up your restaurant identity and customer QR slug to start serving digital contactless orders.
-            </p>
-            <div className="mt-8">
-              <RestaurantOnboardingForm
-                onSuccess={(newRest) => {
-                  loadRestaurants(newRest.id);
-                }}
-              />
+          ) : (
+            <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 shadow-sm max-w-xl mx-auto p-8">
+              <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mx-auto mb-4">
+                <Store className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900">Welcome to MenuGo!</h3>
+              <p className="text-slate-600 text-sm mt-2 max-w-md mx-auto leading-relaxed">
+                You haven&apos;t registered any restaurants yet. Set up your restaurant identity and customer QR slug to start serving digital contactless orders.
+              </p>
+              <div className="mt-8">
+                <RestaurantOnboardingForm
+                  onSuccess={(newRest) => {
+                    loadRestaurants(newRest.id);
+                  }}
+                />
+              </div>
             </div>
-          </div>
+          )
         ) : (
           <div className="space-y-6">
             {/* Restaurant Profile Banner */}
@@ -389,9 +439,10 @@ export default function AdminDashboardPage() {
               </div>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="text-slate-400 hover:text-slate-700 text-sm font-semibold"
+                className="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center transition"
+                aria-label="Close"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

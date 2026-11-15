@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiRequest } from '@/lib/api';
@@ -20,7 +20,9 @@ import {
   ShoppingBag,
   ArrowLeft,
   Wifi,
-  WifiOff
+  WifiOff,
+  Film,
+  Armchair
 } from 'lucide-react';
 
 interface TrackedOrderItem {
@@ -47,6 +49,12 @@ interface TrackedOrder {
   } | null;
   table?: {
     tableNumber: string | null;
+  } | null;
+  cinema?: {
+    seatRow?: string | null;
+    seatNumber?: string | null;
+    showDate?: string | null;
+    showtime?: string | null;
   } | null;
   items: TrackedOrderItem[];
 }
@@ -123,6 +131,15 @@ export default function OrderTrackingPage() {
     () => loadAuthoritativeOrder(false)
   );
 
+  const isCinema = Boolean(order?.cinema);
+  const steps = useMemo(() => [
+    { status: 'new' as OrderStatus, label: 'Order Received', description: 'Your order was sent to the kitchen' },
+    { status: 'accepted' as OrderStatus, label: 'Accepted', description: isCinema ? 'Cinema team acknowledged your order' : 'Kitchen acknowledged your order' },
+    { status: 'preparing' as OrderStatus, label: 'Preparing', description: isCinema ? 'Concessions team is preparing your snacks' : 'Chef is cooking your dishes' },
+    { status: 'ready' as OrderStatus, label: isCinema ? 'Ready for Delivery' : 'Ready to Serve', description: isCinema ? 'Food is boxed, runner is on the way to your seat' : 'Food is prepared, on its way to table' },
+    { status: 'served' as OrderStatus, label: isCinema ? 'Delivered to Seat' : 'Served', description: isCinema ? 'Delivered to your auditorium seat. Enjoy the movie!' : 'Delivered to your table. Enjoy your meal!' }
+  ], [isCinema]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-6 text-center">
@@ -153,7 +170,7 @@ export default function OrderTrackingPage() {
 
   const statusInfo = getStatusDisplayInfo(order.status);
   const normalizedStatus = order.status === 'pending' ? 'new' : order.status;
-  const currentStepIdx = LIFECYCLE_STEPS.findIndex((s) => s.status === normalizedStatus);
+  const currentStepIdx = steps.findIndex((s) => s.status === normalizedStatus);
   const isCancelled = order.status === 'cancelled';
   const isServed = order.status === 'served';
 
@@ -162,15 +179,20 @@ export default function OrderTrackingPage() {
       {/* Top Header */}
       <header className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white">
-            <UtensilsCrossed className="w-4 h-4" />
+          <div className={`w-8 h-8 rounded-lg ${order.cinema ? 'bg-indigo-600' : 'bg-orange-600'} flex items-center justify-center text-white`}>
+            {order.cinema ? <Film className="w-4 h-4" /> : <UtensilsCrossed className="w-4 h-4" />}
           </div>
           <div>
             <h1 className="text-sm font-extrabold text-white leading-tight">
-              {order.restaurant?.name || 'Restaurant Order Tracker'}
+              {order.restaurant?.name || (order.cinema ? 'Cinema Order Tracker' : 'Restaurant Order Tracker')}
             </h1>
             <p className="text-[11px] text-slate-400">
-              {order.table?.tableNumber ? `Table ${order.table.tableNumber}` : 'Takeaway'} • Order #{order.orderNumber}
+              {order.cinema?.seatNumber
+                ? `Seat ${order.cinema.seatNumber}${order.cinema.seatRow ? ` (Row ${order.cinema.seatRow})` : ''}`
+                : order.table?.tableNumber
+                ? `Table ${order.table.tableNumber}`
+                : 'Takeaway'}{' '}
+              • Order #{order.orderNumber}
             </p>
           </div>
         </div>
@@ -272,7 +294,7 @@ export default function OrderTrackingPage() {
             </h3>
 
             <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
-              {LIFECYCLE_STEPS.map((step, idx) => {
+              {steps.map((step, idx) => {
                 const isPassed = currentStepIdx >= idx;
                 const isCurrent = currentStepIdx === idx;
 

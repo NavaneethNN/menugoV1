@@ -448,7 +448,7 @@ function StaffLoginContent() {
           <form onSubmit={handleSetPasswordAndLogin} className="space-y-5">
             <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs">
               <span className="font-extrabold block mb-0.5">
-                👋 Welcome, {staffInfo?.staffName}!
+                Welcome, {staffInfo?.staffName}!
               </span>
               <p className="text-amber-800">
                 This is your first login. Please choose a private <strong>4-digit password</strong>. You will use this password alongside your PIN for every future login.
