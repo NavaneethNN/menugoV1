@@ -16,7 +16,8 @@ import {
   Store,
   ChevronDown,
   Menu,
-  Sparkles
+  Sparkles,
+  User
 } from 'lucide-react';
 
 export default function CinemaAdminLayout({
@@ -182,12 +183,12 @@ export default function CinemaAdminLayout({
       {/* Main Content Viewport */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Theatre Console Header */}
-        <header className="h-16 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 sm:px-6 flex items-center justify-between gap-3 shrink-0 sticky top-0 z-30">
+        <header className="h-16 bg-slate-900/95 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-6 flex items-center justify-between gap-3 shrink-0 sticky top-0 z-30 shadow-xs">
           <div className="flex items-center gap-3 min-w-0">
             {/* Mobile Hamburger Button */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition shrink-0"
+              className="lg:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors shrink-0"
               aria-label="Open Navigation"
             >
               <Menu className="w-5 h-5" />
@@ -195,7 +196,7 @@ export default function CinemaAdminLayout({
 
             {/* Mobile brand badge if small screen */}
             <div className="lg:hidden flex items-center gap-2 shrink-0">
-              <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+              <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm shadow-indigo-600/30">
                 <Film className="w-3.5 h-3.5" />
               </div>
             </div>
@@ -209,7 +210,7 @@ export default function CinemaAdminLayout({
                     const match = theatres.find((t) => t.restaurant.id === e.target.value);
                     if (match) setSelectedMembership(match);
                   }}
-                  className="w-full bg-slate-800 text-white border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-semibold pr-8 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 truncate"
+                  className="w-full bg-slate-800/90 text-white border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs font-semibold pr-8 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 truncate cursor-pointer shadow-xs"
                 >
                   {theatres.map((item) => (
                     <option key={item.restaurant.id} value={item.restaurant.id}>
@@ -221,19 +222,25 @@ export default function CinemaAdminLayout({
               </div>
             ) : selectedTheatre ? (
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-xs font-bold text-white truncate max-w-[140px] sm:max-w-xs">
+                <span className="text-xs sm:text-sm font-bold text-white truncate max-w-[140px] sm:max-w-xs">
                   {selectedTheatre.name}
                 </span>
-                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shrink-0 uppercase">
+                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shrink-0 uppercase tracking-wider">
                   {selectedMembership?.role || 'Admin'}
                 </span>
               </div>
             ) : null}
 
+            {/* Live indicator pill */}
+            <span className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Live Console
+            </span>
+
             {restaurantMemberships.length > 0 && (
               <Link
                 href="/admin/dashboard"
-                className="hidden md:inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-orange-400 font-medium transition px-3 py-1.5 rounded-xl hover:bg-slate-800/80 shrink-0"
+                className="hidden md:inline-flex items-center gap-1.5 text-xs text-orange-300 hover:text-white font-medium transition px-3 py-1.5 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 shrink-0"
               >
                 <Store className="w-3.5 h-3.5 text-orange-400" />
                 <span>Switch to Restaurant Admin</span>
@@ -241,19 +248,19 @@ export default function CinemaAdminLayout({
             )}
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {restaurantMemberships.length > 0 && (
               <Link
                 href="/admin/dashboard"
-                className="md:hidden p-2 text-slate-400 hover:text-orange-400 transition rounded-xl hover:bg-slate-800 shrink-0"
+                className="md:hidden p-2 text-orange-400 hover:text-white transition rounded-xl bg-orange-500/10 border border-orange-500/20 shrink-0"
                 title="Switch to Restaurant Admin"
               >
-                <Store className="w-4 h-4 text-orange-400" />
+                <Store className="w-4 h-4" />
               </Link>
             )}
 
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-xs text-slate-300 font-medium max-w-[160px] truncate">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300 font-medium max-w-[170px] truncate shadow-xs">
+              <User className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
               <span className="truncate">{session?.user?.name || session?.user?.email}</span>
             </div>
 
@@ -262,7 +269,7 @@ export default function CinemaAdminLayout({
                 await signOut();
                 router.push('/admin/login?business=cinema');
               }}
-              className="p-2 text-slate-400 hover:text-rose-400 transition rounded-xl hover:bg-slate-800 shrink-0"
+              className="p-2 text-slate-400 hover:text-rose-400 transition-colors rounded-xl hover:bg-slate-800 shrink-0"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />

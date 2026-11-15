@@ -81,34 +81,41 @@ export default function HomePage() {
       {/* =========================================================================
           NAVIGATION HEADER
           ========================================================================= */}
-      <header className="border-b border-slate-100 bg-white/95 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <header className="border-b border-slate-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-50 transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between gap-4">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg transition-all group-hover:scale-105 ${
-              activeBusiness === 'cinema'
-                ? 'bg-gradient-to-tr from-indigo-600 to-violet-600 shadow-indigo-500/25'
-                : 'bg-gradient-to-tr from-orange-600 to-amber-500 shadow-orange-500/25'
-            }`}>
+          <Link href="/" className="flex items-center gap-3 group shrink-0">
+            <div
+              className={`w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center text-white font-black text-xl sm:text-2xl shadow-lg transition-all duration-300 group-hover:scale-105 group-hover:rotate-1 ${
+                activeBusiness === 'cinema'
+                  ? 'bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-600 shadow-indigo-500/25'
+                  : 'bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-500 shadow-orange-500/25'
+              }`}
+            >
               {activeBusiness === 'cinema' ? <Film className="w-5 h-5 text-white" /> : 'M'}
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-black tracking-tight text-slate-900 leading-none">
+              <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 leading-none">
                 Menu<span className={activeBusiness === 'cinema' ? 'text-indigo-600' : 'text-orange-600'}>Go</span>
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 mt-0.5">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 mt-1 flex items-center gap-1">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    activeBusiness === 'cinema' ? 'bg-indigo-500' : 'bg-orange-500'
+                  }`}
+                />
                 {activeBusiness === 'cinema' ? 'Cinema Seat Ordering' : 'Smart Table Dining'}
               </span>
             </div>
           </Link>
 
-          {/* Business Model Pill Switcher in Header (Desktop) */}
-          <div className="hidden lg:flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200">
+          {/* Business Model Pill Switcher in Header (Desktop / Tablet) */}
+          <div className="hidden lg:flex items-center p-1 bg-slate-100/90 rounded-2xl border border-slate-200/80 shadow-xs">
             <button
               onClick={() => setActiveBusiness('restaurant')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 activeBusiness === 'restaurant'
-                  ? 'bg-white text-orange-700 shadow-xs'
+                  ? 'bg-white text-orange-700 shadow-sm'
                   : 'text-slate-600 hover:text-slate-950'
               }`}
             >
@@ -117,9 +124,9 @@ export default function HomePage() {
             </button>
             <button
               onClick={() => setActiveBusiness('cinema')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 activeBusiness === 'cinema'
-                  ? 'bg-indigo-600 text-white shadow-xs'
+                  ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-950'
               }`}
             >
@@ -132,40 +139,40 @@ export default function HomePage() {
           </div>
 
           {/* Navigation Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-600">
+          <nav className="hidden xl:flex items-center gap-1 text-sm font-semibold text-slate-600">
             <a
               href="#business-selection"
-              className="hover:text-orange-600 transition-colors"
+              className="px-3 py-1.5 rounded-lg hover:text-slate-950 hover:bg-slate-100/80 transition-colors"
             >
               Business Models
             </a>
             <a
               href="#how-it-works"
-              className="hover:text-orange-600 transition-colors"
+              className="px-3 py-1.5 rounded-lg hover:text-slate-950 hover:bg-slate-100/80 transition-colors"
             >
               How It Works
             </a>
             <a
               href="#features"
-              className="hover:text-orange-600 transition-colors"
+              className="px-3 py-1.5 rounded-lg hover:text-slate-950 hover:bg-slate-100/80 transition-colors"
             >
               Features
             </a>
             <Link
               href="/menu/demo-cafe"
-              className="hover:text-orange-600 flex items-center gap-1.5 transition-colors"
+              className="px-3 py-1.5 rounded-lg hover:text-orange-600 hover:bg-orange-50/60 flex items-center gap-1.5 transition-colors"
             >
-              <Eye className="w-4 h-4 text-orange-500" />
+              <Eye className="w-3.5 h-3.5 text-orange-500" />
               <span>Live Demo</span>
             </Link>
           </nav>
 
           {/* Actions & Login */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             {activeBusiness === 'restaurant' ? (
               <Link
                 href="/staff/login"
-                className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-orange-600 bg-slate-50 hover:bg-orange-50/80 border border-slate-200/80 px-3 py-2 rounded-xl transition-all"
+                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-orange-600 bg-slate-50 hover:bg-orange-50/80 border border-slate-200/90 px-3 py-2 rounded-xl transition-all shadow-xs"
                 title="Fast 4-digit PIN workstation login"
               >
                 <KeyRound className="w-3.5 h-3.5 text-orange-600" />
@@ -174,7 +181,7 @@ export default function HomePage() {
             ) : (
               <Link
                 href="/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding"
-                className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 px-3 py-2 rounded-xl transition-all"
+                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700 hover:text-indigo-800 bg-indigo-50/90 hover:bg-indigo-100 border border-indigo-200/90 px-3 py-2 rounded-xl transition-all shadow-xs"
               >
                 <Film className="w-3.5 h-3.5 text-indigo-600" />
                 <span>Cinema Setup</span>
@@ -187,7 +194,7 @@ export default function HomePage() {
                   ? '/admin/login?business=cinema'
                   : '/admin/login'
               }
-              className="text-xs sm:text-sm font-bold text-slate-700 hover:text-slate-950 px-2.5 sm:px-3.5 py-2 transition-colors whitespace-nowrap"
+              className="text-xs sm:text-sm font-bold text-slate-700 hover:text-slate-950 hover:bg-slate-100/80 px-3 py-2 rounded-xl transition-colors whitespace-nowrap"
             >
               Sign In
             </Link>
@@ -198,19 +205,20 @@ export default function HomePage() {
                   ? '/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding'
                   : '/admin/login?mode=signup&business=restaurant'
               }
-              className={`text-xs sm:text-sm font-bold text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all shadow-md hover:-translate-y-0.5 whitespace-nowrap ${
+              className={`text-xs sm:text-sm font-bold text-white px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap flex items-center gap-1.5 ${
                 activeBusiness === 'cinema'
-                  ? 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 shadow-indigo-600/20'
-                  : 'bg-orange-600 hover:bg-orange-700 active:bg-orange-800 shadow-orange-600/20'
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-indigo-600/25'
+                  : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 shadow-orange-600/25'
               }`}
             >
-              {activeBusiness === 'cinema' ? 'Register Cinema' : 'Get Started'}
+              <span>{activeBusiness === 'cinema' ? 'Register Cinema' : 'Get Started'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
 
             {/* Mobile Hamburger Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition"
+              className="xl:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
               aria-label="Toggle mobile menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -218,95 +226,139 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Mobile Navigation Dropdown Menu */}
+        {/* Mobile Navigation Dropdown Menu & Backdrop */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-200 bg-white/98 backdrop-blur-xl px-4 py-5 space-y-4 shadow-xl animate-in slide-in-from-top-2 duration-150">
-            {/* Business Toggle for Mobile */}
-            <div className="p-1 bg-slate-100 rounded-2xl border border-slate-200 grid grid-cols-2 gap-1">
-              <button
-                onClick={() => {
-                  setActiveBusiness('restaurant');
-                }}
-                className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeBusiness === 'restaurant'
-                    ? 'bg-white text-orange-700 shadow-xs'
-                    : 'text-slate-600'
-                }`}
-              >
-                <UtensilsCrossed className="w-3.5 h-3.5 text-orange-600" />
-                <span>Restaurants</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveBusiness('cinema');
-                }}
-                className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeBusiness === 'cinema'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-600'
-                }`}
-              >
-                <Film className="w-3.5 h-3.5" />
-                <span>Cinema</span>
-              </button>
-            </div>
-
-            {/* Navigation Links */}
-            <div className="space-y-1 pt-1">
-              <a
-                href="#business-selection"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
-              >
-                Business Models
-              </a>
-              <a
-                href="#how-it-works"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
-              >
-                How It Works
-              </a>
-              <a
-                href="#features"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
-              >
-                Platform Features
-              </a>
-              <Link
-                href="/menu/demo-cafe"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-orange-600 hover:bg-orange-50 transition"
-              >
-                <Eye className="w-4 h-4" />
-                <span>View Live Demo</span>
-              </Link>
-            </div>
-
-            {/* Quick Setup Link for Mobile */}
-            <div className="pt-2 border-t border-slate-100">
-              {activeBusiness === 'restaurant' ? (
-                <Link
-                  href="/staff/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800"
+          <>
+            <div
+              className="fixed inset-0 top-[72px] sm:top-[80px] bg-slate-950/40 backdrop-blur-xs z-40 xl:hidden animate-in fade-in duration-200"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <div className="xl:hidden border-t border-slate-200 bg-white/98 backdrop-blur-xl px-4 sm:px-6 py-5 space-y-4 shadow-2xl relative z-50 animate-in slide-in-from-top-3 duration-200">
+              {/* Business Toggle for Mobile */}
+              <div className="p-1 bg-slate-100 rounded-2xl border border-slate-200 grid grid-cols-2 gap-1 shadow-inner">
+                <button
+                  onClick={() => {
+                    setActiveBusiness('restaurant');
+                  }}
+                  className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    activeBusiness === 'restaurant'
+                      ? 'bg-white text-orange-700 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 >
-                  <KeyRound className="w-3.5 h-3.5 text-orange-600" />
-                  <span>Staff Workstation PIN Login</span>
-                </Link>
-              ) : (
-                <Link
-                  href="/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs font-bold text-indigo-700"
+                  <UtensilsCrossed className="w-4 h-4 text-orange-600" />
+                  <span>Restaurants</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveBusiness('cinema');
+                  }}
+                  className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    activeBusiness === 'cinema'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 >
-                  <Film className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>Register Cinema Theatre</span>
+                  <Film className="w-4 h-4" />
+                  <span>Cinema</span>
+                  <span className="text-[9px] bg-indigo-500 text-white px-1.5 py-0.2 rounded-full uppercase font-black">
+                    New
+                  </span>
+                </button>
+              </div>
+
+              {/* Navigation Links */}
+              <div className="space-y-1 pt-1">
+                <a
+                  href="#business-selection"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100/80 transition"
+                >
+                  <span>Business Models</span>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </a>
+                <a
+                  href="#how-it-works"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100/80 transition"
+                >
+                  <span>How It Works</span>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </a>
+                <a
+                  href="#features"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100/80 transition"
+                >
+                  <span>Platform Features</span>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </a>
+                <Link
+                  href="/menu/demo-cafe"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-orange-600 hover:bg-orange-50 transition"
+                >
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4" />
+                    <span>View Live Demo Cafe</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-orange-400" />
                 </Link>
-              )}
+              </div>
+
+              {/* Quick Setup Link & Actions for Mobile */}
+              <div className="pt-3 border-t border-slate-100 space-y-2">
+                {activeBusiness === 'restaurant' ? (
+                  <Link
+                    href="/staff/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-800 transition"
+                  >
+                    <KeyRound className="w-3.5 h-3.5 text-orange-600" />
+                    <span>Staff Workstation PIN Login</span>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-xs font-bold text-indigo-700 transition"
+                  >
+                    <Film className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Register Cinema Theatre</span>
+                  </Link>
+                )}
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <Link
+                    href={
+                      activeBusiness === 'cinema'
+                        ? '/admin/login?business=cinema'
+                        : '/admin/login'
+                    }
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="py-2.5 rounded-xl bg-slate-100 text-slate-800 font-bold text-xs text-center hover:bg-slate-200 transition"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href={
+                      activeBusiness === 'cinema'
+                        ? '/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding'
+                        : '/admin/login?mode=signup&business=restaurant'
+                    }
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`py-2.5 rounded-xl font-bold text-xs text-white text-center shadow-sm transition ${
+                      activeBusiness === 'cinema'
+                        ? 'bg-indigo-600 hover:bg-indigo-700'
+                        : 'bg-orange-600 hover:bg-orange-700'
+                    }`}
+                  >
+                    {activeBusiness === 'cinema' ? 'Get Started' : 'Register Free'}
+                  </Link>
+                </div>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </header>
 
