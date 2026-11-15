@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Plus,
@@ -136,22 +136,57 @@ export function CinemaCartDrawer({
 }: CinemaCartDrawerProps) {
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
+  // Parse seat row and number from selectedSeatKey ("ROW:SEAT")
+  const [seatRow, seatNumber] = selectedSeatKey ? selectedSeatKey.split(':') : ['', ''];
+  const [selectedRow, setSelectedRow] = useState<string>(seatRow || '');
+
+  // Sync selectedRow when selectedSeatKey changes externally (or when screen changes)
+  useEffect(() => {
+    if (seatRow) {
+      setSelectedRow(seatRow);
+    } else if (!selectedSeatKey) {
+      setSelectedRow('');
+    }
+  }, [seatRow, selectedSeatKey]);
+
+  // Reset row if current selected row no longer exists in newly loaded screen seating
+  useEffect(() => {
+    if (selectedRow && seatingRows.length > 0 && !seatingRows.some((r) => r.rowIdentifier === selectedRow)) {
+      setSelectedRow('');
+    }
+  }, [seatingRows, selectedRow]);
+
   if (!isOpen) return null;
 
   // Selected screen & seat object lookups
   const selectedScreen = screens.find((s) => s.id === selectedScreenId);
   const selectedShow = shows.find((s) => s.id === selectedShowId);
 
-  const [seatRow, seatNumber] = selectedSeatKey ? selectedSeatKey.split(':') : ['', ''];
-  const activeRow = seatingRows.find((r) => r.rowIdentifier === seatRow);
-  const activeSeat = activeRow?.seats.find((s) => s.seatIdentifier === seatNumber);
+  const activeRow = seatingRows.find((r) => r.rowIdentifier === (selectedRow || seatRow));
+  const availableSeatsForActiveRow = activeRow?.seats || [];
+  const activeSeat = availableSeatsForActiveRow.find((s) => s.seatIdentifier === seatNumber);
 
   // Field validation checks
   const isScreenValid = Boolean(selectedScreenId);
-  const isSeatValid = Boolean(selectedSeatKey && seatRow && seatNumber);
+  const isRowValid = Boolean(selectedRow);
+  const isSeatValid = Boolean(selectedSeatKey && seatRow && seatNumber && (seatRow === selectedRow || !selectedRow));
   const isNameValid = customerName.trim().length >= 2;
   const cleanedPhone = customerPhone.replace(/\D/g, '');
   const isPhoneValid = cleanedPhone.length === 10;
+
+  const handleRowSelect = (rowIdStr: string) => {
+    setSelectedRow(rowIdStr);
+    onSeatChange(''); // Reset seat selection when row changes
+  };
+
+  const handleSeatSelect = (seatIdStr: string) => {
+    const row = selectedRow || seatRow;
+    if (!row || !seatIdStr) {
+      onSeatChange('');
+      return;
+    }
+    onSeatChange(`${row}:${seatIdStr}`);
+  };
 
   const handleValidateAndPlaceOrder = () => {
     setAttemptedSubmit(true);
@@ -167,7 +202,12 @@ export function CinemaCartDrawer({
       return;
     }
 
-    if (!isSeatValid) {
+    if (!isRowValid) {
+      setOrderError('Please select your Seat Row from the dropdown.');
+      return;
+    }
+
+    if (!isSeatValid || !seatNumber) {
       setOrderError('Please select your Seat Number from the dropdown.');
       return;
     }
@@ -441,55 +481,97 @@ export function CinemaCartDrawer({
               </div>
             )}
 
-            {/* 2. Seat Number Dropdown (The Key Requirement!) */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-300 flex items-center justify-between">
-                <span>Seat Number <span className="text-rose-400">*</span></span>
-                {loadingSeating && (
-                  <span className="text-[10px] text-indigo-400 flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin" /> Loading seats...
-                  </span>
-                )}
-              </label>
+            {/* 2. Dedicated Row & Seat Number Dropdowns */}
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Dedicated Dropdown for Row */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-300 flex items-center justify-between">
+                    <span>
+                      Seat Row <span className="text-rose-400">*</span>
+                    </span>
+                    {loadingSeating && (
+                      <span className="text-[10px] text-indigo-400 flex items-center gap-1">
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" /> Loading rows...
+                      </span>
+                    )}
+                  </label>
 
-              <select
-                value={selectedSeatKey}
-                onChange={(e) => onSeatChange(e.target.value)}
-                disabled={!selectedScreenId || loadingSeating}
-                className={`w-full px-3 py-2 text-xs bg-slate-900 border rounded-xl text-white font-medium focus:outline-none transition ${
-                  attemptedSubmit && !isSeatValid
-                    ? 'border-rose-500 ring-1 ring-rose-500'
-                    : 'border-slate-800 focus:border-indigo-500'
-                }`}
-              >
-                <option value="">
-                  {!selectedScreenId
-                    ? '-- Select a Screen First --'
-                    : loadingSeating
-                    ? '-- Loading Available Seats --'
-                    : seatingRows.length === 0
-                    ? '-- No seats configured --'
-                    : '-- Select Your Seat Number --'}
-                </option>
-
-                {seatingRows.map((row) => (
-                  <optgroup
-                    key={row.id}
-                    label={`Row ${row.rowIdentifier} (${row.seatCategory.toUpperCase()} - ${row.seats.length} seats)`}
-                    className="bg-slate-900 text-indigo-300 font-bold"
+                  <select
+                    value={selectedRow}
+                    onChange={(e) => handleRowSelect(e.target.value)}
+                    disabled={!selectedScreenId || loadingSeating || seatingRows.length === 0}
+                    className={`w-full px-3 py-2 text-xs bg-slate-900 border rounded-xl text-white font-medium focus:outline-none transition ${
+                      attemptedSubmit && !selectedRow
+                        ? 'border-rose-500 ring-1 ring-rose-500'
+                        : 'border-slate-800 focus:border-indigo-500'
+                    }`}
                   >
-                    {row.seats.map((seat) => (
+                    <option value="">
+                      {!selectedScreenId
+                        ? '-- Select Screen First --'
+                        : loadingSeating
+                        ? '-- Loading Rows... --'
+                        : seatingRows.length === 0
+                        ? '-- No Rows Available --'
+                        : '-- Select Row --'}
+                    </option>
+
+                    {seatingRows.map((row) => (
                       <option
-                        key={seat.id}
-                        value={`${row.rowIdentifier}:${seat.seatIdentifier}`}
-                        className="bg-slate-950 text-white font-normal"
+                        key={row.id}
+                        value={row.rowIdentifier}
+                        className="bg-slate-950 text-white"
                       >
-                        Seat {seat.seatIdentifier} (Row {row.rowIdentifier} • {seat.seatCategory})
+                        Row {row.rowIdentifier} {row.seatCategory ? `(${row.seatCategory.toUpperCase()})` : ''}
                       </option>
                     ))}
-                  </optgroup>
-                ))}
-              </select>
+                  </select>
+                </div>
+
+                {/* Dedicated Dropdown for Seat Number (Populated based on Row) */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-300 flex items-center justify-between">
+                    <span>
+                      Seat Number <span className="text-rose-400">*</span>
+                    </span>
+                    {selectedRow && activeRow && (
+                      <span className="text-[10px] text-indigo-400 font-semibold">
+                        {availableSeatsForActiveRow.length} {availableSeatsForActiveRow.length === 1 ? 'seat' : 'seats'}
+                      </span>
+                    )}
+                  </label>
+
+                  <select
+                    value={seatRow === selectedRow ? seatNumber : ''}
+                    onChange={(e) => handleSeatSelect(e.target.value)}
+                    disabled={!selectedRow || !activeRow || availableSeatsForActiveRow.length === 0}
+                    className={`w-full px-3 py-2 text-xs bg-slate-900 border rounded-xl text-white font-medium focus:outline-none transition ${
+                      attemptedSubmit && (!isSeatValid || !seatNumber)
+                        ? 'border-rose-500 ring-1 ring-rose-500'
+                        : 'border-slate-800 focus:border-indigo-500'
+                    }`}
+                  >
+                    <option value="">
+                      {!selectedRow
+                        ? '-- Select Row First --'
+                        : availableSeatsForActiveRow.length === 0
+                        ? '-- No Seats in Row --'
+                        : '-- Select Seat Number --'}
+                    </option>
+
+                    {availableSeatsForActiveRow.map((seat) => (
+                      <option
+                        key={seat.id}
+                        value={seat.seatIdentifier}
+                        className="bg-slate-950 text-white"
+                      >
+                        Seat {seat.seatIdentifier}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
               {/* Confirmed Delivery Pill */}
               {isSeatValid && activeSeat && (

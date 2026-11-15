@@ -62,6 +62,52 @@ describe('Cinema Fast Order Flow Verification', () => {
     assert.ok(!invalidRow || !invalidSeat);
   });
 
+  it('2b. Two-step cascading Row-to-Seat selection logic', () => {
+    const mockSeatingRows = [
+      {
+        id: 'row-a',
+        rowIdentifier: 'A',
+        seatCategory: 'recliner',
+        totalSeats: 2,
+        seats: [
+          { id: 's-a1', seatIdentifier: 'A1', seatNumber: 1, seatCategory: 'recliner', status: 'available' },
+          { id: 's-a2', seatIdentifier: 'A2', seatNumber: 2, seatCategory: 'recliner', status: 'available' }
+        ]
+      },
+      {
+        id: 'row-b',
+        rowIdentifier: 'B',
+        seatCategory: 'prime',
+        totalSeats: 3,
+        seats: [
+          { id: 's-b1', seatIdentifier: 'B1', seatNumber: 1, seatCategory: 'prime', status: 'available' },
+          { id: 's-b2', seatIdentifier: 'B2', seatNumber: 2, seatCategory: 'prime', status: 'available' },
+          { id: 's-b3', seatIdentifier: 'B3', seatNumber: 3, seatCategory: 'prime', status: 'available' }
+        ]
+      }
+    ];
+
+    // Step 1: User selects Row 'B'
+    const selectedRow = 'B';
+    const activeRow = mockSeatingRows.find((r) => r.rowIdentifier === selectedRow);
+    assert.ok(activeRow);
+    assert.equal(activeRow.seats.length, 3);
+    assert.deepEqual(activeRow.seats.map((s) => s.seatIdentifier), ['B1', 'B2', 'B3']);
+
+    // Step 2: User selects Seat 'B2'
+    const selectedSeat = 'B2';
+    const seatKey = `${selectedRow}:${selectedSeat}`;
+    assert.equal(seatKey, 'B:B2');
+
+    // Step 3: When user switches Row from 'B' to 'A', seat must be cleared/reset
+    const newRow = 'A';
+    const activeRowNew = mockSeatingRows.find((r) => r.rowIdentifier === newRow);
+    assert.ok(activeRowNew);
+    assert.equal(activeRowNew.seats.length, 2);
+    // B2 is not in Row A
+    assert.equal(activeRowNew.seats.some((s) => s.seatIdentifier === selectedSeat), false);
+  });
+
   it('3. Mandatory Customer Name and 10-digit Mobile Number validation logic', () => {
     const validateCheckoutDetails = (name: string, phone: string) => {
       const isNameValid = name.trim().length >= 2;

@@ -498,7 +498,7 @@ export function CustomerCinemaOrderingView({
                 <>
                   <span className="w-2 h-2 rounded-full bg-emerald-400" />
                   <span>
-                    Seat {selectedSeatNumber}
+                    Row {selectedSeatRow} • Seat {selectedSeatNumber}
                   </span>
                 </>
               ) : selectedScreen ? (
@@ -783,7 +783,7 @@ export function CustomerCinemaOrderingView({
               <span className="text-[10px] text-slate-400 font-bold uppercase block">
                 {selectedSeatKey ? (
                   <span className="text-indigo-400">
-                    Delivering to {selectedScreen?.screenName} • Seat {selectedSeatNumber}
+                    Delivering to {selectedScreen?.screenName} • Row {selectedSeatRow}, Seat {selectedSeatNumber}
                   </span>
                 ) : (
                   <span>In-Seat Concessions Order</span>
