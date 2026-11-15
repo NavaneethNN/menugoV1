@@ -430,7 +430,7 @@ export function CinemaOrderPreparedModal({
               {/* Delivery Context Card */}
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-red-400">
                     Cinema Order Context
                   </span>
                   <span className="text-xs font-semibold text-slate-400">
@@ -445,7 +445,7 @@ export function CinemaOrderPreparedModal({
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-500 uppercase font-semibold block">In-Seat Destination</span>
-                    <span className="font-bold text-indigo-400">Row {order.seat.row} • Seat {order.seat.seat}</span>
+                    <span className="font-bold text-red-400">Row {order.seat.row} • Seat {order.seat.seat}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-500 uppercase font-semibold block">Movie</span>
@@ -460,7 +460,7 @@ export function CinemaOrderPreparedModal({
 
               {/* Concessions Items */}
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400 block mb-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-red-400 block mb-1">
                   Ordered Concessions ({order.summary?.itemCount || order.items.length} items)
                 </span>
 
@@ -588,7 +588,7 @@ export function CinemaOrderPreparedModal({
             <button
               type="button"
               onClick={handleInitiatePayment}
-              className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20"
+              className="w-full py-3.5 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-red-600/30"
             >
               <CreditCard className="w-4 h-4" />
               <span>

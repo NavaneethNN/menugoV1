@@ -151,6 +151,19 @@ export function clearCinemaCartItems(): CinemaCartItem[] {
 }
 
 /**
+ * Update notes for an existing item in cinema cart.
+ */
+export function updateCinemaItemNotes(
+  cart: CinemaCartItem[],
+  productId: string,
+  notes: string
+): CinemaCartItem[] {
+  return cart.map((item) =>
+    item.productId === productId ? { ...item, notes: sanitizeNotes(notes) } : item
+  );
+}
+
+/**
  * Sanitize item-level instructions / notes.
  */
 export function sanitizeNotes(notes: string): string {

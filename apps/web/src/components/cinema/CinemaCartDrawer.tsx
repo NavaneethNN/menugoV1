@@ -236,7 +236,7 @@ export function CinemaCartDrawer({
         {/* Drawer Header */}
         <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/90 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold shrink-0">
+            <div className="w-9 h-9 rounded-2xl bg-red-600/20 text-red-400 border border-red-500/30 flex items-center justify-center font-bold shrink-0">
               <ShoppingBag className="w-4 h-4" />
             </div>
             <div>
@@ -282,7 +282,7 @@ export function CinemaCartDrawer({
           ========================================================================= */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-black uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+              <h3 className="text-xs font-black uppercase tracking-wider text-red-400 flex items-center gap-1.5">
                 <ShoppingBag className="w-3.5 h-3.5" />
                 <span>Your Order ({totalCount})</span>
               </h3>
@@ -392,7 +392,7 @@ export function CinemaCartDrawer({
           ========================================================================= */}
           <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3.5">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-black uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+              <h3 className="text-xs font-black uppercase tracking-wider text-red-400 flex items-center gap-1.5">
                 <Armchair className="w-3.5 h-3.5" />
                 <span>Delivery Location (Screen & Seat)</span>
               </h3>
@@ -406,7 +406,7 @@ export function CinemaCartDrawer({
               <label className="text-[11px] font-bold text-slate-300 flex items-center justify-between">
                 <span>Auditorium Screen <span className="text-rose-400">*</span></span>
                 {isScreenPreselected && (
-                  <span className="text-[10px] text-indigo-400 font-semibold">Pre-selected from QR</span>
+                  <span className="text-[10px] text-red-400 font-semibold">Pre-selected from QR</span>
                 )}
               </label>
 
@@ -417,7 +417,7 @@ export function CinemaCartDrawer({
                 className={`w-full px-3 py-2 text-xs bg-slate-900 border rounded-xl text-white font-medium focus:outline-none transition ${
                   attemptedSubmit && !isScreenValid
                     ? 'border-rose-500 ring-1 ring-rose-500'
-                    : 'border-slate-800 focus:border-indigo-500'
+                    : 'border-slate-800 focus:border-red-500 focus:ring-1 focus:ring-red-500'
                 }`}
               >
                 <option value="">-- Choose Auditorium Screen --</option>
@@ -431,12 +431,12 @@ export function CinemaCartDrawer({
 
             {/* Movie Showtime Info (Auto-resolved) */}
             {selectedShow && (
-              <div className="p-2.5 rounded-xl bg-indigo-950/30 border border-indigo-500/30 flex items-center justify-between text-xs">
+              <div className="p-2.5 rounded-xl bg-red-950/30 border border-red-500/30 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2 min-w-0">
-                  <Film className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                  <Film className="w-3.5 h-3.5 text-red-400 shrink-0" />
                   <div className="min-w-0">
                     <span className="font-bold text-white block truncate">{selectedShow.movieTitle}</span>
-                    <span className="text-[10px] text-indigo-300">
+                    <span className="text-[10px] text-red-300">
                       {new Date(selectedShow.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       {' – '}
                       {new Date(selectedShow.expectedEndTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -465,7 +465,7 @@ export function CinemaCartDrawer({
                 <select
                   value={selectedShowId}
                   onChange={(e) => onShowChange(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-white font-medium focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-white font-medium focus:outline-none focus:border-red-500"
                 >
                   {shows.map((show) => (
                     <option key={show.id} value={show.id}>
@@ -491,7 +491,7 @@ export function CinemaCartDrawer({
                       Seat Row <span className="text-rose-400">*</span>
                     </span>
                     {loadingSeating && (
-                      <span className="text-[10px] text-indigo-400 flex items-center gap-1">
+                      <span className="text-[10px] text-red-400 flex items-center gap-1">
                         <Loader2 className="w-2.5 h-2.5 animate-spin" /> Loading rows...
                       </span>
                     )}
@@ -504,7 +504,7 @@ export function CinemaCartDrawer({
                     className={`w-full px-3 py-2 text-xs bg-slate-900 border rounded-xl text-white font-medium focus:outline-none transition ${
                       attemptedSubmit && !selectedRow
                         ? 'border-rose-500 ring-1 ring-rose-500'
-                        : 'border-slate-800 focus:border-indigo-500'
+                        : 'border-slate-800 focus:border-red-500 focus:ring-1 focus:ring-red-500'
                     }`}
                   >
                     <option value="">
@@ -536,7 +536,7 @@ export function CinemaCartDrawer({
                       Seat Number <span className="text-rose-400">*</span>
                     </span>
                     {selectedRow && activeRow && (
-                      <span className="text-[10px] text-indigo-400 font-semibold">
+                      <span className="text-[10px] text-red-400 font-semibold">
                         {availableSeatsForActiveRow.length} {availableSeatsForActiveRow.length === 1 ? 'seat' : 'seats'}
                       </span>
                     )}
@@ -549,7 +549,7 @@ export function CinemaCartDrawer({
                     className={`w-full px-3 py-2 text-xs bg-slate-900 border rounded-xl text-white font-medium focus:outline-none transition ${
                       attemptedSubmit && (!isSeatValid || !seatNumber)
                         ? 'border-rose-500 ring-1 ring-rose-500'
-                        : 'border-slate-800 focus:border-indigo-500'
+                        : 'border-slate-800 focus:border-red-500 focus:ring-1 focus:ring-red-500'
                     }`}
                   >
                     <option value="">
@@ -589,7 +589,7 @@ export function CinemaCartDrawer({
               SECTION 3: MANDATORY CUSTOMER CONTACT DETAILS
           ========================================================================= */}
           <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
-            <h3 className="text-xs font-black uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+            <h3 className="text-xs font-black uppercase tracking-wider text-red-400 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5" />
               <span>Customer Details (Mandatory)</span>
             </h3>
@@ -610,7 +610,7 @@ export function CinemaCartDrawer({
                     className={`w-full pl-8 pr-3 py-2 text-xs bg-slate-900 border rounded-xl text-white placeholder-slate-600 focus:outline-none transition ${
                       attemptedSubmit && !isNameValid
                         ? 'border-rose-500 ring-1 ring-rose-500'
-                        : 'border-slate-800 focus:border-indigo-500'
+                        : 'border-slate-800 focus:border-red-500 focus:ring-1 focus:ring-red-500'
                     }`}
                   />
                   <User className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
@@ -638,7 +638,7 @@ export function CinemaCartDrawer({
                     className={`w-full pl-8 pr-3 py-2 text-xs bg-slate-900 border rounded-xl text-white placeholder-slate-600 focus:outline-none transition font-mono ${
                       attemptedSubmit && !isPhoneValid
                         ? 'border-rose-500 ring-1 ring-rose-500'
-                        : 'border-slate-800 focus:border-indigo-500'
+                        : 'border-slate-800 focus:border-red-500 focus:ring-1 focus:ring-red-500'
                     }`}
                   />
                   <Phone className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
@@ -659,7 +659,7 @@ export function CinemaCartDrawer({
                   value={specialInstructions}
                   onChange={(e) => onSpecialInstructionsChange(e.target.value)}
                   maxLength={150}
-                  className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-red-500"
                 />
               </div>
             </div>
@@ -684,7 +684,7 @@ export function CinemaCartDrawer({
               </div>
               <div className="flex justify-between text-sm font-black text-white pt-2 border-t border-slate-800">
                 <span>Total Payable</span>
-                <span className="font-mono text-indigo-400 text-base">
+                <span className="font-mono text-red-500 text-base font-black">
                   {formatPaise(totalPaise, currency)}
                 </span>
               </div>
@@ -708,7 +708,7 @@ export function CinemaCartDrawer({
             type="button"
             disabled={isSubmittingOrder || cart.length === 0}
             onClick={handleValidateAndPlaceOrder}
-            className="flex-1 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-black transition flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/30 disabled:opacity-50"
+            className="flex-1 py-3.5 px-4 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white text-xs font-black transition flex items-center justify-center gap-2 shadow-xl shadow-red-600/30 disabled:opacity-50"
           >
             {isSubmittingOrder ? (
               <>
