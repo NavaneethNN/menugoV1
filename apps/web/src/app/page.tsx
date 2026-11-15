@@ -173,7 +173,7 @@ export default function HomePage() {
               </Link>
             ) : (
               <Link
-                href="/cinema/onboarding"
+                href="/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding"
                 className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 px-3 py-2 rounded-xl transition-all"
               >
                 <Film className="w-3.5 h-3.5 text-indigo-600" />
@@ -184,7 +184,7 @@ export default function HomePage() {
             <Link
               href={
                 activeBusiness === 'cinema'
-                  ? '/admin/login?business=cinema&redirect=/cinema/onboarding'
+                  ? '/admin/login?business=cinema'
                   : '/admin/login'
               }
               className="text-xs sm:text-sm font-bold text-slate-700 hover:text-slate-950 px-2.5 sm:px-3.5 py-2 transition-colors whitespace-nowrap"
@@ -195,7 +195,7 @@ export default function HomePage() {
             <Link
               href={
                 activeBusiness === 'cinema'
-                  ? '/cinema/onboarding'
+                  ? '/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding'
                   : '/admin/login?mode=signup&business=restaurant'
               }
               className={`text-xs sm:text-sm font-bold text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all shadow-md hover:-translate-y-0.5 whitespace-nowrap ${
@@ -297,7 +297,7 @@ export default function HomePage() {
                 </Link>
               ) : (
                 <Link
-                  href="/cinema/onboarding"
+                  href="/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs font-bold text-indigo-700"
                 >
@@ -485,13 +485,13 @@ export default function HomePage() {
                 <div className="space-y-2 pt-4 border-t border-slate-800">
                   <div className="flex flex-col sm:flex-row items-center gap-2.5">
                     <Link
-                      href="/cinema/onboarding"
+                      href="/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding"
                       className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-xs text-center transition-all shadow-md shadow-indigo-600/30"
                     >
                       Register Cinema Theatre
                     </Link>
                     <Link
-                      href="/admin/login?business=cinema&redirect=/cinema/onboarding"
+                      href="/admin/login?business=cinema"
                       className="w-full sm:w-auto py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs text-center transition-all flex items-center justify-center gap-1.5"
                     >
                       <Film className="w-3.5 h-3.5 text-indigo-400" />
@@ -1048,7 +1048,7 @@ export default function HomePage() {
                   {/* Primary Call-to-Actions */}
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                     <Link
-                      href="/cinema/onboarding"
+                      href="/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding"
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-base font-bold px-8 py-4 rounded-xl shadow-lg shadow-indigo-600/30 transition-all hover:-translate-y-0.5"
                     >
                       <span>Register Your Cinema Theatre</span>
@@ -1361,7 +1361,7 @@ export default function HomePage() {
                     Join forward-thinking cinema operators delivering hot snacks and beverages directly to customer seats.
                   </p>
                   <Link
-                    href="/cinema/onboarding"
+                    href="/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding"
                     className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white hover:bg-slate-100 text-indigo-900 font-bold text-sm shadow-lg transition-all hover:-translate-y-0.5"
                   >
                     <span>Launch Cinema Setup</span>
@@ -1403,7 +1403,7 @@ export default function HomePage() {
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                href="/cinema/onboarding"
+                href="/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm sm:text-base font-bold px-8 py-4 rounded-xl shadow-lg shadow-indigo-600/30 transition-all hover:-translate-y-0.5"
               >
                 <span>Register Cinema Theatre</span>
@@ -1428,7 +1428,7 @@ export default function HomePage() {
                 <span>Customer Menu Preview</span>
               </Link>
               <span>•</span>
-              <Link href="/cinema/onboarding" className="hover:text-white flex items-center gap-1.5 transition-colors">
+              <Link href="/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding" className="hover:text-white flex items-center gap-1.5 transition-colors">
                 <Film className="w-4 h-4 text-indigo-400" />
                 <span>Cinema Theatre Onboarding</span>
               </Link>
@@ -1494,12 +1494,12 @@ export default function HomePage() {
               </h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/cinema/onboarding" className="hover:text-indigo-600 transition-colors">
+                  <Link href="/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding" className="hover:text-indigo-600 transition-colors">
                     Register Cinema Theatre
                   </Link>
                 </li>
                 <li>
-                  <Link href="/admin/login?business=cinema&redirect=/cinema/onboarding" className="hover:text-indigo-600 transition-colors">
+                  <Link href="/admin/login?business=cinema" className="hover:text-indigo-600 transition-colors">
                     Cinema Admin Console
                   </Link>
                 </li>

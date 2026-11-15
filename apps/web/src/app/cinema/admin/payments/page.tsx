@@ -80,35 +80,63 @@ export default function CinemaPaymentSettingsPage() {
   const [verifyingProvider, setVerifyingProvider] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Current active theatre ID
+  const [theatreId, setTheatreId] = useState<string | null>(null);
+
   // Transactions list
   const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
 
   useEffect(() => {
-    loadPaymentSettings();
-    loadTransactions();
+    initPayments();
   }, []);
 
-  const loadPaymentSettings = async () => {
+  const initPayments = async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await apiRequest('/api/cinema/payments/settings');
-      setAccounts(res.accounts || []);
-      setTheatreName(res.theatreName || '');
-      setCurrency(res.currency || 'INR');
+
+      // Resolve active theatre ID from my memberships
+      let tId = theatreId;
+      if (!tId) {
+        const myTenants = await apiRequest('/api/restaurants/my?tenantType=cinema');
+        const activeTheatre = myTenants.find((m: any) => m.restaurant?.tenantType === 'cinema');
+        if (activeTheatre) {
+          tId = activeTheatre.restaurant.id;
+          setTheatreId(tId);
+        }
+      }
+
+      await Promise.all([
+        loadPaymentSettings(tId || undefined),
+        loadTransactions(tId || undefined)
+      ]);
     } catch (err: any) {
-      console.error('Failed to load payment settings:', err);
+      console.error('Failed to initialize payment settings:', err);
       setError(err?.message || 'Failed to load payment settings');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadTransactions = async () => {
+  const loadPaymentSettings = async (tId?: string) => {
+    try {
+      const activeId = tId || theatreId || undefined;
+      const res = await apiRequest('/api/cinema/payments/settings', { theatreId: activeId });
+      setAccounts(res.accounts || []);
+      setTheatreName(res.theatreName || '');
+      setCurrency(res.currency || 'INR');
+    } catch (err: any) {
+      console.error('Failed to load payment settings:', err);
+      setError(err?.message || 'Failed to load payment settings');
+    }
+  };
+
+  const loadTransactions = async (tId?: string) => {
     try {
       setLoadingTransactions(true);
-      const res = await apiRequest('/api/cinema/payments/transactions?limit=10');
+      const activeId = tId || theatreId || undefined;
+      const res = await apiRequest('/api/cinema/payments/transactions?limit=10', { theatreId: activeId });
       setTransactions(res.transactions || []);
     } catch (err: any) {
       console.warn('Could not load payment transactions:', err);
@@ -147,6 +175,7 @@ export default function CinemaPaymentSettingsPage() {
 
       const res = await apiRequest('/api/cinema/payments/configure', {
         method: 'POST',
+        theatreId: theatreId || undefined,
         body: JSON.stringify({
           provider: modalProvider,
           environment: formEnv,
@@ -180,7 +209,8 @@ export default function CinemaPaymentSettingsPage() {
       setSuccessMessage(null);
 
       const res = await apiRequest(`/api/cinema/payments/verify/${provider}`, {
-        method: 'POST'
+        method: 'POST',
+        theatreId: theatreId || undefined
       });
 
       if (res.success) {
@@ -207,7 +237,8 @@ export default function CinemaPaymentSettingsPage() {
       setActionLoading(`${endpoint}-${provider}`);
       setError(null);
       await apiRequest(`/api/cinema/payments/${endpoint}/${provider}`, {
-        method: 'POST'
+        method: 'POST',
+        theatreId: theatreId || undefined
       });
       setSuccessMessage(
         `${provider.toUpperCase()} gateway ${isCurrentlyDisabled ? 'enabled' : 'disabled'}`
@@ -233,7 +264,8 @@ export default function CinemaPaymentSettingsPage() {
       setActionLoading(`disconnect-${provider}`);
       setError(null);
       await apiRequest(`/api/cinema/payments/disconnect/${provider}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        theatreId: theatreId || undefined
       });
       setSuccessMessage(`${provider.toUpperCase()} disconnected successfully`);
       await loadPaymentSettings();
@@ -563,7 +595,7 @@ export default function CinemaPaymentSettingsPage() {
             <h3 className="text-lg font-bold text-white">Payment Transaction Ledger</h3>
           </div>
           <button
-            onClick={loadTransactions}
+            onClick={() => loadTransactions()}
             disabled={loadingTransactions}
             className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-xs flex items-center gap-1"
           >

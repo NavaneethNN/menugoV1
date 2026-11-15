@@ -146,8 +146,8 @@ export function CinemaOrderPreparedModal({
       const statusToken = order.statusToken || '';
       const isPaytm = selectedProvider === 'paytm';
       const mockPaymentId = simulateFailure
-        ? (isPaytm ? `paytm_txn_fail_${Date.now()}` : `pay_fail_${Date.now()}`)
-        : (isPaytm ? `paytm_txn_${Date.now()}` : `pay_${Date.now()}`);
+        ? (isPaytm ? `mock_paytm_fail_${Date.now()}` : `mock_pay_fail_${Date.now()}`)
+        : (isPaytm ? `mock_paytm_txn_${Date.now()}` : `mock_pay_${Date.now()}`);
       const mockSignature = simulateFailure
         ? 'test_sig_invalid'
         : 'test_sig_captured';

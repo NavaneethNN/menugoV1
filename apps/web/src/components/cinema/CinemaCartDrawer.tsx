@@ -12,21 +12,56 @@ import {
   Film,
   Sparkles,
   ChevronRight,
-  RotateCcw
+  RotateCcw,
+  User,
+  Phone,
+  Clock,
+  Loader2,
+  Tv,
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
 import { formatPaise } from '@menugo/shared';
-import {
-  CinemaCartItem,
-  CinemaOrderContext,
-  MAX_CINEMA_ITEM_NOTES_LENGTH
-} from '@/lib/cinema-cart';
+import { CinemaCartItem } from '@/lib/cinema-cart';
+
+export interface CinemaShow {
+  id: string;
+  screenId: string;
+  movieId: string;
+  movieTitle: string;
+  moviePosterUrl?: string | null;
+  language?: string | null;
+  durationMinutes: number;
+  movieDescription?: string | null;
+  showDate: string;
+  startTime: string;
+  expectedEndTime: string;
+  orderingStartTime: string;
+  orderingEndTime: string;
+  isOrderingOpen: boolean;
+  orderingStatus: 'open' | 'upcoming' | 'closed';
+}
+
+export interface SeatingRow {
+  id: string;
+  rowIdentifier: string;
+  seatCategory: string;
+  totalSeats: number;
+  seats: Array<{
+    id: string;
+    seatIdentifier: string;
+    seatNumber: number;
+    seatCategory: string;
+    status: string;
+  }>;
+}
 
 interface CinemaCartDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  cart: CinemaCartItem[];
+  theatreName: string;
   currency: string;
-  context: CinemaOrderContext | null;
+  cart: CinemaCartItem[];
   subtotalPaise: number;
   taxPaise: number;
   totalPaise: number;
@@ -34,15 +69,41 @@ interface CinemaCartDrawerProps {
   onUpdateQty: (productId: string, delta: number) => void;
   onRemoveItem: (productId: string) => void;
   onClearCart: () => void;
-  onProceedToCheckout: () => void;
+  screens: Array<{
+    id: string;
+    screenName: string;
+    screenType: string;
+    totalSeats: number;
+  }>;
+  isScreenPreselected: boolean;
+  selectedScreenId: string;
+  onScreenChange: (screenId: string) => void;
+  shows: CinemaShow[];
+  selectedShowId: string;
+  onShowChange: (showId: string) => void;
+  loadingShows: boolean;
+  seatingRows: SeatingRow[];
+  loadingSeating: boolean;
+  selectedSeatKey: string; // e.g. "A:A1"
+  onSeatChange: (seatKey: string) => void;
+  customerName: string;
+  onCustomerNameChange: (val: string) => void;
+  customerPhone: string;
+  onCustomerPhoneChange: (val: string) => void;
+  specialInstructions: string;
+  onSpecialInstructionsChange: (val: string) => void;
+  onPlaceOrder: () => void;
+  isSubmittingOrder: boolean;
+  orderError: string | null;
+  setOrderError: (err: string | null) => void;
 }
 
 export function CinemaCartDrawer({
   isOpen,
   onClose,
-  cart,
+  theatreName,
   currency,
-  context,
+  cart,
   subtotalPaise,
   taxPaise,
   totalPaise,
@@ -50,189 +111,536 @@ export function CinemaCartDrawer({
   onUpdateQty,
   onRemoveItem,
   onClearCart,
-  onProceedToCheckout
+  screens,
+  isScreenPreselected,
+  selectedScreenId,
+  onScreenChange,
+  shows,
+  selectedShowId,
+  onShowChange,
+  loadingShows,
+  seatingRows,
+  loadingSeating,
+  selectedSeatKey,
+  onSeatChange,
+  customerName,
+  onCustomerNameChange,
+  customerPhone,
+  onCustomerPhoneChange,
+  specialInstructions,
+  onSpecialInstructionsChange,
+  onPlaceOrder,
+  isSubmittingOrder,
+  orderError,
+  setOrderError
 }: CinemaCartDrawerProps) {
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+
   if (!isOpen) return null;
 
+  // Selected screen & seat object lookups
+  const selectedScreen = screens.find((s) => s.id === selectedScreenId);
+  const selectedShow = shows.find((s) => s.id === selectedShowId);
+
+  const [seatRow, seatNumber] = selectedSeatKey ? selectedSeatKey.split(':') : ['', ''];
+  const activeRow = seatingRows.find((r) => r.rowIdentifier === seatRow);
+  const activeSeat = activeRow?.seats.find((s) => s.seatIdentifier === seatNumber);
+
+  // Field validation checks
+  const isScreenValid = Boolean(selectedScreenId);
+  const isSeatValid = Boolean(selectedSeatKey && seatRow && seatNumber);
+  const isNameValid = customerName.trim().length >= 2;
+  const cleanedPhone = customerPhone.replace(/\D/g, '');
+  const isPhoneValid = cleanedPhone.length === 10;
+
+  const handleValidateAndPlaceOrder = () => {
+    setAttemptedSubmit(true);
+    setOrderError(null);
+
+    if (cart.length === 0) {
+      setOrderError('Your cart is empty. Please add items from the menu first.');
+      return;
+    }
+
+    if (!isScreenValid) {
+      setOrderError('Please select your Auditorium / Screen.');
+      return;
+    }
+
+    if (!isSeatValid) {
+      setOrderError('Please select your Seat Number from the dropdown.');
+      return;
+    }
+
+    if (!isNameValid) {
+      setOrderError('Name is mandatory. Please enter your name (at least 2 characters).');
+      return;
+    }
+
+    if (!isPhoneValid) {
+      setOrderError('Mobile number is mandatory. Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
+    if (!selectedShowId) {
+      setOrderError('No active movie showtime is selected for this screen.');
+      return;
+    }
+
+    onPlaceOrder();
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
       <div className="bg-slate-900 text-white rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-800 overflow-hidden animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200">
         {/* Drawer Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
+        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/90 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold shrink-0">
               <ShoppingBag className="w-4 h-4" />
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-black text-white">
-                Cinema Concessions Cart
+                Place Concessions Order
               </h2>
-              {context && (
-                <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-400">
-                  <span className="font-semibold text-indigo-400">
-                    {context.screenName} • Seat {context.seatNumber}
-                  </span>
-                  <span>• {totalCount} {totalCount === 1 ? 'item' : 'items'}</span>
-                </div>
-              )}
+              <p className="text-[11px] text-slate-400">
+                {theatreName} • {totalCount} {totalCount === 1 ? 'item' : 'items'}
+              </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
             className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition"
-            aria-label="Close cart drawer"
+            aria-label="Close checkout drawer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Seat Delivery Context Banner */}
-        {context && (
-          <div className="bg-indigo-950/40 border-b border-indigo-500/20 px-4 py-2.5 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <Armchair className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-              <span className="text-slate-300">
-                Delivering to: <strong className="text-white">Row {context.seatRow}, Seat {context.seatNumber}</strong>
+        {/* Scrollable Content Body */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5">
+          {/* Global Order Error Alert */}
+          {orderError && (
+            <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>{orderError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOrderError(null)}
+                className="text-rose-400 hover:text-rose-300 p-0.5"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* =========================================================================
+              SECTION 1: CART ITEMS
+          ========================================================================= */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>Your Order ({totalCount})</span>
+              </h3>
+              {cart.length > 0 && (
+                <button
+                  type="button"
+                  onClick={onClearCart}
+                  className="text-[11px] font-semibold text-slate-400 hover:text-rose-400 transition flex items-center gap-1"
+                >
+                  <RotateCcw className="w-3 h-3" /> Clear
+                </button>
+              )}
+            </div>
+
+            {cart.length === 0 ? (
+              <div className="py-8 text-center bg-slate-950/60 rounded-2xl border border-slate-800 p-4 space-y-2">
+                <ShoppingBag className="w-8 h-8 text-slate-600 mx-auto" />
+                <p className="text-xs font-bold text-slate-300">Your cart is empty</p>
+                <p className="text-[11px] text-slate-500">
+                  Select delicious popcorn and beverages from the menu to continue.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-slate-950/80 rounded-2xl border border-slate-800 divide-y divide-slate-800/80 overflow-hidden">
+                {cart.map((item) => {
+                  const itemTotal = item.product.price * item.quantity;
+                  return (
+                    <div key={item.productId} className="p-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-11 h-11 rounded-xl bg-slate-900 border border-slate-800 overflow-hidden shrink-0 relative">
+                          {item.product.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={item.product.imageUrl}
+                              alt={item.product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-600">
+                              <ShoppingBag className="w-4 h-4" />
+                            </div>
+                          )}
+                          <span
+                            className={`absolute bottom-0.5 left-0.5 px-1 py-0.2 rounded text-[7px] font-bold ${
+                              item.product.isVegetarian
+                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40'
+                                : 'bg-rose-950 text-rose-400 border border-rose-500/40'
+                            }`}
+                          >
+                            {item.product.isVegetarian ? 'V' : 'NV'}
+                          </span>
+                        </div>
+
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-bold text-white truncate">
+                            {item.product.name}
+                          </h4>
+                          <p className="text-[11px] text-slate-400">
+                            {formatPaise(item.product.price, currency)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 shrink-0">
+                        <div className="inline-flex items-center gap-1.5 bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-0.5">
+                          <button
+                            type="button"
+                            onClick={() => onUpdateQty(item.productId, -1)}
+                            className="w-5 h-5 text-slate-300 hover:text-white flex items-center justify-center"
+                          >
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <span className="text-xs font-bold text-white px-1">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => onUpdateQty(item.productId, 1)}
+                            className="w-5 h-5 text-slate-300 hover:text-white flex items-center justify-center"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+
+                        <span className="text-xs font-mono font-bold text-white w-14 text-right">
+                          {formatPaise(itemTotal, currency)}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => onRemoveItem(item.productId)}
+                          className="text-slate-500 hover:text-rose-400 p-1 transition"
+                          title="Remove item"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* =========================================================================
+              SECTION 2: DELIVERY DESTINATION (SCREEN & SEAT DROPDOWN)
+          ========================================================================= */}
+          <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3.5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                <Armchair className="w-3.5 h-3.5" />
+                <span>Delivery Location (Screen & Seat)</span>
+              </h3>
+              <span className="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+                In-Seat Delivery
               </span>
             </div>
-            <span className="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/30">
-              In-Seat Service
-            </span>
-          </div>
-        )}
 
-        {/* Cart Items List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 divide-y divide-slate-800/60">
-          {cart.length === 0 ? (
-            <div className="py-12 text-center space-y-3">
-              <ShoppingBag className="w-12 h-12 text-slate-700 mx-auto" />
-              <p className="text-sm font-bold text-slate-300">Your cart is empty</p>
-              <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                Explore the menu to add delicious popcorn, chilled beverages, and snacks to your order.
-              </p>
+            {/* 1. Screen Dropdown */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-300 flex items-center justify-between">
+                <span>Auditorium Screen <span className="text-rose-400">*</span></span>
+                {isScreenPreselected && (
+                  <span className="text-[10px] text-indigo-400 font-semibold">Pre-selected from QR</span>
+                )}
+              </label>
+
+              <select
+                value={selectedScreenId}
+                onChange={(e) => onScreenChange(e.target.value)}
+                disabled={isScreenPreselected}
+                className={`w-full px-3 py-2 text-xs bg-slate-900 border rounded-xl text-white font-medium focus:outline-none transition ${
+                  attemptedSubmit && !isScreenValid
+                    ? 'border-rose-500 ring-1 ring-rose-500'
+                    : 'border-slate-800 focus:border-indigo-500'
+                }`}
+              >
+                <option value="">-- Choose Auditorium Screen --</option>
+                {screens.map((scr) => (
+                  <option key={scr.id} value={scr.id}>
+                    {scr.screenName} ({scr.screenType.toUpperCase()})
+                  </option>
+                ))}
+              </select>
             </div>
-          ) : (
-            cart.map((item) => {
-              const itemTotal = item.product.price * item.quantity;
-              return (
-                <div key={item.productId} className="pt-3 first:pt-0 flex items-start gap-3">
-                  {/* Thumbnail */}
-                  <div className="w-14 h-14 rounded-xl bg-slate-950 border border-slate-800 overflow-hidden shrink-0 relative">
-                    {item.product.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.product.imageUrl}
-                        alt={item.product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-700">
-                        <ShoppingBag className="w-5 h-5" />
-                      </div>
-                    )}
-                    <span
-                      className={`absolute bottom-1 left-1 px-1 py-0.2 rounded text-[8px] font-bold ${
-                        item.product.isVegetarian
-                          ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40'
-                          : 'bg-rose-950 text-rose-400 border border-rose-500/40'
-                      }`}
-                    >
-                      {item.product.isVegetarian ? 'Veg' : 'Non'}
+
+            {/* Movie Showtime Info (Auto-resolved) */}
+            {selectedShow && (
+              <div className="p-2.5 rounded-xl bg-indigo-950/30 border border-indigo-500/30 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Film className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                  <div className="min-w-0">
+                    <span className="font-bold text-white block truncate">{selectedShow.movieTitle}</span>
+                    <span className="text-[10px] text-indigo-300">
+                      {new Date(selectedShow.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {' – '}
+                      {new Date(selectedShow.expectedEndTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <h4 className="text-xs font-bold text-white truncate">
-                        {item.product.name}
-                      </h4>
-                      <button
-                        onClick={() => onRemoveItem(item.productId)}
-                        className="text-slate-500 hover:text-rose-400 transition p-0.5"
-                        aria-label="Remove item"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      {formatPaise(item.product.price, currency)} each
-                    </p>
-
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="inline-flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-2 py-0.5">
-                        <button
-                          type="button"
-                          onClick={() => onUpdateQty(item.productId, -1)}
-                          className="w-5 h-5 rounded text-slate-300 hover:text-white flex items-center justify-center"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="text-xs font-bold text-white px-1">
-                          {item.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => onUpdateQty(item.productId, 1)}
-                          className="w-5 h-5 rounded text-slate-300 hover:text-white flex items-center justify-center"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-
-                      <span className="text-xs font-black text-indigo-300">
-                        {formatPaise(itemTotal, currency)}
-                      </span>
-                    </div>
-                  </div>
                 </div>
-              );
-            })
-          )}
-        </div>
 
-        {/* Pricing Summary & Action Footer */}
-        {cart.length > 0 && (
-          <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-950/90 space-y-3">
+                <span
+                  className={`px-2 py-0.5 rounded text-[9px] font-bold shrink-0 border ${
+                    selectedShow.isOrderingOpen
+                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                      : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                  }`}
+                >
+                  {selectedShow.isOrderingOpen ? 'Ordering Open' : 'Upcoming'}
+                </span>
+              </div>
+            )}
+
+            {/* Multiple Shows Selector if available */}
+            {shows.length > 1 && (
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-400 block">
+                  Select Showtime
+                </label>
+                <select
+                  value={selectedShowId}
+                  onChange={(e) => onShowChange(e.target.value)}
+                  className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-white font-medium focus:outline-none focus:border-indigo-500"
+                >
+                  {shows.map((show) => (
+                    <option key={show.id} value={show.id}>
+                      {show.movieTitle} (
+                      {new Date(show.startTime).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                      ) {show.isOrderingOpen ? '• Open' : '• Upcoming'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* 2. Seat Number Dropdown (The Key Requirement!) */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-300 flex items-center justify-between">
+                <span>Seat Number <span className="text-rose-400">*</span></span>
+                {loadingSeating && (
+                  <span className="text-[10px] text-indigo-400 flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Loading seats...
+                  </span>
+                )}
+              </label>
+
+              <select
+                value={selectedSeatKey}
+                onChange={(e) => onSeatChange(e.target.value)}
+                disabled={!selectedScreenId || loadingSeating}
+                className={`w-full px-3 py-2 text-xs bg-slate-900 border rounded-xl text-white font-medium focus:outline-none transition ${
+                  attemptedSubmit && !isSeatValid
+                    ? 'border-rose-500 ring-1 ring-rose-500'
+                    : 'border-slate-800 focus:border-indigo-500'
+                }`}
+              >
+                <option value="">
+                  {!selectedScreenId
+                    ? '-- Select a Screen First --'
+                    : loadingSeating
+                    ? '-- Loading Available Seats --'
+                    : seatingRows.length === 0
+                    ? '-- No seats configured --'
+                    : '-- Select Your Seat Number --'}
+                </option>
+
+                {seatingRows.map((row) => (
+                  <optgroup
+                    key={row.id}
+                    label={`Row ${row.rowIdentifier} (${row.seatCategory.toUpperCase()} - ${row.seats.length} seats)`}
+                    className="bg-slate-900 text-indigo-300 font-bold"
+                  >
+                    {row.seats.map((seat) => (
+                      <option
+                        key={seat.id}
+                        value={`${row.rowIdentifier}:${seat.seatIdentifier}`}
+                        className="bg-slate-950 text-white font-normal"
+                      >
+                        Seat {seat.seatIdentifier} (Row {row.rowIdentifier} • {seat.seatCategory})
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+
+              {/* Confirmed Delivery Pill */}
+              {isSeatValid && activeSeat && (
+                <div className="pt-1 flex items-center gap-1.5 text-[11px] text-emerald-400 font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>
+                    Delivering to: {selectedScreen?.screenName} • Row {seatRow}, Seat {seatNumber} ({activeSeat.seatCategory})
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* =========================================================================
+              SECTION 3: MANDATORY CUSTOMER CONTACT DETAILS
+          ========================================================================= */}
+          <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+            <h3 className="text-xs font-black uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5" />
+              <span>Customer Details (Mandatory)</span>
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Mandatory Customer Name */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-300 block">
+                  Your Full Name <span className="text-rose-400">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Enter your name"
+                    value={customerName}
+                    onChange={(e) => onCustomerNameChange(e.target.value)}
+                    maxLength={100}
+                    className={`w-full pl-8 pr-3 py-2 text-xs bg-slate-900 border rounded-xl text-white placeholder-slate-600 focus:outline-none transition ${
+                      attemptedSubmit && !isNameValid
+                        ? 'border-rose-500 ring-1 ring-rose-500'
+                        : 'border-slate-800 focus:border-indigo-500'
+                    }`}
+                  />
+                  <User className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                </div>
+                {attemptedSubmit && !isNameValid && (
+                  <p className="text-[10px] text-rose-400">Name is required (at least 2 letters)</p>
+                )}
+              </div>
+
+              {/* Mandatory Mobile Phone */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-300 block">
+                  Mobile Number <span className="text-rose-400">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="tel"
+                    placeholder="10-digit mobile number"
+                    value={customerPhone}
+                    onChange={(e) => {
+                      const numOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      onCustomerPhoneChange(numOnly);
+                    }}
+                    maxLength={10}
+                    className={`w-full pl-8 pr-3 py-2 text-xs bg-slate-900 border rounded-xl text-white placeholder-slate-600 focus:outline-none transition font-mono ${
+                      attemptedSubmit && !isPhoneValid
+                        ? 'border-rose-500 ring-1 ring-rose-500'
+                        : 'border-slate-800 focus:border-indigo-500'
+                    }`}
+                  />
+                  <Phone className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                </div>
+                {attemptedSubmit && !isPhoneValid && (
+                  <p className="text-[10px] text-rose-400">Valid 10-digit mobile number is required</p>
+                )}
+              </div>
+
+              {/* Special Instructions (Optional) */}
+              <div className="col-span-1 sm:col-span-2 space-y-1">
+                <label className="text-[11px] font-semibold text-slate-400 block">
+                  Delivery Notes for Usher (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Please deliver during intermission, extra napkins"
+                  value={specialInstructions}
+                  onChange={(e) => onSpecialInstructionsChange(e.target.value)}
+                  maxLength={150}
+                  className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* =========================================================================
+              SECTION 4: PRICE BREAKDOWN
+          ========================================================================= */}
+          <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block pb-1 border-b border-slate-800">
+              Bill Summary
+            </span>
+
             <div className="space-y-1.5 text-xs">
               <div className="flex justify-between text-slate-400">
-                <span>Subtotal ({totalCount} items)</span>
-                <span>{formatPaise(subtotalPaise, currency)}</span>
+                <span>Concessions Subtotal</span>
+                <span className="font-mono text-white">{formatPaise(subtotalPaise, currency)}</span>
               </div>
               <div className="flex justify-between text-slate-400">
                 <span>Applicable Taxes (GST 5%)</span>
-                <span>{formatPaise(taxPaise, currency)}</span>
+                <span className="font-mono text-white">{formatPaise(taxPaise, currency)}</span>
               </div>
               <div className="flex justify-between text-sm font-black text-white pt-2 border-t border-slate-800">
-                <span>Estimated Total</span>
-                <span className="text-indigo-400">{formatPaise(totalPaise, currency)}</span>
+                <span>Total Payable</span>
+                <span className="font-mono text-indigo-400 text-base">
+                  {formatPaise(totalPaise, currency)}
+                </span>
               </div>
             </div>
-
-            <div className="flex items-center gap-2 pt-2">
-              <button
-                type="button"
-                onClick={onClearCart}
-                className="py-3 px-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs font-bold transition flex items-center gap-1.5"
-                title="Clear Cart"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Clear</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={onProceedToCheckout}
-                className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30"
-              >
-                <span>Review Order & Checkout</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
           </div>
-        )}
+        </div>
+
+        {/* =========================================================================
+            SECTION 5: ACTION FOOTER
+        ========================================================================= */}
+        <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-950/95 shrink-0 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="py-3 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition"
+          >
+            Back
+          </button>
+
+          <button
+            type="button"
+            disabled={isSubmittingOrder || cart.length === 0}
+            onClick={handleValidateAndPlaceOrder}
+            className="flex-1 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-black transition flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/30 disabled:opacity-50"
+          >
+            {isSubmittingOrder ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Preparing Order...</span>
+              </>
+            ) : (
+              <>
+                <span>Place Order & Pay • {formatPaise(totalPaise, currency)}</span>
+                <ChevronRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

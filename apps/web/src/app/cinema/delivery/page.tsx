@@ -87,6 +87,17 @@ export default function CinemaDeliveryPage() {
   const [tab, setTab] = useState<'ready' | 'assigned_for_delivery' | 'delivered'>('ready');
   const [screenFilter, setScreenFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [theatreId, setTheatreId] = useState<string | null>(null);
+
+  // Resolve cinema theatre ID on mount
+  useEffect(() => {
+    apiRequest('/api/restaurants/my?tenantType=cinema')
+      .then((myTenants) => {
+        const activeTheatre = myTenants.find((m: any) => m.restaurant?.tenantType === 'cinema');
+        if (activeTheatre) setTheatreId(activeTheatre.restaurant.id);
+      })
+      .catch((e) => console.warn('Could not resolve cinema tenant:', e));
+  }, []);
 
   // Audio & Socket
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -114,7 +125,9 @@ export default function CinemaDeliveryPage() {
       if (tab) params.append('status', tab);
       if (screenFilter !== 'all') params.append('screenId', screenFilter);
 
-      const res = await apiRequest(`/api/cinema/delivery/orders?${params.toString()}`);
+      const res = await apiRequest(`/api/cinema/delivery/orders?${params.toString()}`, {
+        theatreId: theatreId || undefined
+      });
       if (res.success) {
         const fetchedOrders: DeliveryOrder[] = res.orders || [];
         setOrders(fetchedOrders);
@@ -133,7 +146,7 @@ export default function CinemaDeliveryPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [tab, screenFilter, soundEnabled]);
+  }, [tab, screenFilter, soundEnabled, theatreId]);
 
   useEffect(() => {
     fetchOrders();
@@ -176,7 +189,8 @@ export default function CinemaDeliveryPage() {
       setError(null);
 
       await apiRequest(`/api/cinema/delivery/orders/${orderId}/assign`, {
-        method: 'POST'
+        method: 'POST',
+        theatreId: theatreId || undefined
       });
 
       setSuccessMsg('Delivery assignment accepted! Head to the auditorium.');
@@ -194,7 +208,8 @@ export default function CinemaDeliveryPage() {
       setError(null);
 
       await apiRequest(`/api/cinema/delivery/orders/${orderId}/deliver`, {
-        method: 'POST'
+        method: 'POST',
+        theatreId: theatreId || undefined
       });
 
       setSuccessMsg('Order marked as delivered to seat successfully!');

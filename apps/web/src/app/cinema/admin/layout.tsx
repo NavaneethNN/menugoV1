@@ -43,6 +43,15 @@ export default function CinemaAdminLayout({
     setMobileMenuOpen(false);
   }, [pathname]);
 
+  // Sync active theatre ID to localStorage for tenant-scoped API requests
+  useEffect(() => {
+    if (selectedMembership?.restaurant?.id && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('active_theatre_id', selectedMembership.restaurant.id);
+      } catch {}
+    }
+  }, [selectedMembership]);
+
   useEffect(() => {
     if (sessionLoading) return;
     if (!session) {

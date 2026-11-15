@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from '@/lib/auth-client';
@@ -22,12 +22,15 @@ import {
   Mail,
   Coins,
   Globe,
-  FileText
+  FileText,
+  UserCheck
 } from 'lucide-react';
 
 export default function CinemaOnboardingPage() {
   const router = useRouter();
   const { data: session, isPending: sessionLoading } = useSession();
+
+  const [checkingExisting, setCheckingExisting] = useState(true);
 
   // Onboarding Form State
   const [formData, setFormData] = useState({
@@ -63,6 +66,40 @@ export default function CinemaOnboardingPage() {
     { step: 7, title: 'Screen QR Codes', desc: 'General & screen QR deployment', status: 'upcoming' },
     { step: 8, title: 'Go Live', desc: 'Accept in-auditorium seat orders', status: 'upcoming' }
   ];
+
+  // Auth Guard: Before onboarding, user MUST have created an account & signed in!
+  useEffect(() => {
+    if (sessionLoading) return;
+
+    if (!session?.user) {
+      // Redirect to sign up page first
+      router.push('/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding');
+      return;
+    }
+
+    // Check if user already has an active cinema theatre
+    apiRequest('/api/restaurants/my?tenantType=cinema')
+      .then((tenants) => {
+        const hasCinema = Array.isArray(tenants) && tenants.some((m: any) => m.restaurant?.tenantType === 'cinema');
+        if (hasCinema) {
+          // Already onboarded -> direct to cinema dashboard
+          router.push('/cinema/admin/dashboard');
+        } else {
+          setCheckingExisting(false);
+          // Pre-fill email from logged in user account
+          if (session.user.email) {
+            setFormData((prev) => ({
+              ...prev,
+              contactEmail: prev.contactEmail || session.user.email
+            }));
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not check existing cinema theatres:', err);
+        setCheckingExisting(false);
+      });
+  }, [session, sessionLoading, router]);
 
   // Handle Logo File Upload (Presigned URL or direct payload)
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,7 +139,7 @@ export default function CinemaOnboardingPage() {
     setError(null);
 
     if (!session?.user) {
-      router.push('/admin/login?business=cinema&redirect=/cinema/onboarding');
+      router.push('/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding');
       return;
     }
 
@@ -140,6 +177,18 @@ export default function CinemaOnboardingPage() {
     }
   };
 
+  // Loading Screen while verifying authentication & existing theatre
+  if (sessionLoading || checkingExisting || !session?.user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white p-4">
+        <Loader2 className="w-10 h-10 animate-spin text-indigo-500 mb-4" />
+        <p className="text-sm text-slate-400 font-medium">
+          Verifying cinema administrator account...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-600 selection:text-white">
       {/* Top Header */}
@@ -160,6 +209,12 @@ export default function CinemaOnboardingPage() {
           </Link>
 
           <div className="flex items-center gap-4 text-xs font-semibold">
+            {/* Authenticated user pill */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/90 border border-slate-700 text-slate-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="font-medium truncate max-w-[150px]">{session.user.name || session.user.email}</span>
+            </div>
+
             <Link
               href="/"
               className="text-slate-400 hover:text-white transition-colors"
@@ -192,7 +247,7 @@ export default function CinemaOnboardingPage() {
                 Register Your Cinema Theatre
               </h1>
               <p className="text-slate-400 text-sm sm:text-base mt-2 max-w-2xl leading-relaxed">
-                Configure your theatre identity, city, timezone, and contact details to begin setting up screens, rows, and in-auditorium seat ordering.
+                Step 2 of 2: Configure your theatre identity, city, timezone, and contact details to begin setting up screens, rows, and in-auditorium seat ordering.
               </p>
             </div>
 
@@ -203,6 +258,24 @@ export default function CinemaOnboardingPage() {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Step 1 Account Confirmation Notification */}
+        <div className="mb-6 p-4 rounded-2xl bg-indigo-950/40 border border-indigo-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-full bg-emerald-950 border border-emerald-600 text-emerald-400 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold text-white">Step 1 Complete: </span>
+              <span className="text-slate-300">
+                Administrator account verified for <strong className="text-white">{session.user.name}</strong> ({session.user.email}).
+              </span>
+            </div>
+          </div>
+          <span className="text-indigo-400 font-bold bg-indigo-900/50 px-2.5 py-1 rounded-lg border border-indigo-800/80 shrink-0">
+            Now Complete Step 2: Theatre Details ↓
+          </span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -282,7 +355,7 @@ export default function CinemaOnboardingPage() {
 
                 <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 text-left text-xs space-y-2.5 mb-8 text-slate-300">
                   <div className="flex justify-between">
-                    <span className="text-slate-500 font-semibold">City & State:</span>
+                    <span className="text-slate-500 font-semibold">City &amp; State:</span>
                     <span className="text-white font-medium">{formData.city}, {formData.state}</span>
                   </div>
                   <div className="flex justify-between">
@@ -317,7 +390,7 @@ export default function CinemaOnboardingPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <h2 className="text-xl font-bold text-white mb-1">
-                    Step 1: Theatre Profile Information
+                    Step 2: Theatre Profile Information
                   </h2>
                   <p className="text-xs text-slate-400">
                     Official details for auditorium management, show schedules, and customer food delivery.
@@ -342,10 +415,63 @@ export default function CinemaOnboardingPage() {
                       <input
                         type="text"
                         required
-                        placeholder="e.g. Grand Cineplex IMAX / PVR Gold Cinema"
+                        placeholder="e.g. Cinepolis Nexus Grand / PVR INOX Forum"
                         value={formData.theatreName}
                         onChange={(e) => setFormData({ ...formData, theatreName: e.target.value })}
                         className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Chain or Brand */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                      Theatre Chain / Brand (Optional)
+                    </label>
+                    <div className="relative">
+                      <Building2 className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder="e.g. Cinepolis / PVR / Independent"
+                        value={formData.chainOrBrand}
+                        onChange={(e) => setFormData({ ...formData, chainOrBrand: e.target.value })}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Contact Number */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                      Official Contact Phone (+91) <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Phone className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="tel"
+                        required
+                        placeholder="+91 98765 43210"
+                        value={formData.contactNumber}
+                        onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Street Address */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                      Auditorium / Theatre Address <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <MapPin className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
+                      <textarea
+                        required
+                        rows={2}
+                        placeholder="Level 4, Nexus Mall, Koramangala"
+                        value={formData.address}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                       />
                     </div>
                   </div>
@@ -358,7 +484,7 @@ export default function CinemaOnboardingPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Bengaluru / Mumbai / Delhi"
+                      placeholder="e.g. Bengaluru, Mumbai, Hyderabad"
                       value={formData.city}
                       onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -373,42 +499,24 @@ export default function CinemaOnboardingPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Karnataka / Maharashtra"
+                      placeholder="e.g. Karnataka, Maharashtra"
                       value={formData.state}
                       onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
 
-                  {/* Contact Number */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                      Contact Phone <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Phone className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="tel"
-                        required
-                        placeholder="e.g. +91 98765 43210"
-                        value={formData.contactNumber}
-                        onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
-                    </div>
-                  </div>
-
                   {/* Contact Email */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                      Contact Email <span className="text-rose-500">*</span>
+                      Official Contact Email <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
                       <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input
                         type="email"
                         required
-                        placeholder="e.g. cinema.admin@theatre.com"
+                        placeholder="manager@theatre.com"
                         value={formData.contactEmail}
                         onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
                         className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -416,100 +524,70 @@ export default function CinemaOnboardingPage() {
                     </div>
                   </div>
 
-                  {/* Logo Upload */}
-                  <div className="sm:col-span-2">
+                  {/* Business Details / Registration */}
+                  <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                      Theatre Logo (Optional)
+                      GSTIN / Business Reg (Optional)
                     </label>
-                    <div className="flex items-center gap-3">
-                      {formData.logoUrl ? (
-                        <div className="w-11 h-11 rounded-xl border border-indigo-500 overflow-hidden shrink-0 bg-slate-950 flex items-center justify-center">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={formData.logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                        </div>
-                      ) : null}
-                      <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 hover:border-indigo-500 text-xs font-medium text-slate-300 transition">
-                        <Upload className="w-4 h-4 text-slate-400" />
-                        <span>{logoUploading ? 'Uploading...' : formData.logoUrl ? 'Change Logo' : 'Upload Logo'}</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleLogoUpload}
-                          className="hidden"
-                          disabled={logoUploading}
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Optional Details Disclosure */}
-                <details className="group rounded-2xl border border-slate-800 bg-slate-950/40 p-4 transition-all">
-                  <summary className="text-xs font-bold text-slate-400 hover:text-indigo-400 cursor-pointer list-none flex items-center justify-between">
-                    <span>+ Additional Details (Address, Brand, GSTIN)</span>
-                    <span className="text-[10px] text-slate-500 group-open:rotate-180 transition-transform">▼</span>
-                  </summary>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 mt-3 border-t border-slate-800/80">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                        Brand / Chain Name
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Cinepolis / PVR INOX / Independent"
-                        value={formData.chainOrBrand}
-                        onChange={(e) => setFormData({ ...formData, chainOrBrand: e.target.value })}
-                        className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                        GSTIN / Tax ID
-                      </label>
+                    <div className="relative">
+                      <FileText className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input
                         type="text"
                         placeholder="e.g. 29AAAAA0000A1Z5"
                         value={formData.businessDetails}
                         onChange={(e) => setFormData({ ...formData, businessDetails: e.target.value })}
-                        className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                        Mall / Auditorium Street Address
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 4th Floor, Nexus Mall, Koramangala"
-                        value={formData.address}
-                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                        className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     </div>
                   </div>
-                </details>
 
-                <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-800">
-                    <Globe className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>India (IST) • <strong>INR (₹)</strong></span>
+                  {/* Indian Market Defaults (Section 4) */}
+                  <div className="sm:col-span-2 p-4 rounded-2xl bg-indigo-950/40 border border-indigo-900/60 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                    <div>
+                      <span className="text-slate-400 font-semibold block mb-1">Target Market</span>
+                      <span className="font-bold text-white flex items-center gap-1.5">
+                        🇮🇳 India (Initial Market)
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-semibold block mb-1">Currency</span>
+                      <span className="font-bold text-white flex items-center gap-1.5">
+                        <Coins className="w-3.5 h-3.5 text-amber-400" />
+                        INR (₹ Indian Rupees)
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-semibold block mb-1">Timezone</span>
+                      <span className="font-bold text-white flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                        Asia/Kolkata (IST)
+                      </span>
+                    </div>
                   </div>
+                </div>
+
+                {/* Form Actions */}
+                <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <Link
+                    href="/"
+                    className="text-xs text-slate-400 hover:text-white transition-colors"
+                  >
+                    Cancel and return home
+                  </Link>
 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition shadow-lg shadow-indigo-600/30 flex items-center gap-2 disabled:opacity-50"
+                    className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 disabled:opacity-50"
                   >
                     {loading ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Registering Theatre...</span>
+                        <span>Saving Theatre Profile...</span>
                       </>
                     ) : (
                       <>
-                        <span>Complete Profile & Continue</span>
+                        <span>Save &amp; Complete Theatre Setup</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
@@ -520,6 +598,11 @@ export default function CinemaOnboardingPage() {
           </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+        <p>MenuGo Cinema Module • Multi-Tenant Enterprise Architecture • Razorpay &amp; Paytm Ready</p>
+      </footer>
     </div>
   );
 }

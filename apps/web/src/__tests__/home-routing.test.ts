@@ -24,13 +24,53 @@ describe('Home Page Business Selection & Routing (Task 01 & Section 3)', () => {
     const cinemaRoutes = {
       onboarding: '/cinema/onboarding',
       signup: '/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding',
-      signin: '/admin/login?business=cinema&redirect=/cinema/onboarding'
+      signin: '/admin/login?business=cinema'
     };
 
     assert.equal(cinemaRoutes.onboarding, '/cinema/onboarding');
     assert.equal(cinemaRoutes.signup.includes('business=cinema'), true);
     assert.equal(cinemaRoutes.signup.includes('redirect=/cinema/onboarding'), true);
-    assert.equal(cinemaRoutes.signin.includes('business=cinema'), true);
+    assert.equal(cinemaRoutes.signin, '/admin/login?business=cinema');
+  });
+
+  test('Cinema sign-up first requirement: Unauthenticated visitors cannot access onboarding directly', () => {
+    // Simulating session guard
+    function checkOnboardingAccess(session: { user?: { email: string } } | null) {
+      if (!session?.user) {
+        return {
+          allowed: false,
+          redirect: '/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding'
+        };
+      }
+      return {
+        allowed: true,
+        redirect: null
+      };
+    }
+
+    const unauthenticated = checkOnboardingAccess(null);
+    assert.equal(unauthenticated.allowed, false);
+    assert.equal(unauthenticated.redirect, '/admin/login?mode=signup&business=cinema&redirect=/cinema/onboarding');
+
+    const authenticated = checkOnboardingAccess({ user: { email: 'cinema_owner@example.com' } });
+    assert.equal(authenticated.allowed, true);
+    assert.equal(authenticated.redirect, null);
+  });
+
+  test('Cinema existing theatre routing: Directs existing owner to dashboard, new owner to onboarding', () => {
+    function resolveCinemaPostAuth(tenants: Array<{ restaurant: { tenantType: string } }>) {
+      const hasCinema = Array.isArray(tenants) && tenants.some((m) => m.restaurant?.tenantType === 'cinema');
+      return hasCinema ? '/cinema/admin/dashboard' : '/cinema/onboarding';
+    }
+
+    // New cinema user with no theatre yet
+    assert.equal(resolveCinemaPostAuth([]), '/cinema/onboarding');
+
+    // Existing cinema user with a registered cinema
+    assert.equal(
+      resolveCinemaPostAuth([{ restaurant: { tenantType: 'cinema' } }]),
+      '/cinema/admin/dashboard'
+    );
   });
 
   test('Login route resolver respects business and redirect parameters without breaking restaurants', () => {

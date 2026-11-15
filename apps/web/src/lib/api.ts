@@ -45,11 +45,29 @@ export async function apiRequest<T = any>(
     ...(headers as Record<string, string>)
   };
 
-  const resolvedTenantId = theatreId || tenantId || restaurantId;
+  let resolvedTenantId = theatreId || tenantId || restaurantId;
+  const isCinemaContext = Boolean(theatreId || path.includes('/cinema/'));
+
+  if (!resolvedTenantId && typeof window !== 'undefined') {
+    try {
+      if (isCinemaContext) {
+        resolvedTenantId = localStorage.getItem('active_theatre_id') || undefined;
+      }
+      if (!resolvedTenantId) {
+        resolvedTenantId =
+          localStorage.getItem('active_theatre_id') ||
+          localStorage.getItem('active_restaurant_id') ||
+          undefined;
+      }
+    } catch {
+      // Ignore localStorage read errors in private browsing
+    }
+  }
+
   if (resolvedTenantId) {
     customHeaders['x-restaurant-id'] = resolvedTenantId;
-    if (theatreId) customHeaders['x-theatre-id'] = theatreId;
-    if (tenantId) customHeaders['x-tenant-id'] = tenantId;
+    customHeaders['x-theatre-id'] = resolvedTenantId;
+    customHeaders['x-tenant-id'] = resolvedTenantId;
   }
 
   const res = await fetch(url, {

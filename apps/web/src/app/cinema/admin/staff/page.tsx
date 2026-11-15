@@ -78,6 +78,7 @@ export default function CinemaAdminStaffPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<StaffMember | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [theatreId, setTheatreId] = useState<string | null>(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -94,6 +95,16 @@ export default function CinemaAdminStaffPage() {
     role: 'kitchen' as 'owner' | 'admin' | 'kitchen' | 'delivery' | 'staff'
   });
 
+  // Resolve cinema theatre ID on mount
+  useEffect(() => {
+    apiRequest('/api/restaurants/my?tenantType=cinema')
+      .then((myTenants) => {
+        const activeTheatre = myTenants.find((m: any) => m.restaurant?.tenantType === 'cinema');
+        if (activeTheatre) setTheatreId(activeTheatre.restaurant.id);
+      })
+      .catch((e) => console.warn('Could not resolve cinema tenant:', e));
+  }, []);
+
   const loadStaffData = useCallback(async (isSilent = false) => {
     try {
       if (!isSilent) setLoading(true);
@@ -106,7 +117,7 @@ export default function CinemaAdminStaffPage() {
       if (searchQuery.trim()) params.append('search', searchQuery.trim());
 
       const url = `/api/cinema/staff${params.toString() ? `?${params.toString()}` : ''}`;
-      const res = await apiRequest(url);
+      const res = await apiRequest(url, { theatreId: theatreId || undefined });
 
       if (res.success) {
         setMembers(res.members || []);
@@ -119,7 +130,7 @@ export default function CinemaAdminStaffPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [roleFilter, statusFilter, searchQuery]);
+  }, [roleFilter, statusFilter, searchQuery, theatreId]);
 
   useEffect(() => {
     loadStaffData();
@@ -133,6 +144,7 @@ export default function CinemaAdminStaffPage() {
 
       await apiRequest('/api/cinema/staff', {
         method: 'POST',
+        theatreId: theatreId || undefined,
         body: JSON.stringify({
           name: formData.name.trim(),
           email: formData.email.trim().toLowerCase(),
@@ -178,6 +190,7 @@ export default function CinemaAdminStaffPage() {
 
       await apiRequest(`/api/cinema/staff/${editingMember.id}`, {
         method: 'PATCH',
+        theatreId: theatreId || undefined,
         body: JSON.stringify({
           staffName: editFormData.staffName.trim(),
           phone: editFormData.phone.trim() || undefined,
@@ -209,7 +222,7 @@ export default function CinemaAdminStaffPage() {
       setError(null);
 
       const endpoint = `/api/cinema/staff/${member.id}/${isActivating ? 'activate' : 'deactivate'}`;
-      await apiRequest(endpoint, { method: 'POST' });
+      await apiRequest(endpoint, { method: 'POST', theatreId: theatreId || undefined });
 
       setSuccessMsg(`Staff member ${isActivating ? 'activated' : 'deactivated'} successfully`);
       loadStaffData(true);
@@ -229,7 +242,7 @@ export default function CinemaAdminStaffPage() {
       setActionLoading(true);
       setError(null);
 
-      await apiRequest(`/api/cinema/staff/${member.id}`, { method: 'DELETE' });
+      await apiRequest(`/api/cinema/staff/${member.id}`, { method: 'DELETE', theatreId: theatreId || undefined });
 
       setSuccessMsg('Staff member removed successfully');
       loadStaffData(true);
