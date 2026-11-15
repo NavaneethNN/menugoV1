@@ -51,6 +51,22 @@ describe('Order State Machine & Lifecycle Transitions (Task 13)', () => {
       }
     });
 
+    test('accepted -> ready: permitted for owner, admin, kitchen (skips separate prepare step)', () => {
+      const roles: RestaurantMemberRole[] = ['owner', 'admin', 'kitchen'];
+      for (const role of roles) {
+        const result = validateStatusTransition('accepted', 'ready', role);
+        assert.equal(result.valid, true, `Role ${role} should be allowed to transition accepted -> ready directly`);
+      }
+    });
+
+    test('accepted -> delivered: permitted for owner, admin, kitchen, staff (direct seat delivery)', () => {
+      const roles: (RestaurantMemberRole | 'delivery')[] = ['owner', 'admin', 'kitchen', 'staff'];
+      for (const role of roles) {
+        const result = validateStatusTransition('accepted', 'delivered', role);
+        assert.equal(result.valid, true, `Role ${role} should be allowed to deliver accepted order directly`);
+      }
+    });
+
     test('accepted -> cancelled: permitted for owner and admin', () => {
       assert.equal(validateStatusTransition('accepted', 'cancelled', 'owner').valid, true);
       assert.equal(validateStatusTransition('accepted', 'cancelled', 'admin').valid, true);

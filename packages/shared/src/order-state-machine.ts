@@ -19,8 +19,8 @@ export const ALLOWED_FORWARD_TRANSITIONS: Record<OrderStatus, readonly OrderStat
   new: ['accepted', 'preparing'],
   pending: ['confirmed', 'accepted', 'preparing'],
   confirmed: ['accepted', 'preparing'],
-  accepted: ['preparing'],
-  preparing: ['ready'],
+  accepted: ['preparing', 'ready', 'delivered'],
+  preparing: ['ready', 'delivered'],
   ready: ['assigned_for_delivery', 'delivered', 'served'],
   assigned_for_delivery: ['delivered', 'served'],
   delivered: [],
@@ -207,8 +207,8 @@ export function getStatusDisplayInfo(status: OrderStatus) {
       };
     case 'accepted':
       return {
-        label: 'Accepted',
-        description: 'Acknowledged by kitchen / staff',
+        label: 'Accepted (Preparing)',
+        description: 'Order accepted, kitchen is preparing food',
         badgeClass: 'bg-cyan-100 text-cyan-800 border-cyan-200',
         dotClass: 'bg-cyan-500'
       };

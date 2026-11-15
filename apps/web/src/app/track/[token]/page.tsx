@@ -132,13 +132,23 @@ export default function OrderTrackingPage() {
   );
 
   const isCinema = Boolean(order?.cinema);
-  const steps = useMemo(() => [
-    { status: 'new' as OrderStatus, label: 'Order Received', description: 'Your order was sent to the kitchen' },
-    { status: 'accepted' as OrderStatus, label: 'Accepted', description: isCinema ? 'Cinema team acknowledged your order' : 'Kitchen acknowledged your order' },
-    { status: 'preparing' as OrderStatus, label: 'Preparing', description: isCinema ? 'Concessions team is preparing your snacks' : 'Chef is cooking your dishes' },
-    { status: 'ready' as OrderStatus, label: isCinema ? 'Ready for Delivery' : 'Ready to Serve', description: isCinema ? 'Food is boxed, runner is on the way to your seat' : 'Food is prepared, on its way to table' },
-    { status: 'served' as OrderStatus, label: isCinema ? 'Delivered to Seat' : 'Served', description: isCinema ? 'Delivered to your auditorium seat. Enjoy the movie!' : 'Delivered to your table. Enjoy your meal!' }
-  ], [isCinema]);
+  const steps = useMemo(() => {
+    if (isCinema) {
+      return [
+        { status: 'new' as OrderStatus, label: 'Order Received', description: 'Your order was sent to the concessions kitchen' },
+        { status: 'accepted' as OrderStatus, label: 'Preparing', description: 'Concessions team is preparing your snacks & drinks' },
+        { status: 'ready' as OrderStatus, label: 'Ready for Delivery', description: 'Food is boxed, on the way to your auditorium seat' },
+        { status: 'delivered' as OrderStatus, label: 'Delivered to Seat', description: 'Delivered to your auditorium seat. Enjoy the movie!' }
+      ];
+    }
+    return [
+      { status: 'new' as OrderStatus, label: 'Order Received', description: 'Your order was sent to the kitchen' },
+      { status: 'accepted' as OrderStatus, label: 'Accepted', description: 'Kitchen acknowledged your order' },
+      { status: 'preparing' as OrderStatus, label: 'Preparing', description: 'Chef is cooking your dishes' },
+      { status: 'ready' as OrderStatus, label: 'Ready to Serve', description: 'Food is prepared, on its way to table' },
+      { status: 'served' as OrderStatus, label: 'Served', description: 'Delivered to your table. Enjoy your meal!' }
+    ];
+  }, [isCinema]);
 
   if (loading) {
     return (
@@ -169,10 +179,16 @@ export default function OrderTrackingPage() {
   }
 
   const statusInfo = getStatusDisplayInfo(order.status);
-  const normalizedStatus = order.status === 'pending' ? 'new' : order.status;
+  const normalizedStatus = useMemo(() => {
+    if (order.status === 'pending') return 'new';
+    if (isCinema && order.status === 'preparing') return 'accepted';
+    if (isCinema && order.status === 'served') return 'delivered';
+    if (!isCinema && order.status === 'delivered') return 'served';
+    return order.status;
+  }, [order.status, isCinema]);
   const currentStepIdx = steps.findIndex((s) => s.status === normalizedStatus);
   const isCancelled = order.status === 'cancelled';
-  const isServed = order.status === 'served';
+  const isServed = order.status === 'served' || order.status === 'delivered';
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-orange-500 selection:text-white pb-12">

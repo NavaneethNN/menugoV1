@@ -978,7 +978,7 @@ interface CinemaOrderCardProps {
   order: CinemaKitchenOrder;
   isUpdating: boolean;
   onAccept: () => void;
-  onPrepare: () => void;
+  onPrepare?: () => void;
   onReady: () => void;
   onDeliver: () => void;
   role: RestaurantMemberRole;
@@ -1108,39 +1108,17 @@ function CinemaOrderCard({
       {/* Card Action Buttons according to Lifecycle State */}
       <div className="pt-2 border-t border-slate-800 flex gap-2">
         {isNew && (
-          <>
-            <button
-              onClick={onAccept}
-              disabled={isUpdating}
-              className="flex-1 py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 shadow-md shadow-blue-600/20"
-            >
-              {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-              Accept Order
-            </button>
-            <button
-              onClick={onPrepare}
-              disabled={isUpdating}
-              className="py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1 transition-colors disabled:opacity-50 border border-slate-700"
-              title="Start cooking immediately"
-            >
-              <Flame className="w-3.5 h-3.5 text-orange-400" />
-              Cook
-            </button>
-          </>
-        )}
-
-        {isAccepted && (
           <button
-            onClick={onPrepare}
+            onClick={onAccept}
             disabled={isUpdating}
-            className="w-full py-2 px-3 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 shadow-md shadow-orange-600/20"
+            className="w-full py-2.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 shadow-md shadow-blue-600/20"
           >
-            {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Flame className="w-3.5 h-3.5" />}
-            Start Preparing
+            {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+            Accept Order
           </button>
         )}
 
-        {isPreparing && (
+        {(isAccepted || isPreparing) && (
           <div className="flex gap-2 w-full">
             <button
               onClick={onReady}

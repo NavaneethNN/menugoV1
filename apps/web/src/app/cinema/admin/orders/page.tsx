@@ -437,7 +437,6 @@ export default function CinemaAdminOrdersPage() {
       case 'confirmed':
         return 'accepted';
       case 'accepted':
-        return 'preparing';
       case 'preparing':
         return 'ready';
       case 'ready':
@@ -1053,9 +1052,7 @@ export default function CinemaAdminOrdersPage() {
                               >
                                 {order.status === 'new'
                                   ? 'Accept'
-                                  : order.status === 'accepted'
-                                  ? 'Start Prep'
-                                  : order.status === 'preparing'
+                                  : order.status === 'accepted' || order.status === 'preparing'
                                   ? 'Mark Ready'
                                   : order.status === 'ready'
                                   ? 'Assign Runner'

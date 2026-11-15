@@ -660,6 +660,71 @@ describe('Task 15: Cinema Kitchen Dashboard & Preparation Workflow', () => {
       assert.equal(history.changedByRole, 'kitchen');
     });
 
+    it('POST /api/cinema/kitchen/orders/:orderId/ready marks accepted order as ready directly without needing prepare status', async () => {
+      const testDirectReadyOrderId = crypto.randomUUID();
+      await db.insert(orders).values({
+        id: testDirectReadyOrderId,
+        restaurantId: theatreAId,
+        orderType: 'cinema',
+        status: 'accepted',
+        paymentStatus: 'paid',
+        screenId: screenAId,
+        movieId: movieAId,
+        showId: showAId,
+        seatRow: 'B',
+        seatNumber: 'B1',
+        totalAmount: 18000,
+        subtotal: 18000,
+        orderNumber: '8888'
+      });
+
+      const res = await request(app)
+        .post(`/api/cinema/kitchen/orders/${testDirectReadyOrderId}/ready`)
+        .set('Cookie', cookieCinemaAKitchen)
+        .set('x-theatre-id', theatreAId)
+        .send({ reason: 'Kitchen marked accepted order directly as ready' });
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.success, true);
+      assert.equal(res.body.order.status, 'ready');
+
+      const [orderDb] = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, testDirectReadyOrderId))
+        .limit(1);
+      assert.equal(orderDb.status, 'ready');
+    });
+
+    it('POST /api/cinema/kitchen/orders/:orderId/deliver allows delivering directly from accepted status', async () => {
+      const testDirectDeliverOrderId = crypto.randomUUID();
+      await db.insert(orders).values({
+        id: testDirectDeliverOrderId,
+        restaurantId: theatreAId,
+        orderType: 'cinema',
+        status: 'accepted',
+        paymentStatus: 'paid',
+        screenId: screenAId,
+        movieId: movieAId,
+        showId: showAId,
+        seatRow: 'C',
+        seatNumber: 'C1',
+        totalAmount: 15000,
+        subtotal: 15000,
+        orderNumber: '7777'
+      });
+
+      const res = await request(app)
+        .post(`/api/cinema/kitchen/orders/${testDirectDeliverOrderId}/deliver`)
+        .set('Cookie', cookieCinemaAKitchen)
+        .set('x-theatre-id', theatreAId)
+        .send({ notes: 'Delivered directly to Seat C1 from accepted' });
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.success, true);
+      assert.equal(res.body.order.status, 'delivered');
+    });
+
     it('allows starting preparation directly from new/confirmed status (Order 2)', async () => {
       const res = await request(app)
         .post(`/api/cinema/kitchen/orders/${paidNewOrderAId}/prepare`)

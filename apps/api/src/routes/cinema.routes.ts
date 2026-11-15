@@ -5720,7 +5720,8 @@ router.post(
       const orderId = req.params.orderId as string;
       const userRole = req.tenant!.role;
       const userId = req.user?.id || null;
-      const reason = req.body?.reason || 'Order accepted by cinema kitchen';
+      const reason =
+        req.body?.reason || 'Order accepted by cinema kitchen (preparation started)';
 
       const updatedOrder = await db.transaction(async (tx) => {
         const [order] = await tx
@@ -5975,9 +5976,9 @@ router.post(
           throw new AppError('Order is already marked as ready', 400);
         }
 
-        if (order.status !== 'preparing') {
+        if (order.status !== 'preparing' && order.status !== 'accepted') {
           throw new AppError(
-            `Invalid status transition: order must be in "preparing" status before marking ready (current status: "${order.status}")`,
+            `Invalid status transition: order must be in "accepted" or "preparing" status before marking ready (current status: "${order.status}")`,
             400
           );
         }
@@ -6085,11 +6086,11 @@ router.post(
           throw new AppError('Order is already marked as delivered', 400);
         }
 
-        // Allow delivery directly from ready, assigned_for_delivery, or preparing
-        const allowedStatuses: OrderStatus[] = ['ready', 'assigned_for_delivery', 'preparing'];
+        // Allow delivery directly from ready, assigned_for_delivery, preparing, or accepted
+        const allowedStatuses: OrderStatus[] = ['ready', 'assigned_for_delivery', 'preparing', 'accepted'];
         if (!allowedStatuses.includes(order.status as OrderStatus)) {
           throw new AppError(
-            `Invalid status transition: order must be in ready, preparing, or assigned status before delivery (current status: "${order.status}")`,
+            `Invalid status transition: order must be in ready, preparing, accepted, or assigned status before delivery (current status: "${order.status}")`,
             400
           );
         }

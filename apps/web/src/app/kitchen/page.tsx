@@ -647,38 +647,17 @@ export default function KitchenDashboardPage() {
         {/* Action Controls */}
         <div className="p-3 bg-slate-950/90 border-t border-slate-800">
           {isNew && (
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                disabled={isUpdating}
-                onClick={() => handleUpdateStatus(order, 'accepted')}
-                className="py-2.5 px-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5"
-              >
-                <Check className="w-4 h-4" />
-                <span>Accept</span>
-              </button>
-              <button
-                disabled={isUpdating}
-                onClick={() => handleUpdateStatus(order, 'preparing')}
-                className="py-2.5 px-3 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5"
-              >
-                <Flame className="w-4 h-4" />
-                <span>Start Prep</span>
-              </button>
-            </div>
-          )}
-
-          {isAccepted && (
             <button
               disabled={isUpdating}
-              onClick={() => handleUpdateStatus(order, 'preparing')}
-              className="w-full py-2.5 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5"
+              onClick={() => handleUpdateStatus(order, 'accepted')}
+              className="w-full py-2.5 px-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5"
             >
-              <Flame className="w-4 h-4" />
-              <span>Start Cooking</span>
+              <Check className="w-4 h-4" />
+              <span>Accept Order</span>
             </button>
           )}
 
-          {isPreparing && (
+          {(isAccepted || isPreparing) && (
             <button
               disabled={isUpdating}
               onClick={() => handleUpdateStatus(order, 'ready')}
