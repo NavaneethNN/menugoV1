@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { apiRequest } from '@/lib/api';
 import {
@@ -87,11 +87,33 @@ export default function CinemaPaymentSettingsPage() {
   const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
 
-  useEffect(() => {
-    initPayments();
-  }, []);
+  const loadPaymentSettings = useCallback(async (tId?: string) => {
+    try {
+      const activeId = tId || theatreId || undefined;
+      const res = await apiRequest('/api/cinema/payments/settings', { theatreId: activeId });
+      setAccounts(res.accounts || []);
+      setTheatreName(res.theatreName || '');
+      setCurrency(res.currency || 'INR');
+    } catch (err: any) {
+      console.error('Failed to load payment settings:', err);
+      setError(err?.message || 'Failed to load payment settings');
+    }
+  }, [theatreId]);
 
-  const initPayments = async () => {
+  const loadTransactions = useCallback(async (tId?: string) => {
+    try {
+      setLoadingTransactions(true);
+      const activeId = tId || theatreId || undefined;
+      const res = await apiRequest('/api/cinema/payments/transactions?limit=10', { theatreId: activeId });
+      setTransactions(res.transactions || []);
+    } catch (err: any) {
+      console.warn('Could not load payment transactions:', err);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  }, [theatreId]);
+
+  const initPayments = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -117,33 +139,11 @@ export default function CinemaPaymentSettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [theatreId, loadPaymentSettings, loadTransactions]);
 
-  const loadPaymentSettings = async (tId?: string) => {
-    try {
-      const activeId = tId || theatreId || undefined;
-      const res = await apiRequest('/api/cinema/payments/settings', { theatreId: activeId });
-      setAccounts(res.accounts || []);
-      setTheatreName(res.theatreName || '');
-      setCurrency(res.currency || 'INR');
-    } catch (err: any) {
-      console.error('Failed to load payment settings:', err);
-      setError(err?.message || 'Failed to load payment settings');
-    }
-  };
-
-  const loadTransactions = async (tId?: string) => {
-    try {
-      setLoadingTransactions(true);
-      const activeId = tId || theatreId || undefined;
-      const res = await apiRequest('/api/cinema/payments/transactions?limit=10', { theatreId: activeId });
-      setTransactions(res.transactions || []);
-    } catch (err: any) {
-      console.warn('Could not load payment transactions:', err);
-    } finally {
-      setLoadingTransactions(false);
-    }
-  };
+  useEffect(() => {
+    initPayments();
+  }, [initPayments]);
 
   const openConfigModal = (provider: 'razorpay' | 'paytm') => {
     const existing = accounts.find((a) => a.provider === provider);

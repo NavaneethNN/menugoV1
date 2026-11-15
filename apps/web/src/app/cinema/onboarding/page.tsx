@@ -546,7 +546,8 @@ export default function CinemaOnboardingPage() {
                     <div>
                       <span className="text-slate-400 font-semibold block mb-1">Target Market</span>
                       <span className="font-bold text-white flex items-center gap-1.5">
-                        🇮🇳 India (Initial Market)
+                        <Globe className="w-3.5 h-3.5 text-indigo-400" />
+                        India (Initial Market)
                       </span>
                     </div>
                     <div>

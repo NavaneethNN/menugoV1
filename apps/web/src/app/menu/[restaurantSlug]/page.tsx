@@ -250,7 +250,7 @@ function CustomerMenuContent() {
     } finally {
       setLoading(false);
     }
-  }, [restaurantSlug]);
+  }, [restaurantSlug, router]);
 
   const verifyTableToken = useCallback(
     async (token: string) => {
