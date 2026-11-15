@@ -422,6 +422,25 @@ export default function CinemaKitchenDashboardPage() {
     }
   };
 
+  const handleMarkDelivered = async (orderId: string) => {
+    if (!theatreId) return;
+    setUpdatingOrderIds((prev) => ({ ...prev, [orderId]: true }));
+    try {
+      await apiRequest(`/api/cinema/kitchen/orders/${orderId}/deliver`, {
+        method: 'POST',
+        headers: {
+          'x-theatre-id': theatreId
+        }
+      });
+      await fetchKitchenOrders(true);
+    } catch (err: any) {
+      console.error('Failed to mark order delivered:', err);
+      alert(err?.message || 'Failed to mark order as delivered');
+    } finally {
+      setUpdatingOrderIds((prev) => ({ ...prev, [orderId]: false }));
+    }
+  };
+
   // Group orders into KDS columns
   const groupedOrders = useMemo(() => {
     const newOrders: CinemaKitchenOrder[] = [];
@@ -851,6 +870,7 @@ export default function CinemaKitchenDashboardPage() {
                       onAccept={() => handleAcceptOrder(order.id)}
                       onPrepare={() => handleStartPreparing(order.id)}
                       onReady={() => handleMarkReady(order.id)}
+                      onDeliver={() => handleMarkDelivered(order.id)}
                       role={role}
                     />
                   ))
@@ -885,6 +905,7 @@ export default function CinemaKitchenDashboardPage() {
                       onAccept={() => handleAcceptOrder(order.id)}
                       onPrepare={() => handleStartPreparing(order.id)}
                       onReady={() => handleMarkReady(order.id)}
+                      onDeliver={() => handleMarkDelivered(order.id)}
                       role={role}
                     />
                   ))
@@ -919,6 +940,7 @@ export default function CinemaKitchenDashboardPage() {
                       onAccept={() => handleAcceptOrder(order.id)}
                       onPrepare={() => handleStartPreparing(order.id)}
                       onReady={() => handleMarkReady(order.id)}
+                      onDeliver={() => handleMarkDelivered(order.id)}
                       role={role}
                     />
                   ))
@@ -937,6 +959,7 @@ export default function CinemaKitchenDashboardPage() {
                 onAccept={() => handleAcceptOrder(order.id)}
                 onPrepare={() => handleStartPreparing(order.id)}
                 onReady={() => handleMarkReady(order.id)}
+                onDeliver={() => handleMarkDelivered(order.id)}
                 role={role}
               />
             ))}
@@ -957,6 +980,7 @@ interface CinemaOrderCardProps {
   onAccept: () => void;
   onPrepare: () => void;
   onReady: () => void;
+  onDeliver: () => void;
   role: RestaurantMemberRole;
 }
 
@@ -966,6 +990,7 @@ function CinemaOrderCard({
   onAccept,
   onPrepare,
   onReady,
+  onDeliver,
   role
 }: CinemaOrderCardProps) {
   const elapsedMins = calculateElapsedMinutes(order.createdAt);
@@ -1116,20 +1141,45 @@ function CinemaOrderCard({
         )}
 
         {isPreparing && (
-          <button
-            onClick={onReady}
-            disabled={isUpdating}
-            className="w-full py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 shadow-md shadow-emerald-600/30"
-          >
-            {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            Mark Food Ready
-          </button>
+          <div className="flex gap-2 w-full">
+            <button
+              onClick={onReady}
+              disabled={isUpdating}
+              className="flex-1 py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 shadow-md shadow-emerald-600/30"
+            >
+              {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              Mark Food Ready
+            </button>
+            <button
+              onClick={onDeliver}
+              disabled={isUpdating}
+              className="py-2.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold text-xs flex items-center justify-center gap-1 transition-colors disabled:opacity-50 border border-slate-700"
+              title="Deliver directly to seat without waiting"
+            >
+              <Check className="w-3.5 h-3.5 text-emerald-400" />
+              Deliver
+            </button>
+          </div>
         )}
 
         {isReady && (
-          <div className="w-full py-2 px-3 rounded-lg bg-emerald-950/80 text-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5 border border-emerald-800/80">
-            <CheckCheck className="w-4 h-4 text-emerald-400" />
-            Ready for Delivery Staff
+          <div className="w-full flex flex-col gap-1.5">
+            <button
+              onClick={onDeliver}
+              disabled={isUpdating}
+              className="w-full py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 shadow-md shadow-emerald-600/30"
+              title="Mark order as delivered to customer seat"
+            >
+              {isUpdating ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+              <span>Mark Delivered to Seat</span>
+            </button>
+            <span className="text-[10px] text-center text-slate-400 font-medium">
+              No delivery staff? Deliver directly to {seatDisplay}
+            </span>
           </div>
         )}
       </div>

@@ -22,7 +22,7 @@ import {
   orderStatusHistory,
   restaurantTables
 } from '@menugo/database';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, and } from 'drizzle-orm';
 import crypto from 'node:crypto';
 import { setRealtimeProvider, RealtimeProvider } from '../lib/realtime';
 
@@ -610,6 +610,54 @@ describe('Task 15: Cinema Kitchen Dashboard & Preparation Workflow', () => {
         .where(eq(orders.id, paidConfirmedOrderAId))
         .limit(1);
       assert.equal(orderDb.status, 'ready');
+    });
+
+    it('POST /api/cinema/kitchen/orders/:orderId/deliver allows kitchen staff to mark order as delivered directly to seat (theatres without runner)', async () => {
+      const testDeliveryOrderId = crypto.randomUUID();
+      await db.insert(orders).values({
+        id: testDeliveryOrderId,
+        restaurantId: theatreAId,
+        orderType: 'cinema',
+        status: 'ready',
+        paymentStatus: 'paid',
+        screenId: screenAId,
+        movieId: movieAId,
+        showId: showAId,
+        seatRow: 'A',
+        seatNumber: 'A1',
+        totalAmount: 25000,
+        subtotal: 25000,
+        orderNumber: '9999'
+      });
+
+      const res = await request(app)
+        .post(`/api/cinema/kitchen/orders/${testDeliveryOrderId}/deliver`)
+        .set('Cookie', cookieCinemaAKitchen)
+        .set('x-theatre-id', theatreAId)
+        .send({ notes: 'Handed directly to customer at Seat A1' });
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.success, true);
+      assert.equal(res.body.order.status, 'delivered');
+
+      const [orderDb] = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, testDeliveryOrderId))
+        .limit(1);
+      assert.equal(orderDb.status, 'delivered');
+      assert.equal(orderDb.deliveryStatus, 'delivered');
+      assert.ok(orderDb.deliveredAt !== null);
+
+      // Verify orderStatusHistory record
+      const [history] = await db
+        .select()
+        .from(orderStatusHistory)
+        .where(and(eq(orderStatusHistory.orderId, testDeliveryOrderId), eq(orderStatusHistory.toStatus, 'delivered')))
+        .limit(1);
+      assert.ok(history);
+      assert.equal(history.fromStatus, 'ready');
+      assert.equal(history.changedByRole, 'kitchen');
     });
 
     it('allows starting preparation directly from new/confirmed status (Order 2)', async () => {

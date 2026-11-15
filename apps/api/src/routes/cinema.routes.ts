@@ -6039,6 +6039,121 @@ router.post(
 );
 
 /**
+ * POST /api/cinema/kitchen/orders/:orderId/deliver
+ * Marks an order as DELIVERED to seat directly from the kitchen KDS console.
+ * Specifically handles cinema theatres operating without dedicated delivery runner staff.
+ * Authorized for owner, admin, kitchen, and staff roles.
+ */
+router.post(
+  '/kitchen/orders/:orderId/deliver',
+  requireAuth,
+  requireCinemaTenant(['owner', 'admin', 'kitchen', 'staff']),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const theatreId = req.tenant!.restaurantId;
+      const orderId = req.params.orderId as string;
+      const userRole = req.tenant!.role;
+      const userId = req.user?.id || null;
+      const reason =
+        (req.body?.notes as string) ||
+        (req.body?.reason as string) ||
+        'Order delivered to customer seat directly by cinema kitchen staff';
+
+      const updatedOrder = await db.transaction(async (tx) => {
+        const [order] = await tx
+          .select()
+          .from(orders)
+          .where(
+            and(
+              eq(orders.id, orderId),
+              eq(orders.restaurantId, theatreId),
+              eq(orders.orderType, 'cinema')
+            )
+          )
+          .for('update')
+          .limit(1);
+
+        if (!order) {
+          throw new AppError('Cinema order not found or does not belong to this theatre', 404);
+        }
+
+        if (order.paymentStatus !== 'paid') {
+          throw new AppError('Cannot mark unpaid order as delivered', 400);
+        }
+
+        if (order.status === 'delivered') {
+          throw new AppError('Order is already marked as delivered', 400);
+        }
+
+        // Allow delivery directly from ready, assigned_for_delivery, or preparing
+        const allowedStatuses: OrderStatus[] = ['ready', 'assigned_for_delivery', 'preparing'];
+        if (!allowedStatuses.includes(order.status as OrderStatus)) {
+          throw new AppError(
+            `Invalid status transition: order must be in ready, preparing, or assigned status before delivery (current status: "${order.status}")`,
+            400
+          );
+        }
+
+        const now = new Date();
+        const [saved] = await tx
+          .update(orders)
+          .set({
+            status: 'delivered',
+            deliveryStatus: 'delivered',
+            deliveredAt: now,
+            updatedAt: now
+          })
+          .where(eq(orders.id, order.id))
+          .returning();
+
+        await tx.insert(orderStatusHistory).values({
+          id: crypto.randomUUID(),
+          orderId: order.id,
+          fromStatus: order.status,
+          toStatus: 'delivered',
+          changedByUserId: userId,
+          changedByRole: userRole,
+          reason
+        });
+
+        if (!saved) {
+          throw new AppError('Failed to update cinema order to delivered', 500);
+        }
+        return saved;
+      });
+
+      const enrichedList = await enrichCinemaKitchenOrders(theatreId, [updatedOrder]);
+      const enriched = enrichedList[0];
+      if (!enriched) {
+        throw new AppError('Failed to retrieve updated cinema order', 500);
+      }
+
+      await publishOrderUpdated(
+        theatreId,
+        {
+          ...updatedOrder,
+          orderType: 'cinema',
+          screenName: enriched.screen?.name,
+          movieTitle: enriched.movie?.title,
+          seatRow: enriched.seatRow,
+          seatNumber: enriched.seatNumber
+        },
+        enriched.items,
+        'Cinema Kitchen'
+      ).catch((err) => console.warn('Realtime publish error in kitchen deliver:', err));
+
+      res.json({
+        success: true,
+        message: 'Order marked as delivered successfully by kitchen staff',
+        order: enriched
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
  * PATCH /api/cinema/kitchen/orders/:orderId/status
  * Generic order status transition for cinema kitchen with state-machine & concurrency validation.
  */
@@ -6099,12 +6214,19 @@ router.patch(
           throw new AppError(check.error || 'Invalid status transition', statusCode);
         }
 
+        const updateFields: Partial<typeof orders.$inferInsert> = {
+          status: targetStatus,
+          updatedAt: new Date()
+        };
+
+        if (targetStatus === 'delivered' || targetStatus === 'served') {
+          updateFields.deliveryStatus = 'delivered';
+          updateFields.deliveredAt = new Date();
+        }
+
         const [saved] = await tx
           .update(orders)
-          .set({
-            status: targetStatus,
-            updatedAt: new Date()
-          })
+          .set(updateFields)
           .where(eq(orders.id, order.id))
           .returning();
 

@@ -268,7 +268,7 @@ router.post(
 router.post(
   '/orders/:orderId/deliver',
   requireAuth,
-  requireCinemaTenant(['owner', 'admin', 'delivery', 'staff']),
+  requireCinemaTenant(['owner', 'admin', 'delivery', 'staff', 'kitchen']),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const theatreId = req.tenant!.restaurantId;
@@ -295,8 +295,8 @@ router.post(
           throw new AppError('Cinema order not found or does not belong to this theatre', 404);
         }
 
-        if (order.status !== 'assigned_for_delivery') {
-          throw new AppError('Order must be assigned for delivery before being marked as delivered', 400);
+        if (order.status !== 'assigned_for_delivery' && order.status !== 'ready') {
+          throw new AppError('Order must be ready or assigned for delivery before being marked as delivered', 400);
         }
 
         if (userRole === 'delivery' && order.deliveryStaffId && order.deliveryStaffId !== userId) {
