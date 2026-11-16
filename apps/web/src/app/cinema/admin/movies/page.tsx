@@ -441,34 +441,25 @@ export default function CinemaMoviesPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-16">
       {/* Top Banner & Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Link
-              href="/cinema/admin/dashboard"
-              className="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1 transition"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Dashboard</span>
-            </Link>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
+            <Film className="w-5 h-5" />
           </div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
-              <Film className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-white">Movie Catalogue</h1>
-              <p className="text-xs text-slate-400 font-medium">
-                {theatreName} • Master Movie Repository for Daily Show Scheduling
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-white">Movie Catalogue</h1>
+            <p className="text-xs text-slate-400 font-medium">
+              {theatreName} • Master Movie Repository for Daily Show Scheduling
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <CinemaShowsTabs />
+
           <button
             onClick={() => theatreId && fetchMovies(theatreId)}
-            className="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 hover:text-white transition"
+            className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 hover:text-white transition"
             title="Refresh list"
           >
             <RefreshCw className="w-4 h-4" />
@@ -476,16 +467,13 @@ export default function CinemaMoviesPage() {
 
           <button
             onClick={openAddModal}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-4 sm:px-5 rounded-xl transition shadow-lg shadow-indigo-600/25 text-xs sm:text-sm whitespace-nowrap"
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-xl transition shadow-lg shadow-indigo-600/25 text-xs whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             <span>Add Movie</span>
           </button>
         </div>
       </div>
-
-      {/* Shows & Movies Unified Sub-Tab Navigation */}
-      <CinemaShowsTabs />
 
       {/* Alerts */}
       {error && (

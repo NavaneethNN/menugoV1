@@ -5,7 +5,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Settings, QrCode, CreditCard, Users } from 'lucide-react';
 
-export function CinemaSettingsTabs() {
+interface CinemaSettingsTabsProps {
+  className?: string;
+}
+
+export function CinemaSettingsTabs({ className = '' }: CinemaSettingsTabsProps) {
   const pathname = usePathname();
   const isProfile = pathname === '/cinema/admin/settings';
   const isQr = pathname.startsWith('/cinema/admin/qr');
@@ -13,12 +17,12 @@ export function CinemaSettingsTabs() {
   const isStaff = pathname.startsWith('/cinema/admin/staff');
 
   return (
-    <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-800 rounded-xl max-w-fit mb-6 shadow-xs overflow-x-auto no-scrollbar">
+    <div className={`inline-flex items-center p-1 bg-slate-900/90 border border-slate-800 rounded-xl shadow-xs shrink-0 overflow-x-auto no-scrollbar ${className}`}>
       <Link
         href="/cinema/admin/settings"
-        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
           isProfile
-            ? 'bg-indigo-600 text-white shadow-sm'
+            ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
         }`}
       >
@@ -28,9 +32,9 @@ export function CinemaSettingsTabs() {
 
       <Link
         href="/cinema/admin/qr"
-        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
           isQr
-            ? 'bg-indigo-600 text-white shadow-sm'
+            ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
         }`}
       >
@@ -40,9 +44,9 @@ export function CinemaSettingsTabs() {
 
       <Link
         href="/cinema/admin/payments"
-        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
           isPayments
-            ? 'bg-indigo-600 text-white shadow-sm'
+            ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
         }`}
       >
@@ -52,9 +56,9 @@ export function CinemaSettingsTabs() {
 
       <Link
         href="/cinema/admin/staff"
-        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
           isStaff
-            ? 'bg-indigo-600 text-white shadow-sm'
+            ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
         }`}
       >

@@ -462,32 +462,25 @@ export default function CinemaAdminSeatingPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-20">
       {/* Header & Screen Selection */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Link
-              href="/cinema/admin/screens"
-              className="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1 transition"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Screens</span>
-            </Link>
-          </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Seating Layout Configuration
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Configure row identifiers, flexible seat counts, and seating categories (Regular, Premium, Recliner).
+          <p className="text-slate-400 text-xs sm:text-sm mt-1">
+            Configure row identifiers, flexible seat counts, and seating categories.
           </p>
         </div>
 
-        {/* Screen Picker Dropdown */}
-        <div className="flex items-center gap-3">
+        {/* Screen Picker Dropdown & Sub-Tabs */}
+        <div className="flex flex-wrap items-center gap-3">
+          <CinemaScreensTabs />
+
           <div className="relative">
             <select
               value={selectedScreenId}
               onChange={(e) => handleSelectScreen(e.target.value)}
-              className="px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs font-bold focus:outline-none focus:border-indigo-500 pr-10 appearance-none shadow-xl cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs font-bold focus:outline-none focus:border-indigo-500 pr-9 appearance-none shadow-sm cursor-pointer"
             >
               {screens.map((sc) => (
                 <option key={sc.id} value={sc.id}>
@@ -495,21 +488,18 @@ export default function CinemaAdminSeatingPage() {
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+            <ChevronDown className="absolute right-3 top-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
           </div>
 
           <button
             onClick={handleOpenAddRowModal}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition shrink-0"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Add Row</span>
           </button>
         </div>
       </div>
-
-      {/* Screens & Seating Unified Sub-Tab Navigation */}
-      <CinemaScreensTabs />
 
       {/* Alert Messages */}
       {error && (
