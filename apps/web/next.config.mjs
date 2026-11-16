@@ -49,6 +49,50 @@ const nextConfig = {
       }
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: '/how-it-works',
+        destination: '/#how-it-works',
+        permanent: false
+      },
+      {
+        source: '/features',
+        destination: '/#features',
+        permanent: false
+      },
+      {
+        source: '/business-selection',
+        destination: '/#business-selection',
+        permanent: false
+      },
+      {
+        source: '/cinema-ordering-flow',
+        destination: '/#cinema-ordering-flow',
+        permanent: false
+      },
+      {
+        source: '/theatre',
+        destination: '/cinema/onboarding',
+        permanent: false
+      },
+      {
+        source: '/theatre/onboarding',
+        destination: '/cinema/onboarding',
+        permanent: false
+      },
+      {
+        source: '/cinema',
+        destination: '/#cinema-view',
+        permanent: false
+      },
+      {
+        source: '/restaurant',
+        destination: '/#restaurant-view',
+        permanent: false
+      }
+    ];
+  },
   async rewrites() {
     // Proxy /api calls through Next.js to backend Express service
     const targetApi = process.env.INTERNAL_API_URL || process.env.API_URL || 'http://localhost:5001';

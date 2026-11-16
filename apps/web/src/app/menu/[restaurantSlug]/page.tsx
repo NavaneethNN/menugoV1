@@ -26,6 +26,7 @@ import { OrderConfirmModal } from '@/components/menu/OrderConfirmModal';
 import { OrderSuccessModal } from '@/components/menu/OrderSuccessModal';
 import { ServiceRequestModal } from '@/components/menu/ServiceRequestModal';
 import { CategoryMenuModal } from '@/components/menu/CategoryMenuModal';
+import { FeaturedDishesSlider } from '@/components/menu/FeaturedDishesSlider';
 import {
   UtensilsCrossed,
   MapPin,
@@ -1062,109 +1063,20 @@ function CustomerMenuContent() {
             </div>
           )}
 
-          {/* Chef's Recommendations / Crowd Favorites Spotlight Carousel */}
+          {/* Modern Chef's Recommendations Spotlight Slider */}
           {selectedCategory === 'all' && !searchQuery && quickFilter === 'all' && !vegOnly && featuredProducts.length > 0 && (
-            <div className="mb-6 pb-6 border-b border-slate-100">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-bold">
-                    <Flame className="w-4 h-4 fill-current text-red-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
-                      Chef&apos;s Signature Recommendations
-                    </h2>
-                    <p className="text-[11px] text-slate-500 font-medium">
-                      Most loved dishes by guests today
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Horizontal Scroll Cards */}
-              <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 pt-1 -mx-4 px-4 sm:mx-0 sm:px-0">
-                {featuredProducts.map((prod) => {
-                  const qty = getItemQuantity(prod.id);
-                  const hasImage = Boolean(prod.imageUrl && !imageErrors[prod.id]);
-                  return (
-                    <div
-                      key={prod.id}
-                      className="w-40 sm:w-44 shrink-0 rounded-3xl bg-slate-50/90 border border-slate-200/80 overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow group cursor-pointer"
-                      onClick={() => setSelectedProductForModal(prod)}
-                    >
-                      {/* Card Image */}
-                      <div className="h-28 sm:h-32 w-full bg-slate-200 relative overflow-hidden">
-                        {hasImage ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img
-                            src={prod.imageUrl!}
-                            alt={prod.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            onError={() => handleImageError(prod.id)}
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-red-100/50 text-red-400">
-                            <UtensilsCrossed className="w-10 h-10" />
-                          </div>
-                        )}
-                        <div className="absolute top-2 left-2">
-                          {prod.isVegetarian ? <VegBadge /> : <NonVegBadge />}
-                        </div>
-                        <div className="absolute top-2 right-2 bg-slate-950/70 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-300 flex items-center gap-0.5">
-                          <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                          <span>Must Try</span>
-                        </div>
-                      </div>
-
-                      {/* Card Details */}
-                      <div className="p-3 flex-1 flex flex-col justify-between">
-                        <div>
-                          <h3 className="text-xs font-black text-slate-900 leading-snug line-clamp-1">
-                            {prod.name}
-                          </h3>
-                          <p className="text-xs font-extrabold text-red-600 mt-0.5">
-                            {formatPaise(prod.price, restaurant.currency)}
-                          </p>
-                        </div>
-
-                        {/* Add Button */}
-                        <div className="mt-2" onClick={(e) => e.stopPropagation()}>
-                          {qty === 0 ? (
-                            <button
-                              type="button"
-                              onClick={() => handleAddToCart(prod)}
-                              className="w-full py-1.5 px-2 bg-white hover:bg-red-50 active:bg-red-100 text-red-600 border border-red-200 hover:border-red-400 font-black text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1"
-                            >
-                              <Plus className="w-3.5 h-3.5 text-red-600 stroke-[3]" />
-                              <span>ADD</span>
-                            </button>
-                          ) : (
-                            <div className="w-full py-1 px-1 bg-red-600 text-white font-black text-xs rounded-xl shadow-xs flex items-center justify-between">
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateQty(prod.id, -1)}
-                                className="p-1 hover:bg-red-700 rounded-lg transition"
-                              >
-                                <Minus className="w-3 h-3 stroke-[3]" />
-                              </button>
-                              <span className="text-xs font-black">{qty}</span>
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateQty(prod.id, 1)}
-                                className="p-1 hover:bg-red-700 rounded-lg transition"
-                              >
-                                <Plus className="w-3 h-3 stroke-[3]" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <FeaturedDishesSlider
+              products={featuredProducts}
+              currency={restaurant.currency}
+              imageErrors={imageErrors}
+              onImageError={handleImageError}
+              onSelectProduct={setSelectedProductForModal}
+              onAddToCart={handleAddToCart}
+              onUpdateQty={handleUpdateQty}
+              getItemQuantity={getItemQuantity}
+              VegBadge={VegBadge}
+              NonVegBadge={NonVegBadge}
+            />
           )}
 
           {/* Empty Restaurant State */}

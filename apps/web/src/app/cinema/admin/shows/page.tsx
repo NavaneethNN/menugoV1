@@ -25,7 +25,8 @@ import {
   UtensilsCrossed,
   Sparkles,
   Info,
-  ArrowLeft
+  ArrowLeft,
+  ArrowRight
 } from 'lucide-react';
 
 interface CinemaScreen {
@@ -601,6 +602,37 @@ export default function CinemaShowsPage() {
           <button onClick={() => setSuccess(null)} className="text-emerald-400 hover:text-emerald-200">
             <X className="w-4 h-4" />
           </button>
+        </div>
+      )}
+
+      {/* Step 6 -> Step 7 Guided Next Action Card */}
+      {shows.length > 0 && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-slate-900 to-slate-900 border border-indigo-700/60 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] uppercase font-extrabold tracking-wider bg-emerald-950 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-800">
+                  Step 6 Completed
+                </span>
+                <span className="font-bold text-white text-sm">
+                  {shows.length} Movie Showtimes Scheduled
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-1">
+                Next Stage (Step 7 of 8): Generate and download general &amp; auditorium QR codes.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/cinema/admin/qr"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-md shadow-indigo-600/30 shrink-0"
+          >
+            <span>Proceed to Step 7: Screen QR Codes</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
       )}
 

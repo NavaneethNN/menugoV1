@@ -23,7 +23,14 @@ import {
   Coins,
   Globe,
   FileText,
-  UserCheck
+  UserCheck,
+  UtensilsCrossed,
+  CreditCard,
+  CalendarDays,
+  QrCode,
+  Zap,
+  Lock,
+  ChevronRight
 } from 'lucide-react';
 
 export default function CinemaOnboardingPage() {
@@ -57,14 +64,14 @@ export default function CinemaOnboardingPage() {
 
   // Setup roadmap steps from Section 4 of theatremodule.md
   const roadmapSteps = [
-    { step: 1, title: 'Theatre Profile', desc: 'Basic details, city & currency', status: 'current' },
-    { step: 2, title: 'Cinema Screens', desc: 'Auditorium count & screen names', status: 'upcoming' },
-    { step: 3, title: 'Seating Layout', desc: 'Rows & seat numbering (A1..Z25)', status: 'upcoming' },
-    { step: 4, title: 'Food Menu', desc: 'Popcorn, snacks, combos & beverages', status: 'upcoming' },
-    { step: 5, title: 'Payment Gateway', desc: 'Theatre Razorpay or Paytm account', status: 'upcoming' },
-    { step: 6, title: 'Movie Schedules', desc: 'Daily showtimes & order windows', status: 'upcoming' },
-    { step: 7, title: 'Screen QR Codes', desc: 'General & screen QR deployment', status: 'upcoming' },
-    { step: 8, title: 'Go Live', desc: 'Accept in-auditorium seat orders', status: 'upcoming' }
+    { step: 1, title: 'Theatre Profile', desc: 'Basic details, city & currency', status: submitted ? 'completed' : 'current', href: '/cinema/onboarding', icon: Building2 },
+    { step: 2, title: 'Cinema Screens', desc: 'Auditorium count & screen names', status: submitted ? 'current' : 'upcoming', href: '/cinema/admin/screens', icon: Tv },
+    { step: 3, title: 'Seating Layout', desc: 'Rows & seat numbering (A1..Z25)', status: 'upcoming', href: '/cinema/admin/seating', icon: Film },
+    { step: 4, title: 'Food Menu', desc: 'Popcorn, snacks, combos & beverages', status: 'upcoming', href: '/cinema/admin/menu', icon: UtensilsCrossed },
+    { step: 5, title: 'Payment Gateway', desc: 'Theatre Razorpay or Paytm account', status: 'upcoming', href: '/cinema/admin/payments', icon: CreditCard },
+    { step: 6, title: 'Movie Schedules', desc: 'Daily showtimes & order windows', status: 'upcoming', href: '/cinema/admin/shows', icon: CalendarDays },
+    { step: 7, title: 'Screen QR Codes', desc: 'General & screen QR deployment', status: 'upcoming', href: '/cinema/admin/qr', icon: QrCode },
+    { step: 8, title: 'Go Live', desc: 'Accept in-auditorium seat orders', status: 'upcoming', href: '/cinema/admin/dashboard', icon: Zap }
   ];
 
   // Auth Guard: Before onboarding, user MUST have created an account & signed in!
@@ -80,10 +87,22 @@ export default function CinemaOnboardingPage() {
     // Check if user already has an active cinema theatre
     apiRequest('/api/restaurants/my?tenantType=cinema')
       .then((tenants) => {
-        const hasCinema = Array.isArray(tenants) && tenants.some((m: any) => m.restaurant?.tenantType === 'cinema');
-        if (hasCinema) {
-          // Already onboarded -> direct to cinema dashboard
-          router.push('/cinema/admin/dashboard');
+        const cinemaTenant = Array.isArray(tenants) && tenants.find((m: any) => m.restaurant?.tenantType === 'cinema');
+        if (cinemaTenant?.restaurant?.id) {
+          // If already registered, check if onboarding is in progress or completed
+          apiRequest('/api/cinema/onboarding/status', { theatreId: cinemaTenant.restaurant.id })
+            .then((status) => {
+              if (status?.isComplete) {
+                router.push('/cinema/admin/dashboard');
+              } else {
+                setCreatedData({ theatre: cinemaTenant.restaurant });
+                setSubmitted(true);
+                setCheckingExisting(false);
+              }
+            })
+            .catch(() => {
+              router.push('/cinema/admin/dashboard');
+            });
         } else {
           setCheckingExisting(false);
           // Pre-fill email from logged in user account
@@ -290,13 +309,16 @@ export default function CinemaOnboardingPage() {
 
             <div className="space-y-4">
               {roadmapSteps.map((step) => {
-                const isCurrent = step.step === 1;
+                const isCurrent = step.status === 'current';
+                const isCompleted = step.status === 'completed';
                 return (
                   <div
                     key={step.step}
                     className={`p-3.5 rounded-2xl border transition-all flex items-start gap-3.5 ${
                       isCurrent
                         ? 'bg-indigo-950/70 border-indigo-600/80 text-white shadow-md shadow-indigo-950'
+                        : isCompleted
+                        ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-300'
                         : 'bg-slate-900/40 border-slate-800 text-slate-400'
                     }`}
                   >
@@ -304,19 +326,26 @@ export default function CinemaOnboardingPage() {
                       className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs shrink-0 mt-0.5 ${
                         isCurrent
                           ? 'bg-indigo-600 text-white shadow-sm'
+                          : isCompleted
+                          ? 'bg-emerald-600 text-white shadow-sm'
                           : 'bg-slate-800 text-slate-500'
                       }`}
                     >
-                      {step.step}
+                      {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : step.step}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-bold ${isCurrent ? 'text-white' : 'text-slate-300'}`}>
+                        <span className={`text-sm font-bold ${isCurrent ? 'text-white' : isCompleted ? 'text-emerald-200' : 'text-slate-300'}`}>
                           {step.title}
                         </span>
                         {isCurrent && (
                           <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-400 bg-indigo-900/80 px-2 py-0.5 rounded-full">
-                            Step 1
+                            Step {step.step}
+                          </span>
+                        )}
+                        {isCompleted && (
+                          <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-800">
+                            Done
                           </span>
                         )}
                       </div>
@@ -338,22 +367,65 @@ export default function CinemaOnboardingPage() {
           {/* Right: Registration Form */}
           <div className="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
             {submitted ? (
-              <div className="text-center py-10 px-4 max-w-lg mx-auto">
-                <div className="w-16 h-16 rounded-2xl bg-emerald-950 border border-emerald-700 text-emerald-400 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-950">
-                  <CheckCircle2 className="w-8 h-8" />
+              <div className="py-6 px-2 sm:px-4 max-w-2xl mx-auto space-y-8">
+                {/* Header Confirmation */}
+                <div className="text-center space-y-3">
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-950 border border-emerald-600 text-emerald-400 flex items-center justify-center mx-auto shadow-xl shadow-emerald-950/60">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 text-xs font-bold">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Step 1 of 8 Complete • Profile Registered</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-black text-white">
+                    {createdData?.theatre?.name || formData.theatreName}
+                  </h2>
+                  <p className="text-slate-300 text-sm leading-relaxed max-w-lg mx-auto">
+                    Theatre identity registered under slug{' '}
+                    <code className="text-indigo-400 bg-slate-950 px-2 py-0.5 rounded font-mono font-bold">
+                      {createdData?.theatre?.slug}
+                    </code>{' '}
+                    with dedicated <strong className="text-white">cinema</strong> tenant isolation.
+                  </p>
                 </div>
-                <h2 className="text-2xl font-black text-white mb-2">
-                  Theatre Profile Registered!
-                </h2>
-                <p className="text-slate-300 text-sm mb-6 leading-relaxed">
-                  <strong className="text-white">{createdData?.theatre?.name || formData.theatreName}</strong> has been registered with slug{' '}
-                  <code className="text-indigo-400 bg-slate-950 px-2 py-0.5 rounded font-mono font-bold">
-                    {createdData?.theatre?.slug}
-                  </code>{' '}
-                  under <strong className="text-white">tenant_type = cinema</strong>.
-                </p>
 
-                <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 text-left text-xs space-y-2.5 mb-8 text-slate-300">
+                {/* Primary Action Buttons */}
+                <div className="p-6 rounded-2xl bg-indigo-950/40 border border-indigo-700/60 shadow-xl space-y-4 text-center">
+                  <div className="space-y-1">
+                    <span className="text-xs uppercase tracking-wider font-extrabold text-indigo-400">
+                      Recommended Next Step
+                    </span>
+                    <h3 className="text-lg font-bold text-white">
+                      Step 2: Add Your Cinema Screens &amp; Auditoriums
+                    </h3>
+                    <p className="text-xs text-slate-300 max-w-md mx-auto">
+                      Add your auditoriums (e.g. Screen 1, Screen 2, IMAX) to establish the physical layout for seat ordering.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                    <Link
+                      href="/cinema/admin/screens"
+                      className="w-full sm:flex-1 py-3.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-sm font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30"
+                    >
+                      <span>Continue to Step 2: Add Screens</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+
+                    <Link
+                      href="/cinema/admin/dashboard"
+                      className="w-full sm:w-auto py-3.5 px-6 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-sm font-bold transition flex items-center justify-center gap-2"
+                    >
+                      <span>Go to Dashboard</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Summary Metadata Card */}
+                <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 text-left text-xs space-y-2.5 text-slate-300">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">
+                    Registered Profile Specifications
+                  </span>
                   <div className="flex justify-between">
                     <span className="text-slate-500 font-semibold">City &amp; State:</span>
                     <span className="text-white font-medium">{formData.city}, {formData.state}</span>
@@ -367,23 +439,96 @@ export default function CinemaOnboardingPage() {
                     <span className="text-white font-medium">{formData.timezone}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500 font-semibold">Currency:</span>
+                    <span className="text-slate-500 font-semibold">Base Currency:</span>
                     <span className="text-emerald-400 font-bold">INR (₹)</span>
-                  </div>
-                  <div className="flex justify-between border-t border-slate-800/80 pt-2">
-                    <span className="text-slate-500 font-semibold">Next Stage:</span>
-                    <span className="text-indigo-400 font-bold">Add Cinema Screens (Task 03)</span>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <Link
-                    href="/cinema/admin/dashboard"
-                    className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30"
-                  >
-                    <span>Enter Cinema Dashboard</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
+                {/* Full 8-Step Interactive Setup Journey */}
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-bold text-white">Full Onboarding Pipeline</h3>
+                      <p className="text-xs text-slate-400">Complete these sequential stages to launch seat ordering</p>
+                    </div>
+                    <span className="text-xs font-bold text-indigo-400 bg-indigo-950 px-2.5 py-1 rounded-full border border-indigo-800">
+                      1 of 8 Complete
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+                    {roadmapSteps.map((s) => {
+                      const Icon = s.icon || Film;
+                      const isStep1 = s.step === 1;
+                      const isStep2 = s.step === 2;
+
+                      return (
+                        <div
+                          key={s.step}
+                          className={`p-4 rounded-2xl border transition flex flex-col justify-between ${
+                            isStep1
+                              ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-200'
+                              : isStep2
+                              ? 'bg-indigo-950/40 border-indigo-600/80 text-white ring-1 ring-indigo-500/50'
+                              : 'bg-slate-950/40 border-slate-800 text-slate-400'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[10px] font-black uppercase text-slate-400">
+                                Step {s.step}
+                              </span>
+                              {isStep1 ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-800">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>Completed</span>
+                                </span>
+                              ) : isStep2 ? (
+                                <span className="text-[10px] font-bold text-indigo-300 bg-indigo-900 px-2 py-0.5 rounded-full border border-indigo-700">
+                                  Next Action
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-semibold text-slate-500">
+                                  Upcoming
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <Icon className={`w-4 h-4 ${isStep1 ? 'text-emerald-400' : isStep2 ? 'text-indigo-400' : 'text-slate-500'}`} />
+                              <h4 className={`text-sm font-bold ${isStep1 ? 'text-emerald-200' : isStep2 ? 'text-white' : 'text-slate-300'}`}>
+                                {s.title}
+                              </h4>
+                            </div>
+
+                            <p className="text-xs text-slate-400 leading-relaxed mb-3">
+                              {s.desc}
+                            </p>
+                          </div>
+
+                          {isStep2 ? (
+                            <Link
+                              href="/cinema/admin/screens"
+                              className="w-full py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm"
+                            >
+                              <span>Configure Screens Now</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                          ) : (
+                            <Link
+                              href={s.href}
+                              className={`text-xs font-semibold flex items-center gap-1 ${
+                                isStep1 ? 'text-emerald-400 hover:text-emerald-300' : 'text-slate-500 hover:text-slate-300'
+                              }`}
+                            >
+                              <span>{isStep1 ? 'View Settings' : 'Go to Page'}</span>
+                              <ChevronRight className="w-3 h-3" />
+                            </Link>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             ) : (

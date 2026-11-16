@@ -38,6 +38,7 @@ import {
   Menu,
   X
 } from 'lucide-react';
+import { HowItWorksSlider } from '@/components/home/HowItWorksSlider';
 
 export default function HomePage() {
   // Active business view: restaurant or cinema
@@ -109,19 +110,19 @@ export default function HomePage() {
           {/* Navigation Links (Desktop) */}
           <nav className="hidden xl:flex items-center gap-0.5 text-[13px] font-semibold text-slate-600 whitespace-nowrap">
             <a
-              href="#business-selection"
+              href="/#business-selection"
               className="px-2 py-2 rounded-lg hover:text-slate-950 hover:bg-slate-100/80 transition-colors"
             >
               Business Models
             </a>
             <a
-              href="#how-it-works"
+              href="/#how-it-works"
               className="px-2 py-2 rounded-lg hover:text-slate-950 hover:bg-slate-100/80 transition-colors"
             >
               How It Works
             </a>
             <a
-              href="#features"
+              href="/#features"
               className="px-2 py-2 rounded-lg hover:text-slate-950 hover:bg-slate-100/80 transition-colors"
             >
               Features
@@ -239,7 +240,7 @@ export default function HomePage() {
                   Explore MenuGo
                 </p>
                 <a
-                  href="#business-selection"
+                  href="/#business-selection"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 transition"
                 >
@@ -250,7 +251,7 @@ export default function HomePage() {
                   <ChevronRight className="w-4 h-4 text-slate-400" />
                 </a>
                 <a
-                  href="#how-it-works"
+                  href="/#how-it-works"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 transition"
                 >
@@ -261,7 +262,7 @@ export default function HomePage() {
                   <ChevronRight className="w-4 h-4 text-slate-400" />
                 </a>
                 <a
-                  href="#features"
+                  href="/#features"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 transition"
                 >
@@ -617,19 +618,20 @@ export default function HomePage() {
 
             <section id="how-it-works" className="py-20 sm:py-24 bg-white border-b border-slate-200">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="max-w-3xl mb-12"><p className="text-xs font-extrabold uppercase tracking-[0.18em] text-red-700 mb-3">A better flow for the whole team</p><h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-950">From table QR to a meal served.</h2><p className="text-base sm:text-lg text-slate-600 mt-4">Guests get time to browse. Your team gets accurate orders and a clear view of what needs attention.</p></div>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                  {[
-                    { icon: QrCode, title: 'Scan', body: 'Guests scan the QR code at their table and open your menu in a browser.' },
-                    { icon: Compass, title: 'Explore', body: 'They browse categories, photos, descriptions, prices and available options.' },
-                    { icon: ShoppingBag, title: 'Order', body: 'They choose items, quantities and special instructions, then place the order.' },
-                    { icon: ChefHat, title: 'Prepare', body: 'Orders appear on your kitchen display with the table and item details.' },
-                    { icon: Sparkles, title: 'Serve', body: 'Your team updates order progress and brings the meal to the right table.' },
-                  ].map((step, index) => {
-                    const Icon = step.icon;
-                    return <div key={step.title} className="rounded-2xl border border-slate-200 bg-[#ffffff] p-5 sm:p-6"><div className="flex items-center justify-between mb-5"><span className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center text-sm font-black">0{index + 1}</span><Icon className="w-5 h-5 text-red-600" /></div><h3 className="font-extrabold text-slate-900 text-lg mb-2">{step.title}</h3><p className="text-sm text-slate-600 leading-relaxed">{step.body}</p></div>;
-                  })}
+                <div className="max-w-3xl mb-10">
+                  <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-red-700 mb-3">
+                    A better flow for the whole team
+                  </p>
+                  <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-950">
+                    From table QR to a meal served.
+                  </h2>
+                  <p className="text-base sm:text-lg text-slate-600 mt-4">
+                    Guests get time to browse. Your team gets accurate orders and a clear view of what needs attention.
+                  </p>
                 </div>
+                
+                {/* Modern Interactive Step Showcase Slider */}
+                <HowItWorksSlider businessType="restaurant" />
               </div>
             </section>
 
@@ -743,26 +745,20 @@ export default function HomePage() {
 
             <section id="cinema-ordering-flow" className="py-20 sm:py-24 bg-white border-b border-slate-200">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="max-w-3xl mb-12">
-                  <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-red-700 mb-3">One connected guest experience</p>
-                  <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-950">From a quick scan to the right seat.</h2>
-                  <p className="text-base sm:text-lg text-slate-600 mt-4">Guests order in the browser they already have. Your team gets the show and seat context needed to fulfil each order.</p>
+                <div className="max-w-3xl mb-10">
+                  <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-red-700 mb-3">
+                    One connected guest experience
+                  </p>
+                  <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-950">
+                    From a quick scan to the right seat.
+                  </h2>
+                  <p className="text-base sm:text-lg text-slate-600 mt-4">
+                    Guests order in the browser they already have. Your team gets the show and seat context needed to fulfil each order.
+                  </p>
                 </div>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                  {[
-                    { icon: QrCode, title: 'Scan', body: 'A general or screen QR opens your branded theatre menu. No download or account required.' },
-                    { icon: CalendarDays, title: 'Choose a show', body: 'Guests see published shows that are currently accepting food orders.' },
-                    { icon: Armchair, title: 'Select a seat', body: 'Pick their screen row and seat from the layout you have configured.' },
-                    { icon: ShoppingBag, title: 'Order & pay', body: 'Browse categories, add items and pay securely before the order is confirmed.' },
-                    { icon: ChefHat, title: 'Prepare & deliver', body: 'Kitchen staff prepare the ticket; runners deliver it to the listed seat.' },
-                  ].map((step, index) => {
-                    const Icon = step.icon;
-                    return <div key={step.title} className="relative rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
-                      <div className="flex items-center justify-between mb-5"><span className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center text-sm font-black">0{index + 1}</span><Icon className="w-5 h-5 text-red-600" /></div>
-                      <h3 className="font-extrabold text-slate-900 text-lg mb-2">{step.title}</h3><p className="text-sm text-slate-600 leading-relaxed">{step.body}</p>
-                    </div>;
-                  })}
-                </div>
+                
+                {/* Modern Interactive Step Showcase Slider for Cinema */}
+                <HowItWorksSlider businessType="cinema" />
               </div>
             </section>
 

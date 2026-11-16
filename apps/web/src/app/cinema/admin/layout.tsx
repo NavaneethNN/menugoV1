@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useSession, signOut } from '@/lib/auth-client';
 import { apiRequest } from '@/lib/api';
 import { CinemaSidebar } from '@/components/cinema/CinemaSidebar';
+import { CinemaOnboardingBanner } from '@/components/cinema/CinemaOnboardingBanner';
 import {
   Film,
   LogOut,
@@ -276,6 +277,9 @@ export default function CinemaAdminLayout({
             </button>
           </div>
         </header>
+
+        {/* Global Cinema Onboarding Stepper Banner */}
+        <CinemaOnboardingBanner />
 
         {/* Child Page Rendering with Theatre Context */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
