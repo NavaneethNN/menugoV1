@@ -169,12 +169,21 @@ export default function OrderTrackingPage() {
         </div>
         <h2 className="text-xl font-bold text-white">Order Not Found</h2>
         <p className="text-sm text-slate-400 max-w-sm mt-1">{error || 'This order link is invalid or expired.'}</p>
-        <button
-          onClick={() => loadAuthoritativeOrder(true)}
-          className="mt-6 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold border border-slate-700 transition"
-        >
-          Retry
-        </button>
+        <div className="flex items-center gap-3 mt-6">
+          <button
+            onClick={() => loadAuthoritativeOrder(true)}
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold border border-slate-700 transition"
+          >
+            Retry
+          </button>
+          <Link
+            href="/"
+            className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Go to Homepage</span>
+          </Link>
+        </div>
       </div>
     );
   }

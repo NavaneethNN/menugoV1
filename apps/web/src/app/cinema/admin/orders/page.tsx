@@ -32,7 +32,8 @@ import {
   DollarSign,
   ArrowUpRight,
   Check,
-  RotateCcw
+  RotateCcw,
+  ArrowLeft
 } from 'lucide-react';
 
 interface OrderItem {
@@ -581,6 +582,15 @@ export default function CinemaAdminOrdersPage() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Link
+              href="/cinema/admin/dashboard"
+              className="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1 transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Dashboard</span>
+            </Link>
+          </div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
               Task 17 • Cinema Orders

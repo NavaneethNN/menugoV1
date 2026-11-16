@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signIn, signUp, useSession } from '@/lib/auth-client';
 import { apiRequest } from '@/lib/api';
-import { Lock, Mail, User, ArrowRight, Loader2, Sparkles, KeyRound, Film, UtensilsCrossed } from 'lucide-react';
+import { Lock, Mail, User, ArrowRight, ArrowLeft, Loader2, Sparkles, KeyRound, Film, UtensilsCrossed } from 'lucide-react';
 
 function LoginForm() {
   const router = useRouter();
@@ -120,6 +120,14 @@ function LoginForm() {
     <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
       {/* Header */}
       <div className={`${isCinema ? 'bg-slate-950 border-b border-indigo-900/40' : 'bg-slate-900'} p-8 text-white text-center relative`}>
+        {/* Back to Homepage Link */}
+        <Link
+          href="/"
+          className="absolute top-4 left-4 p-2 text-slate-400 hover:text-white rounded-xl transition"
+          title="Back to Homepage"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </Link>
         {/* Module Badge */}
         <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/10 text-xs font-bold mb-3">
           {isCinema ? (

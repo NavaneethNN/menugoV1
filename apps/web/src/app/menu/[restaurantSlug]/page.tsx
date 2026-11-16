@@ -48,6 +48,7 @@ import {
   Info,
   ChevronDown,
   ArrowRight,
+  ArrowLeft,
   Lock,
   Flame,
   Star,
@@ -686,13 +687,22 @@ function CustomerMenuContent() {
           <p className="text-xs sm:text-sm text-slate-500 mt-2 mb-6 leading-relaxed">
             {error || 'The requested restaurant menu could not be loaded.'}
           </p>
-          <button
-            onClick={loadMenu}
-            className="inline-flex items-center justify-center gap-2 w-full py-3 px-5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-2xl shadow-md transition"
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span>Retry Menu Loading</span>
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2.5">
+            <button
+              onClick={loadMenu}
+              className="inline-flex items-center justify-center gap-2 flex-1 py-3 px-5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-2xl shadow-md transition"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>Retry Menu Loading</span>
+            </button>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center gap-2 py-3 px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition text-sm"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Homepage</span>
+            </Link>
+          </div>
         </div>
       </div>
     );

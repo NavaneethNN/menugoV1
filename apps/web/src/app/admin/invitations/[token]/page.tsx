@@ -99,13 +99,21 @@ export default function InvitationAcceptPage() {
             </div>
             <h2 className="text-xl font-black text-slate-900">Invitation Unavailable</h2>
             <p className="text-slate-600 text-sm">{error}</p>
-            <Link
-              href="/admin/login"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition"
-            >
-              <span>Go to Sign In</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
+              <Link
+                href="/admin/login"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition"
+              >
+                <span>Go to Sign In</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition"
+              >
+                <span>Back to Homepage</span>
+              </Link>
+            </div>
           </div>
         ) : success ? (
           <div className="space-y-4 animate-in fade-in duration-300">

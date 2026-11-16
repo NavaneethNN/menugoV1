@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { apiRequest } from '@/lib/api';
 import {
   CalendarDays,
@@ -23,7 +24,8 @@ import {
   Ban,
   UtensilsCrossed,
   Sparkles,
-  Info
+  Info,
+  ArrowLeft
 } from 'lucide-react';
 
 interface CinemaScreen {
@@ -522,6 +524,15 @@ export default function CinemaShowsPage() {
       {/* Top Banner & Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
         <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Link
+              href="/cinema/admin/dashboard"
+              className="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1 transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Dashboard</span>
+            </Link>
+          </div>
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
               <CalendarDays className="w-5 h-5" />

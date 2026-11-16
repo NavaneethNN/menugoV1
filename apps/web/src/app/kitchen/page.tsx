@@ -45,7 +45,8 @@ import {
   ChevronDown,
   Sparkles,
   ShieldAlert,
-  Loader2
+  Loader2,
+  ArrowLeft
 } from 'lucide-react';
 
 export default function KitchenDashboardPage() {
@@ -699,6 +700,14 @@ export default function KitchenDashboardPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* Logo & Kitchen Identity */}
           <div className="flex items-center gap-3">
+            <Link
+              href="/admin/dashboard"
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition"
+              title="Back to Dashboard"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-orange-950/50">
               <ChefHat className="w-6 h-6" />
             </div>

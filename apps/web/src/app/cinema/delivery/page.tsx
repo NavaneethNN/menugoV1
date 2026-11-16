@@ -26,6 +26,7 @@ import {
   ChevronRight,
   Loader2,
   ArrowRight,
+  ArrowLeft,
   ShoppingBag,
   Bell,
   Search,
@@ -239,6 +240,13 @@ export default function CinemaDeliveryPage() {
       {/* Top Navigation & Status Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-800">
         <div className="flex items-center gap-3">
+          <Link
+            href="/cinema/admin/dashboard"
+            className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-colors"
+            title="Back to Dashboard"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-sky-600/30">
             <Truck className="w-6 h-6" />
           </div>
@@ -306,7 +314,8 @@ export default function CinemaDeliveryPage() {
             href="/cinema/admin/dashboard"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all"
           >
-            Back to Admin
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Dashboard</span>
           </Link>
         </div>
       </div>

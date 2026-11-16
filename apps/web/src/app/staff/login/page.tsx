@@ -296,11 +296,12 @@ function StaffLoginContent() {
 
         {/* Back Link */}
         <Link
-          href="/admin/login"
-          className="absolute top-4 left-4 p-2 text-slate-400 hover:text-white rounded-xl transition"
-          title="Back to Admin Email Login"
+          href="/"
+          className="absolute top-4 left-4 p-2 text-slate-400 hover:text-white rounded-xl transition flex items-center gap-1.5 text-xs font-semibold"
+          title="Back to Homepage"
         >
           <ArrowLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">Home</span>
         </Link>
       </div>
 
@@ -706,10 +707,17 @@ function StaffLoginContent() {
         )}
 
         {/* Footer info */}
-        <div className="pt-2 text-center border-t border-slate-100">
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-slate-100 text-xs font-bold text-slate-500">
+          <Link
+            href="/"
+            className="hover:text-slate-800 transition flex items-center gap-1"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Homepage</span>
+          </Link>
           <Link
             href="/admin/login"
-            className="text-xs font-bold text-slate-500 hover:text-slate-800 transition"
+            className="hover:text-slate-800 transition"
           >
             Manager or Owner? Sign in with Email →
           </Link>
