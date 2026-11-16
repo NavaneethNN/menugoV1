@@ -253,7 +253,7 @@ export default function CinemaQrManagementPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-16">
+    <div className="max-w-7xl mx-auto space-y-8 pb-16 print:hidden">
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
         <div>
@@ -675,61 +675,77 @@ export default function CinemaQrManagementPage() {
 
       {/* PREVIEW & PRINT STAND MODAL */}
       {previewQr && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 text-white shadow-2xl space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold">Printable QR Stand Preview</h3>
-              <button onClick={() => setPreviewQr(null)} className="text-slate-400 hover:text-white">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 print:p-0 print:bg-white print:static print:block print:overflow-visible">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md my-auto shadow-2xl flex flex-col max-h-[92vh] print:max-h-none print:shadow-none print:border-none print:max-w-none print:w-full print:m-0 print:block">
+            <div className="flex items-center justify-between border-b border-slate-800 p-4 sm:p-5 shrink-0 print:hidden bg-slate-950/60 rounded-t-3xl">
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-white">Printable QR Stand Preview</h3>
+                <p className="text-[11px] text-slate-400">High-resolution QR Stand Card</p>
+              </div>
+              <button
+                onClick={() => setPreviewQr(null)}
+                className="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Stand Graphic */}
-            <div className="bg-white text-slate-900 rounded-2xl p-6 text-center space-y-4 shadow-xl">
-              <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600 block">
-                  {theatreName}
-                </span>
-                <h4 className="text-lg font-black tracking-tight mt-0.5 text-slate-950">
-                  {previewQr.qrName}
-                </h4>
-                <p className="text-xs text-slate-600 mt-1">
-                  Scan to order food, snacks & beverages directly to your seat
-                </p>
-              </div>
+            {/* Scrollable Content Body */}
+            <div className="overflow-y-auto p-4 sm:p-6 space-y-4 print:p-0 print:overflow-visible">
+              {/* Stand Graphic */}
+              <div className="bg-white text-slate-900 rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-xl border-2 border-slate-200 print:border-2 print:border-slate-800 print:rounded-3xl print:p-8 print:max-w-md print:mx-auto print:my-4 print:shadow-none print:break-inside-avoid">
+                <div>
+                  <span className="text-[11px] font-extrabold uppercase tracking-widest text-indigo-600 block">
+                    {theatreName}
+                  </span>
+                  <h4 className="text-xl font-black tracking-tight mt-0.5 text-slate-950">
+                    {previewQr.qrName}
+                  </h4>
+                  <p className="text-xs text-slate-600 mt-1 max-w-xs mx-auto">
+                    Scan to order food, snacks &amp; beverages directly to your seat
+                  </p>
+                </div>
 
-              <div className="flex justify-center p-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={previewQr.qrCodeData}
-                  alt={previewQr.qrName}
-                  className="w-56 h-56 object-contain"
-                />
-              </div>
+                <div className="flex justify-center p-3 bg-white rounded-2xl border border-slate-100 shadow-2xs inline-block print:border-2 print:border-slate-300">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={previewQr.qrCodeData}
+                    alt={previewQr.qrName}
+                    className="w-48 h-48 sm:w-56 sm:h-56 object-contain"
+                  />
+                </div>
 
-              <div className="pt-2 border-t border-slate-200">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Powered by MenuGo Cinema Contactless SaaS
-                </p>
+                <div className="pt-3 border-t border-slate-200">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider print:text-slate-600">
+                    Powered by MenuGo Cinema Contactless SaaS
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-2">
+            {/* Action Buttons (Pinned footer, always visible, hidden during print) */}
+            <div className="flex items-center justify-end gap-2.5 p-4 sm:p-5 border-t border-slate-800 bg-slate-950/80 rounded-b-3xl shrink-0 print:hidden">
               <button
                 onClick={() => setPreviewQr(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition"
               >
                 Close
               </button>
               <a
                 href={previewQr.qrCodeData}
                 download={`${previewQr.qrName.toLowerCase().replace(/\s+/g, '-')}.png`}
-                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/30"
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition flex items-center gap-1.5"
               >
-                <Download className="w-4 h-4" />
-                Download Stand PNG
+                <Download className="w-4 h-4 text-slate-400" />
+                <span>Download PNG</span>
               </a>
+              <button
+                onClick={() => window.print()}
+                className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/30"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Print Stand Card</span>
+              </button>
             </div>
           </div>
         </div>
