@@ -70,6 +70,7 @@ interface ResolvedCinemaData {
     contactNumber?: string | null;
     contactEmail?: string | null;
     timezone?: string | null;
+    paymentProviders?: string[];
   };
   isScreenPreselected: boolean;
   selectedScreen?: {
@@ -1421,6 +1422,7 @@ export function CustomerCinemaOrderingView({
           isOpen={isPreparedModalOpen}
           onClose={() => setIsPreparedModalOpen(false)}
           order={preparedOrder}
+          paymentProviders={preparedOrder?.theatre?.paymentProviders || resolveData?.theatre?.paymentProviders || []}
         />
       </div>
     </div>

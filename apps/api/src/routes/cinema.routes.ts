@@ -11,6 +11,7 @@ import {
   cinemaShows,
   cinemaQrCodes,
   cinemaCarts,
+  cinemaPaymentAccounts,
   cinemaPaymentTransactions,
   cinemaRefunds,
   categories,
@@ -2998,6 +2999,22 @@ router.get(
         )
         .orderBy(asc(cinemaScreens.screenName));
 
+      // Query active verified payment gateways configured for this theatre
+      const paymentAccounts = await db
+        .select({
+          provider: cinemaPaymentAccounts.provider
+        })
+        .from(cinemaPaymentAccounts)
+        .where(
+          and(
+            eq(cinemaPaymentAccounts.theatreId, qr.theatreId),
+            eq(cinemaPaymentAccounts.isVerified, true),
+            ne(cinemaPaymentAccounts.status, 'disabled')
+          )
+        );
+
+      const paymentProviders = paymentAccounts.map((a) => a.provider);
+
       res.json({
         valid: true,
         qrType: 'theatre',
@@ -3013,7 +3030,8 @@ router.get(
           country: profile?.country || 'India',
           contactNumber: theatre.phone || profile?.contactNumber || null,
           contactEmail: theatre.email || profile?.contactEmail || null,
-          timezone: profile?.timezone || 'Asia/Kolkata'
+          timezone: profile?.timezone || 'Asia/Kolkata',
+          paymentProviders
         },
         isScreenPreselected: false,
         selectedScreen: null,
@@ -3131,6 +3149,22 @@ router.get(
         )
         .orderBy(asc(cinemaScreens.screenName));
 
+      // Query active verified payment gateways configured for this theatre
+      const paymentAccounts = await db
+        .select({
+          provider: cinemaPaymentAccounts.provider
+        })
+        .from(cinemaPaymentAccounts)
+        .where(
+          and(
+            eq(cinemaPaymentAccounts.theatreId, theatreQr.theatreId),
+            eq(cinemaPaymentAccounts.isVerified, true),
+            ne(cinemaPaymentAccounts.status, 'disabled')
+          )
+        );
+
+      const paymentProviders = paymentAccounts.map((a) => a.provider);
+
       res.json({
         valid: true,
         qrType: 'screen',
@@ -3146,7 +3180,8 @@ router.get(
           country: profile?.country || 'India',
           contactNumber: theatre.phone || profile?.contactNumber || null,
           contactEmail: theatre.email || profile?.contactEmail || null,
-          timezone: profile?.timezone || 'Asia/Kolkata'
+          timezone: profile?.timezone || 'Asia/Kolkata',
+          paymentProviders
         },
         isScreenPreselected: true,
         selectedScreen: {
@@ -3231,7 +3266,7 @@ router.get(
           : new Date().toISOString().split('T')[0]!;
 
       // 4. Query published shows for this screen and date
-      const showsList = await db
+      let showsList = await db
         .select({
           id: cinemaShows.id,
           theatreId: cinemaShows.theatreId,
@@ -3261,6 +3296,40 @@ router.get(
           )
         )
         .orderBy(asc(cinemaShows.startTime));
+
+      // Fallback: If no shows specifically on targetDate (e.g. testing or date rollover), look for any active published shows for this screen
+      if (showsList.length === 0) {
+        showsList = await db
+          .select({
+            id: cinemaShows.id,
+            theatreId: cinemaShows.theatreId,
+            screenId: cinemaShows.screenId,
+            movieId: cinemaShows.movieId,
+            showDate: cinemaShows.showDate,
+            startTime: cinemaShows.startTime,
+            expectedEndTime: cinemaShows.expectedEndTime,
+            orderingStartTime: cinemaShows.orderingStartTime,
+            orderingEndTime: cinemaShows.orderingEndTime,
+            turnaroundBufferMinutes: cinemaShows.turnaroundBufferMinutes,
+            status: cinemaShows.status,
+            movieTitle: cinemaMovies.title,
+            moviePosterUrl: cinemaMovies.posterUrl,
+            language: cinemaMovies.language,
+            durationMinutes: cinemaMovies.durationMinutes,
+            movieDescription: cinemaMovies.description
+          })
+          .from(cinemaShows)
+          .innerJoin(cinemaMovies, eq(cinemaShows.movieId, cinemaMovies.id))
+          .where(
+            and(
+              eq(cinemaShows.theatreId, qr.theatreId),
+              eq(cinemaShows.screenId, screenId),
+              eq(cinemaShows.status, 'published')
+            )
+          )
+          .orderBy(desc(cinemaShows.showDate), asc(cinemaShows.startTime))
+          .limit(4);
+      }
 
       // 5. Enhance each show with ordering window status
       const now = new Date();
@@ -5245,6 +5314,22 @@ router.post(
         };
       });
 
+      // Query active verified payment gateways configured for this theatre
+      const paymentAccounts = await db
+        .select({
+          provider: cinemaPaymentAccounts.provider
+        })
+        .from(cinemaPaymentAccounts)
+        .where(
+          and(
+            eq(cinemaPaymentAccounts.theatreId, context.theatre.id),
+            eq(cinemaPaymentAccounts.isVerified, true),
+            ne(cinemaPaymentAccounts.status, 'disabled')
+          )
+        );
+
+      const paymentProviders = paymentAccounts.map((a) => a.provider);
+
       res.status(201).json({
         success: true,
         message: 'Cinema order prepared successfully in pending status',
@@ -5254,7 +5339,8 @@ router.post(
           theatre: {
             id: context.theatre.id,
             name: context.theatre.name,
-            currency: context.theatre.currency
+            currency: context.theatre.currency,
+            paymentProviders
           },
           screen: {
             id: context.screen.id,

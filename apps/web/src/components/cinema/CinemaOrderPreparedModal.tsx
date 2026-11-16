@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   CheckCircle2,
@@ -27,6 +27,8 @@ interface PreparedOrder {
   status: string;
   paymentStatus: string;
   statusToken?: string;
+  customerName?: string;
+  customerPhone?: string;
   totalAmount: number;
   subtotal: number;
   taxAmount: number;
@@ -34,6 +36,8 @@ interface PreparedOrder {
     id: string;
     name: string;
     currency: string;
+    logoUrl?: string | null;
+    paymentProviders?: string[];
   };
   screen: {
     id: string;
@@ -77,17 +81,41 @@ interface CinemaOrderPreparedModalProps {
   isOpen: boolean;
   onClose: () => void;
   order: PreparedOrder | null;
+  paymentProviders?: string[];
 }
 
 type CheckoutPhase = 'idle' | 'initiating' | 'gateway_modal' | 'verifying' | 'success' | 'failed';
 
+// Helper to dynamically load the standard Razorpay Checkout SDK
+function loadRazorpaySdk(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(false);
+    if ((window as any).Razorpay) return resolve(true);
+
+    const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+    if (existing) {
+      existing.addEventListener('load', () => resolve(true));
+      existing.addEventListener('error', () => resolve(false));
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 export function CinemaOrderPreparedModal({
   isOpen,
   onClose,
-  order
+  order,
+  paymentProviders = []
 }: CinemaOrderPreparedModalProps) {
   const [phase, setPhase] = useState<CheckoutPhase>('idle');
-  const [selectedProvider, setSelectedProvider] = useState<'paytm' | 'razorpay'>('paytm');
+  const [selectedProvider, setSelectedProvider] = useState<'paytm' | 'razorpay'>('razorpay');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [transactionData, setTransactionData] = useState<{
     transactionId: string;
@@ -96,11 +124,70 @@ export function CinemaOrderPreparedModal({
   } | null>(null);
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
 
+  // Compute available payment providers based on theatre configuration
+  const availableProviders = useMemo(() => {
+    const list = order?.theatre?.paymentProviders || paymentProviders || [];
+    if (list && list.length > 0) {
+      return list as Array<'paytm' | 'razorpay'>;
+    }
+    return ['razorpay', 'paytm'] as Array<'paytm' | 'razorpay'>;
+  }, [order?.theatre?.paymentProviders, paymentProviders]);
+
+  // Auto-select preferred gateway (favor Razorpay if active, or whichever provider is configured)
+  useEffect(() => {
+    if (availableProviders.includes('razorpay')) {
+      setSelectedProvider('razorpay');
+    } else if (availableProviders.includes('paytm')) {
+      setSelectedProvider('paytm');
+    }
+  }, [availableProviders]);
+
   if (!isOpen || !order) return null;
 
   const currency = order.theatre?.currency || 'INR';
 
-  // 1. Initiate Payment Order with Theatre Gateway Account
+  // 1. Authoritative Backend Payment Verification
+  const verifyPaymentWithBackend = async (data: {
+    transactionId: string;
+    providerPaymentId: string;
+    providerOrderId: string;
+    providerSignature?: string;
+    responsePayload: any;
+  }) => {
+    try {
+      setPhase('verifying');
+      setErrorMessage(null);
+
+      const statusToken = order.statusToken || '';
+      const verifyRes = await apiRequest('/api/cinema/payments/verify', {
+        method: 'POST',
+        theatreId: order.theatre.id,
+        body: JSON.stringify({
+          orderId: order.id,
+          statusToken,
+          transactionId: data.transactionId,
+          provider: selectedProvider,
+          providerPaymentId: data.providerPaymentId,
+          providerOrderId: data.providerOrderId,
+          providerSignature: data.providerSignature,
+          responsePayload: data.responsePayload
+        })
+      });
+
+      if (verifyRes.verified && verifyRes.status === 'CAPTURED') {
+        setConfirmedOrderId(order.orderNumber);
+        setPhase('success');
+      } else {
+        throw new Error(verifyRes.message || 'Payment could not be verified by payment gateway');
+      }
+    } catch (err: any) {
+      console.error('Payment verification error:', err);
+      setErrorMessage(err?.message || 'Payment verification failed');
+      setPhase('failed');
+    }
+  };
+
+  // 2. Initiate Payment Order with Theatre Gateway Account
   const handleInitiatePayment = async () => {
     try {
       setPhase('initiating');
@@ -124,6 +211,65 @@ export function CinemaOrderPreparedModal({
           providerOrderId: res.providerOrderId,
           providerPayload: res.providerPayload
         });
+
+        // If Razorpay, dynamically launch official Razorpay Standard Checkout SDK
+        if (selectedProvider === 'razorpay') {
+          const isLoaded = await loadRazorpaySdk();
+          if (isLoaded && typeof (window as any).Razorpay === 'function') {
+            const razorpayKey = res.providerPayload?.key || res.providerPayload?.keyId;
+            const options = {
+              key: razorpayKey,
+              amount: res.amount || order.totalAmount,
+              currency: res.currency || order.theatre.currency || 'INR',
+              name: order.theatre.name,
+              description: `Concessions Order #${order.orderNumber} (${order.screen.screenName} - Row ${order.seat.row}, Seat ${order.seat.seat})`,
+              image: order.theatre.logoUrl || undefined,
+              order_id: res.providerOrderId,
+              prefill: {
+                name: order.customerName,
+                contact: order.customerPhone
+              },
+              notes: {
+                theatreId: order.theatre.id,
+                orderId: order.id,
+                screen: order.screen.screenName,
+                seat: `${order.seat.row}:${order.seat.seat}`
+              },
+              theme: {
+                color: '#dc2626'
+              },
+              handler: async function (response: {
+                razorpay_payment_id: string;
+                razorpay_order_id: string;
+                razorpay_signature: string;
+              }) {
+                await verifyPaymentWithBackend({
+                  transactionId: res.transactionId,
+                  providerPaymentId: response.razorpay_payment_id,
+                  providerOrderId: response.razorpay_order_id,
+                  providerSignature: response.razorpay_signature,
+                  responsePayload: response
+                });
+              },
+              modal: {
+                ondismiss: function () {
+                  setPhase('idle');
+                  setErrorMessage('Payment was dismissed. You can retry anytime before showtime.');
+                }
+              }
+            };
+
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', function (resp: any) {
+              setPhase('failed');
+              setErrorMessage(resp.error?.description || 'Payment was declined by Razorpay gateway.');
+            });
+            rzp.open();
+            return;
+          }
+        }
+
+        // Fallback to gateway modal if Paytm or if Razorpay SDK was blocked
         setPhase('gateway_modal');
       } else {
         throw new Error(res.message || 'Failed to initiate payment gateway transaction');
@@ -135,62 +281,38 @@ export function CinemaOrderPreparedModal({
     }
   };
 
-  // 2. Complete Server-Side Verification
+  // 3. Fallback / Test Simulation verification
   const handleCompletePayment = async (simulateFailure = false) => {
     if (!transactionData) return;
 
-    try {
-      setPhase('verifying');
-      setErrorMessage(null);
+    const isPaytm = selectedProvider === 'paytm';
+    const mockPaymentId = simulateFailure
+      ? (isPaytm ? `mock_paytm_fail_${Date.now()}` : `mock_pay_fail_${Date.now()}`)
+      : (isPaytm ? `mock_paytm_txn_${Date.now()}` : `mock_pay_${Date.now()}`);
+    const mockSignature = simulateFailure
+      ? 'test_sig_invalid'
+      : 'test_sig_captured';
 
-      const statusToken = order.statusToken || '';
-      const isPaytm = selectedProvider === 'paytm';
-      const mockPaymentId = simulateFailure
-        ? (isPaytm ? `mock_paytm_fail_${Date.now()}` : `mock_pay_fail_${Date.now()}`)
-        : (isPaytm ? `mock_paytm_txn_${Date.now()}` : `mock_pay_${Date.now()}`);
-      const mockSignature = simulateFailure
-        ? 'test_sig_invalid'
-        : 'test_sig_captured';
+    const responsePayload = isPaytm
+      ? {
+          MID: transactionData.providerPayload?.mid || 'MOCK_MID',
+          ORDERID: transactionData.providerOrderId,
+          TXNAMOUNT: (order.totalAmount / 100).toFixed(2),
+          STATUS: simulateFailure ? 'TXN_FAILURE' : 'TXN_SUCCESS'
+        }
+      : {
+          razorpay_payment_id: mockPaymentId,
+          razorpay_order_id: transactionData.providerOrderId,
+          razorpay_signature: mockSignature
+        };
 
-      const responsePayload = isPaytm
-        ? {
-            MID: transactionData.providerPayload?.mid || 'MOCK_MID',
-            ORDERID: transactionData.providerOrderId,
-            TXNAMOUNT: (order.totalAmount / 100).toFixed(2),
-            STATUS: simulateFailure ? 'TXN_FAILURE' : 'TXN_SUCCESS'
-          }
-        : {
-            razorpay_payment_id: mockPaymentId,
-            razorpay_order_id: transactionData.providerOrderId,
-            razorpay_signature: mockSignature
-          };
-
-      const verifyRes = await apiRequest('/api/cinema/payments/verify', {
-        method: 'POST',
-        theatreId: order.theatre.id,
-        body: JSON.stringify({
-          orderId: order.id,
-          statusToken,
-          transactionId: transactionData.transactionId,
-          provider: selectedProvider,
-          providerPaymentId: mockPaymentId,
-          providerOrderId: transactionData.providerOrderId,
-          providerSignature: mockSignature,
-          responsePayload
-        })
-      });
-
-      if (verifyRes.verified && verifyRes.status === 'CAPTURED') {
-        setConfirmedOrderId(order.orderNumber);
-        setPhase('success');
-      } else {
-        throw new Error(verifyRes.message || `Payment could not be verified by ${isPaytm ? 'Paytm' : 'Razorpay'} gateway`);
-      }
-    } catch (err: any) {
-      console.error('Payment verification error:', err);
-      setErrorMessage(err?.message || 'Payment verification failed');
-      setPhase('failed');
-    }
+    await verifyPaymentWithBackend({
+      transactionId: transactionData.transactionId,
+      providerPaymentId: mockPaymentId,
+      providerOrderId: transactionData.providerOrderId,
+      providerSignature: mockSignature,
+      responsePayload
+    });
   };
 
   const handleCancelGateway = () => {
@@ -370,10 +492,10 @@ export function CinemaOrderPreparedModal({
                   <button
                     type="button"
                     onClick={() => handleCompletePayment(false)}
-                    className="py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20"
+                    className="py-3 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-red-600/20"
                   >
                     <ShieldCheck className="w-4 h-4" />
-                    <span>Pay {formatPaise(order.totalAmount, currency)}</span>
+                    <span>Confirm {selectedProvider === 'razorpay' ? 'Razorpay' : 'Paytm'} • {formatPaise(order.totalAmount, currency)}</span>
                   </button>
                   <button
                     type="button"
@@ -504,69 +626,81 @@ export function CinemaOrderPreparedModal({
 
               {/* Payment Gateway Provider Selector */}
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400 block">
-                  Select Theatre Payment Method
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400 block">
+                    Payment Gateway
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    Direct Merchant Settlement
+                  </span>
+                </div>
 
                 <div className="space-y-2">
-                  <label
-                    onClick={() => setSelectedProvider('paytm')}
-                    className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer transition ${
-                      selectedProvider === 'paytm'
-                        ? 'bg-blue-950/40 border-blue-500 shadow-md shadow-blue-500/10'
-                        : 'bg-slate-900 border-slate-800 hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-xs">
-                        PT
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-white">Paytm Payment Gateway</span>
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                            Active
-                          </span>
+                  {availableProviders.includes('razorpay') && (
+                    <label
+                      onClick={() => setSelectedProvider('razorpay')}
+                      className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer transition ${
+                        selectedProvider === 'razorpay'
+                          ? 'bg-indigo-950/40 border-indigo-500 shadow-md shadow-indigo-500/10'
+                          : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs">
+                          RZ
                         </div>
-                        <p className="text-[11px] text-slate-400">UPI, Cards, NetBanking, Paytm Wallet</p>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-white">Razorpay Standard Checkout</span>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                              Connected
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400">UPI, Cards, NetBanking, Instant Settlement</p>
+                        </div>
                       </div>
-                    </div>
-                    <input
-                      type="radio"
-                      name="provider"
-                      checked={selectedProvider === 'paytm'}
-                      onChange={() => setSelectedProvider('paytm')}
-                      className="accent-blue-500 w-4 h-4"
-                    />
-                  </label>
+                      <input
+                        type="radio"
+                        name="provider"
+                        checked={selectedProvider === 'razorpay'}
+                        onChange={() => setSelectedProvider('razorpay')}
+                        className="accent-indigo-500 w-4 h-4"
+                      />
+                    </label>
+                  )}
 
-                  <label
-                    onClick={() => setSelectedProvider('razorpay')}
-                    className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer transition ${
-                      selectedProvider === 'razorpay'
-                        ? 'bg-indigo-950/40 border-indigo-500 shadow-md shadow-indigo-500/10'
-                        : 'bg-slate-900 border-slate-800 hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs">
-                        RZ
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-white">Razorpay</span>
+                  {availableProviders.includes('paytm') && (
+                    <label
+                      onClick={() => setSelectedProvider('paytm')}
+                      className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer transition ${
+                        selectedProvider === 'paytm'
+                          ? 'bg-blue-950/40 border-blue-500 shadow-md shadow-blue-500/10'
+                          : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-xs">
+                          PT
                         </div>
-                        <p className="text-[11px] text-slate-400">UPI, Credit/Debit Cards, NetBanking</p>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-white">Paytm Payment Gateway</span>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                              Active
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400">UPI, Cards, NetBanking, Paytm Wallet</p>
+                        </div>
                       </div>
-                    </div>
-                    <input
-                      type="radio"
-                      name="provider"
-                      checked={selectedProvider === 'razorpay'}
-                      onChange={() => setSelectedProvider('razorpay')}
-                      className="accent-indigo-500 w-4 h-4"
-                    />
-                  </label>
+                      <input
+                        type="radio"
+                        name="provider"
+                        checked={selectedProvider === 'paytm'}
+                        onChange={() => setSelectedProvider('paytm')}
+                        className="accent-blue-500 w-4 h-4"
+                      />
+                    </label>
+                  )}
                 </div>
               </div>
             </div>

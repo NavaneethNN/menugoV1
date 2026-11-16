@@ -156,6 +156,16 @@ export function CinemaCartDrawer({
     }
   }, [seatingRows, selectedRow]);
 
+  // Auto-select open show if shows change and none selected
+  useEffect(() => {
+    if (shows.length > 0 && !selectedShowId) {
+      const openShow = shows.find((s) => s.isOrderingOpen) || shows[0];
+      if (openShow) {
+        onShowChange(openShow.id);
+      }
+    }
+  }, [shows, selectedShowId, onShowChange]);
+
   if (!isOpen) return null;
 
   // Selected screen & seat object lookups
@@ -192,38 +202,52 @@ export function CinemaCartDrawer({
     setAttemptedSubmit(true);
     setOrderError(null);
 
+    const scrollToTop = () => {
+      const container = document.getElementById('cinema-cart-drawer-content');
+      if (container) {
+        container.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+
     if (cart.length === 0) {
       setOrderError('Your cart is empty. Please add items from the menu first.');
+      scrollToTop();
       return;
     }
 
     if (!isScreenValid) {
       setOrderError('Please select your Auditorium / Screen.');
+      scrollToTop();
       return;
     }
 
     if (!isRowValid) {
       setOrderError('Please select your Seat Row from the dropdown.');
+      scrollToTop();
       return;
     }
 
     if (!isSeatValid || !seatNumber) {
       setOrderError('Please select your Seat Number from the dropdown.');
+      scrollToTop();
       return;
     }
 
     if (!isNameValid) {
       setOrderError('Name is mandatory. Please enter your name (at least 2 characters).');
+      scrollToTop();
       return;
     }
 
     if (!isPhoneValid) {
       setOrderError('Mobile number is mandatory. Please enter a valid 10-digit mobile number.');
+      scrollToTop();
       return;
     }
 
     if (!selectedShowId) {
       setOrderError('No active movie showtime is selected for this screen.');
+      scrollToTop();
       return;
     }
 
@@ -259,7 +283,7 @@ export function CinemaCartDrawer({
         </div>
 
         {/* Scrollable Content Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5">
+        <div id="cinema-cart-drawer-content" className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5">
           {/* Global Order Error Alert */}
           {orderError && (
             <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between animate-in fade-in">
@@ -453,6 +477,13 @@ export function CinemaCartDrawer({
                 >
                   {selectedShow.isOrderingOpen ? 'Ordering Open' : 'Upcoming'}
                 </span>
+              </div>
+            )}
+
+            {!selectedShow && !loadingShows && selectedScreenId && (
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>No movie showtimes currently scheduled for this screen today.</span>
               </div>
             )}
 
@@ -695,33 +726,52 @@ export function CinemaCartDrawer({
         {/* =========================================================================
             SECTION 5: ACTION FOOTER
         ========================================================================= */}
-        <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-950/95 shrink-0 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="py-3 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition"
-          >
-            Back
-          </button>
+        <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-950/95 shrink-0 flex flex-col gap-2.5">
+          {orderError && (
+            <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs flex items-center justify-between animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>{orderError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOrderError(null)}
+                className="text-rose-400 hover:text-rose-300 p-0.5 ml-2"
+                aria-label="Dismiss error"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
-          <button
-            type="button"
-            disabled={isSubmittingOrder || cart.length === 0}
-            onClick={handleValidateAndPlaceOrder}
-            className="flex-1 py-3.5 px-4 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white text-xs font-black transition flex items-center justify-center gap-2 shadow-xl shadow-red-600/30 disabled:opacity-50"
-          >
-            {isSubmittingOrder ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Preparing Order...</span>
-              </>
-            ) : (
-              <>
-                <span>Place Order & Pay • {formatPaise(totalPaise, currency)}</span>
-                <ChevronRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="py-3 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition"
+            >
+              Back
+            </button>
+
+            <button
+              type="button"
+              disabled={isSubmittingOrder || cart.length === 0}
+              onClick={handleValidateAndPlaceOrder}
+              className="flex-1 py-3.5 px-4 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white text-xs font-black transition flex items-center justify-center gap-2 shadow-xl shadow-red-600/30 disabled:opacity-50"
+            >
+              {isSubmittingOrder ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Preparing Order...</span>
+                </>
+              ) : (
+                <>
+                  <span>Place Order & Pay • {formatPaise(totalPaise, currency)}</span>
+                  <ChevronRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>
