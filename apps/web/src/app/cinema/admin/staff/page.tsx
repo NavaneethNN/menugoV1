@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { apiRequest } from '@/lib/api';
+import { CinemaSettingsTabs } from '@/components/cinema/CinemaSettingsTabs';
 import {
   Users,
   UserPlus,
@@ -364,6 +365,9 @@ export default function CinemaAdminStaffPage() {
           </button>
         </div>
       </div>
+
+      {/* Settings & Operations Unified Sub-Tab Navigation */}
+      <CinemaSettingsTabs />
 
       {/* Staff Login & POS Terminal Setup Banner */}
       {theatreInfo && (

@@ -46,32 +46,67 @@ export function CinemaSidebar({
 
   const navigationSections = [
     {
-      title: 'OPERATIONS',
+      title: 'MANAGEMENT',
       items: [
-        { label: 'Overview', href: '/cinema/admin/dashboard', icon: LayoutDashboard },
-        { label: 'Orders', href: '/cinema/admin/orders', icon: ShoppingBag },
-        { label: 'Kitchen KDS', href: '/cinema/kitchen', icon: ChefHat },
-        { label: 'Seat Delivery', href: '/cinema/delivery', icon: Truck }
+        {
+          label: 'Overview',
+          href: '/cinema/admin/dashboard',
+          icon: LayoutDashboard,
+          match: (path: string) => path === '/cinema/admin/dashboard'
+        },
+        {
+          label: 'Orders',
+          href: '/cinema/admin/orders',
+          icon: ShoppingBag,
+          match: (path: string) => path.startsWith('/cinema/admin/orders')
+        },
+        {
+          label: 'Screens & Seating',
+          href: '/cinema/admin/screens',
+          icon: Tv,
+          match: (path: string) =>
+            path.startsWith('/cinema/admin/screens') || path.startsWith('/cinema/admin/seating')
+        },
+        {
+          label: 'Shows & Movies',
+          href: '/cinema/admin/shows',
+          icon: CalendarDays,
+          match: (path: string) =>
+            path.startsWith('/cinema/admin/shows') || path.startsWith('/cinema/admin/movies')
+        },
+        {
+          label: 'Concessions Menu',
+          href: '/cinema/admin/menu',
+          icon: UtensilsCrossed,
+          match: (path: string) => path.startsWith('/cinema/admin/menu')
+        },
+        {
+          label: 'Settings & QR',
+          href: '/cinema/admin/settings',
+          icon: Settings,
+          match: (path: string) =>
+            path.startsWith('/cinema/admin/settings') ||
+            path.startsWith('/cinema/admin/qr') ||
+            path.startsWith('/cinema/admin/payments') ||
+            path.startsWith('/cinema/admin/staff')
+        }
       ]
     },
     {
-      title: 'CINEMA CONFIG',
+      title: 'LIVE STATIONS',
       items: [
-        { label: 'Screens', href: '/cinema/admin/screens', icon: Tv },
-        { label: 'Seating Layout', href: '/cinema/admin/seating', icon: Armchair },
-        { label: 'Movie Catalogue', href: '/cinema/admin/movies', icon: Clapperboard },
-        { label: 'Daily Shows', href: '/cinema/admin/shows', icon: CalendarDays },
-        { label: 'QR Codes', href: '/cinema/admin/qr', icon: QrCode }
-      ]
-    },
-    {
-      title: 'COMMERCE & ADMIN',
-      items: [
-        { label: 'Food & Beverage', href: '/cinema/admin/menu', icon: UtensilsCrossed },
-        { label: 'Payment Gateway', href: '/cinema/admin/payments', icon: CreditCard },
-        { label: 'Staff & Roles', href: '/cinema/admin/staff', icon: Users },
-        { label: 'Reports & Sales', href: '/cinema/admin/reports', icon: BarChart3 },
-        { label: 'Theatre Profile', href: '/cinema/admin/settings', icon: Settings }
+        {
+          label: 'Kitchen KDS',
+          href: '/cinema/kitchen',
+          icon: ChefHat,
+          match: (path: string) => path.startsWith('/cinema/kitchen')
+        },
+        {
+          label: 'Seat Delivery',
+          href: '/cinema/delivery',
+          icon: Truck,
+          match: (path: string) => path.startsWith('/cinema/delivery')
+        }
       ]
     }
   ];
@@ -121,7 +156,9 @@ export function CinemaSidebar({
             </p>
             {section.items.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+              const isActive = item.match
+                ? item.match(pathname)
+                : pathname === item.href || pathname?.startsWith(item.href + '/');
               return (
                 <Link
                   key={item.href}

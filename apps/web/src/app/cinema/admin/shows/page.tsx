@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiRequest } from '@/lib/api';
+import { CinemaShowsTabs } from '@/components/cinema/CinemaShowsTabs';
 import {
   CalendarDays,
   Clock,
@@ -573,6 +574,9 @@ export default function CinemaShowsPage() {
           </button>
         </div>
       </div>
+
+      {/* Shows & Movies Unified Sub-Tab Navigation */}
+      <CinemaShowsTabs />
 
       {/* Alerts */}
       {error && (

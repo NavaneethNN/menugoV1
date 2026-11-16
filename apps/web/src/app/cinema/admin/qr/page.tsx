@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { apiRequest } from '@/lib/api';
+import { CinemaSettingsTabs } from '@/components/cinema/CinemaSettingsTabs';
 import {
   QrCode,
   Download,
@@ -296,6 +297,9 @@ export default function CinemaQrManagementPage() {
           )}
         </div>
       </div>
+
+      {/* Settings & Operations Unified Sub-Tab Navigation */}
+      <CinemaSettingsTabs />
 
       {/* Notifications */}
       {error && (

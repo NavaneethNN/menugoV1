@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { apiRequest } from '@/lib/api';
+import { CinemaSettingsTabs } from '@/components/cinema/CinemaSettingsTabs';
 import {
   CreditCard,
   ShieldCheck,
@@ -359,6 +360,9 @@ export default function CinemaPaymentSettingsPage() {
           </span>
         </div>
       </div>
+
+      {/* Settings & Operations Unified Sub-Tab Navigation */}
+      <CinemaSettingsTabs />
 
       {/* Notifications */}
       {error && (

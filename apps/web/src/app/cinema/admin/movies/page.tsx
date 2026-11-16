@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { apiRequest } from '@/lib/api';
 import { CINEMA_LANGUAGES } from '@menugo/shared';
+import { CinemaShowsTabs } from '@/components/cinema/CinemaShowsTabs';
 import {
   Film,
   Plus,
@@ -482,6 +483,9 @@ export default function CinemaMoviesPage() {
           </button>
         </div>
       </div>
+
+      {/* Shows & Movies Unified Sub-Tab Navigation */}
+      <CinemaShowsTabs />
 
       {/* Alerts */}
       {error && (

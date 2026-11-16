@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/lib/api';
+import { CinemaScreensTabs } from '@/components/cinema/CinemaScreensTabs';
 import {
   Armchair,
   Tv,
@@ -509,6 +510,9 @@ export default function CinemaAdminSeatingPage() {
           </button>
         </div>
       </div>
+
+      {/* Screens & Seating Unified Sub-Tab Navigation */}
+      <CinemaScreensTabs />
 
       {/* Alert Messages */}
       {error && (

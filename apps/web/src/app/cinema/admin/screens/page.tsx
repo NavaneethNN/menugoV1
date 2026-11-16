@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiRequest } from '@/lib/api';
+import { CinemaScreensTabs } from '@/components/cinema/CinemaScreensTabs';
 import {
   Tv,
   Film,
@@ -312,6 +313,9 @@ export default function CinemaAdminScreensPage() {
           <span>Add Cinema Screen</span>
         </button>
       </div>
+
+      {/* Screens & Seating Unified Sub-Tab Navigation */}
+      <CinemaScreensTabs />
 
       {/* Alert Messages */}
       {error && (
