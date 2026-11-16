@@ -1,7 +1,7 @@
 import express, { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { db, restaurantMembers, restaurants, user, account } from '@menugo/database';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, asc, or } from 'drizzle-orm';
 import { staffPinLoginSchema, staffPinCheckSchema } from '@menugo/shared';
 import { AppError } from '../middleware/error-handler';
 import { auth } from '../lib/auth';
@@ -69,6 +69,74 @@ router.get('/staff-restaurants', async (_req: Request, res: Response, next: Next
       .where(eq(restaurants.isActive, true));
 
     res.json(activeRestaurants);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * Public endpoint to list active cinema theatres for POS & staff login setup.
+ */
+router.get('/staff-theatres', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const activeTheatres = await db
+      .select({
+        id: restaurants.id,
+        name: restaurants.name,
+        slug: restaurants.slug,
+        logoUrl: restaurants.logoUrl,
+        address: restaurants.address
+      })
+      .from(restaurants)
+      .where(
+        and(
+          eq(restaurants.isActive, true),
+          eq(restaurants.tenantType, 'cinema')
+        )
+      )
+      .orderBy(asc(restaurants.name));
+
+    res.json(activeTheatres);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * Public endpoint to get cinema theatre details by slug or ID for POS terminal binding.
+ */
+router.get('/theatre-info/:slugOrId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const slugOrId = req.params.slugOrId as string;
+    if (!slugOrId) {
+      return res.status(400).json({ error: 'Theatre identifier is required' });
+    }
+
+    const [theatre] = await db
+      .select({
+        id: restaurants.id,
+        name: restaurants.name,
+        slug: restaurants.slug,
+        logoUrl: restaurants.logoUrl,
+        address: restaurants.address,
+        isActive: restaurants.isActive,
+        tenantType: restaurants.tenantType
+      })
+      .from(restaurants)
+      .where(
+        and(
+          or(eq(restaurants.slug, slugOrId), eq(restaurants.id, slugOrId)),
+          eq(restaurants.tenantType, 'cinema'),
+          eq(restaurants.isActive, true)
+        )
+      )
+      .limit(1);
+
+    if (!theatre) {
+      return res.status(404).json({ error: 'Cinema theatre not found or inactive' });
+    }
+
+    res.json(theatre);
   } catch (error) {
     next(error);
   }
