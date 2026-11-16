@@ -23,8 +23,8 @@ function getTargetUrl(): string {
 const targetUrl = getTargetUrl().replace(/\/$/, '');
 
 console.log('================================================');
-console.log(`🩺 MenuGo Production Smoke Test Runner`);
-console.log(`🎯 Target API URL: ${targetUrl}`);
+console.log(`[SMOKE] MenuGo Production Smoke Test Runner`);
+console.log(`[TARGET] Target API URL: ${targetUrl}`);
 console.log('================================================\n');
 
 interface TestResult {
@@ -43,11 +43,11 @@ async function runCheck(name: string, fn: () => Promise<void>) {
     await fn();
     const durationMs = Date.now() - start;
     results.push({ name, passed: true, durationMs });
-    console.log(`✅ [PASS] ${name} (${durationMs}ms)`);
+    console.log(`[PASS] ${name} (${durationMs}ms)`);
   } catch (err: any) {
     const durationMs = Date.now() - start;
     results.push({ name, passed: false, durationMs, error: err.message });
-    console.log(`❌ [FAIL] ${name} (${durationMs}ms): ${err.message}`);
+    console.log(`[FAIL] ${name} (${durationMs}ms): ${err.message}`);
   }
 }
 
@@ -162,10 +162,10 @@ async function main() {
   const failedCount = results.filter((r) => !r.passed).length;
   console.log(`Summary: ${passedCount}/${results.length} checks passed.`);
   if (failedCount > 0) {
-    console.log(`⚠️ ${failedCount} checks failed!`);
+    console.log(`[WARN] ${failedCount} checks failed!`);
     process.exit(1);
   } else {
-    console.log(`🎉 All deployment smoke checks passed successfully!`);
+    console.log(`[SUCCESS] All deployment smoke checks passed successfully!`);
     console.log('================================================');
   }
 }

@@ -34,9 +34,9 @@ import { auth } from '../apps/api/src/lib/auth';
 import { encryptSecret } from '../apps/api/src/lib/encryption';
 
 async function seedCinema() {
-  console.log('🎬 =========================================================');
-  console.log('🍿 Seeding Sample Cinema Theatre Data for MenuGo Pilot');
-  console.log('🎬 =========================================================\n');
+  console.log(' =========================================================');
+  console.log(' Seeding Sample Cinema Theatre Data for MenuGo Pilot');
+  console.log(' =========================================================\n');
 
   const adminEmail = 'theatre.admin@menugo.com';
   const adminPassword = 'CinemaAdmin123!';
@@ -44,7 +44,7 @@ async function seedCinema() {
   const theatreName = 'PVR Grand Luxe IMAX';
 
   // 1. Clean up existing records for this slug/email if any
-  console.log('🧹 Cleaning up prior demo seed records...');
+  console.log(' Cleaning up prior demo seed records...');
   const existingTheatres = await db
     .select()
     .from(restaurants)
@@ -83,9 +83,9 @@ async function seedCinema() {
 
   if (existingUser) {
     adminUserId = existingUser.id;
-    console.log(`👤 Found existing admin user account: ${adminEmail} (ID: ${adminUserId})`);
+    console.log(` Found existing admin user account: ${adminEmail} (ID: ${adminUserId})`);
   } else {
-    console.log(`👤 Creating new admin account for ${adminEmail}...`);
+    console.log(` Creating new admin account for ${adminEmail}...`);
     const signupRes = await auth.api.signUpEmail({
       body: {
         name: 'PVR Cinema Admin',
@@ -103,7 +103,7 @@ async function seedCinema() {
   }
 
   // 2. Create Restaurant / Cinema Tenant
-  console.log('\n🏛️ Creating Cinema Theatre entity...');
+  console.log('\n️ Creating Cinema Theatre entity...');
   const theatreId = crypto.randomUUID();
   await db.insert(restaurants).values({
     id: theatreId,
@@ -159,10 +159,10 @@ async function seedCinema() {
     role: 'owner',
     status: 'active'
   });
-  console.log(`   ✅ Theatre registered: "${theatreName}" (ID: ${theatreId})`);
+  console.log(`    Theatre registered: "${theatreName}" (ID: ${theatreId})`);
 
   // 3. Create Screens
-  console.log('\n📺 Creating Auditoriums / Cinema Screens...');
+  console.log('\n Creating Auditoriums / Cinema Screens...');
   const screen1Id = crypto.randomUUID();
   const screen2Id = crypto.randomUUID();
 
@@ -190,11 +190,11 @@ async function seedCinema() {
       seatingConfigured: true
     }
   ]);
-  console.log('   ✅ Screen 1: Audi 1 - IMAX with Laser (26 seats)');
-  console.log('   ✅ Screen 2: Audi 2 - Dolby Atmos 4K (26 seats)');
+  console.log('    Screen 1: Audi 1 - IMAX with Laser (26 seats)');
+  console.log('    Screen 2: Audi 2 - Dolby Atmos 4K (26 seats)');
 
   // 4. Create Rows and Seats
-  console.log('\n💺 Creating Seating Layout (Rows & Seats)...');
+  console.log('\n Creating Seating Layout (Rows & Seats)...');
   const configureScreenSeats = async (screenId: string, screenLabel: string) => {
     // Row A: Recliner (6 seats: A1..A6)
     const rowAId = crypto.randomUUID();
@@ -287,7 +287,7 @@ async function seedCinema() {
   await configureScreenSeats(screen2Id, 'Audi 2 - Dolby Atmos');
 
   // 5. Create Movies
-  console.log('\n🎞️ Adding Movies to Catalogue...');
+  console.log('\n️ Adding Movies to Catalogue...');
   const movie1Id = crypto.randomUUID();
   const movie2Id = crypto.randomUUID();
 
@@ -313,11 +313,11 @@ async function seedCinema() {
       status: 'active'
     }
   ]);
-  console.log('   ✅ Movie 1: Gladiator II (148 min)');
-  console.log('   ✅ Movie 2: Dune: Part Two (166 min)');
+  console.log('    Movie 1: Gladiator II (148 min)');
+  console.log('    Movie 2: Dune: Part Two (166 min)');
 
   // 6. Create Daily Shows (Active and OPEN for ordering right now!)
-  console.log('\n📅 Scheduling Daily Shows (Setting food ordering window OPEN now)...');
+  console.log('\n Scheduling Daily Shows (Setting food ordering window OPEN now)...');
   const now = new Date();
   const today = now.toISOString().split('T')[0];
 
@@ -381,12 +381,12 @@ async function seedCinema() {
       status: 'published'
     }
   ]);
-  console.log(`   ✅ Show 1: Audi 1 - Gladiator II [ACTIVE NOW - Food Ordering OPEN]`);
-  console.log(`   ✅ Show 2: Audi 1 - Dune: Part Two [Upcoming Today at ${show2StartTime.toLocaleTimeString()}]`);
-  console.log(`   ✅ Show 3: Audi 2 - Dune: Part Two [ACTIVE NOW - Food Ordering OPEN]`);
+  console.log(`    Show 1: Audi 1 - Gladiator II [ACTIVE NOW - Food Ordering OPEN]`);
+  console.log(`    Show 2: Audi 1 - Dune: Part Two [Upcoming Today at ${show2StartTime.toLocaleTimeString()}]`);
+  console.log(`    Show 3: Audi 2 - Dune: Part Two [ACTIVE NOW - Food Ordering OPEN]`);
 
   // 7. Food Concessions Menu
-  console.log('\n🍿 Populating Concessions Menu & Pricing...');
+  console.log('\n Populating Concessions Menu & Pricing...');
   const cat1Id = crypto.randomUUID();
   const cat2Id = crypto.randomUUID();
   const cat3Id = crypto.randomUUID();
@@ -528,10 +528,10 @@ async function seedCinema() {
       isAvailable: true
     }
   ]);
-  console.log('   ✅ Populated 4 concession categories and 9 delicious items');
+  console.log('    Populated 4 concession categories and 9 delicious items');
 
   // 8. Configure Payment Gateways (Razorpay & Paytm test accounts)
-  console.log('\n💳 Configuring Theatre Payment Gateways (Razorpay & Paytm)...');
+  console.log('\n Configuring Theatre Payment Gateways (Razorpay & Paytm)...');
   const razorpaySecret = 'mock_secret_key_12345';
   const paytmSecret = 'mock_paytm_secret_key_12345';
 
@@ -572,11 +572,11 @@ async function seedCinema() {
       }
     }
   ]);
-  console.log('   ✅ Razorpay Test Account connected & verified (Key: rzp_test_mock_cinema)');
-  console.log('   ✅ Paytm Test Account connected & verified (MID: TEST_CINEMA_MID)');
+  console.log('    Razorpay Test Account connected & verified (Key: rzp_test_mock_cinema)');
+  console.log('    Paytm Test Account connected & verified (MID: TEST_CINEMA_MID)');
 
   // 9. Generate and Register QR Codes
-  console.log('\n📱 Generating Public QR Codes for Customer In-Seat Ordering...');
+  console.log('\n Generating Public QR Codes for Customer In-Seat Ordering...');
   const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   // Tokens must be 32..64 hex characters per isValidCinemaQrTokenFormat
@@ -646,31 +646,31 @@ async function seedCinema() {
     }
   ]);
 
-  console.log('   ✅ Theatre QR Code generated: token = ' + theatreToken);
-  console.log('   ✅ Screen 1 QR Code generated: token = ' + screen1Token);
-  console.log('   ✅ Screen 2 QR Code generated: token = ' + screen2Token);
+  console.log('    Theatre QR Code generated: token = ' + theatreToken);
+  console.log('    Screen 1 QR Code generated: token = ' + screen1Token);
+  console.log('    Screen 2 QR Code generated: token = ' + screen2Token);
 
   console.log('\n=============================================================');
-  console.log('🎉 CINEMA SAMPLE DATA SEEDED SUCCESSFULLY!');
+  console.log(' CINEMA SAMPLE DATA SEEDED SUCCESSFULLY!');
   console.log('=============================================================');
-  console.log('🔑 CINEMA ADMIN CREDENTIALS:');
+  console.log(' CINEMA ADMIN CREDENTIALS:');
   console.log(`   Sign In URL:  ${appBaseUrl}/admin/login?business=cinema`);
   console.log(`   Email:        ${adminEmail}`);
   console.log(`   Password:     ${adminPassword}`);
   console.log(`   Dashboard:    ${appBaseUrl}/cinema/admin/dashboard`);
-  console.log('\n🍿 CUSTOMER ORDERING ENTRY POINTS (Ready to test right now):');
+  console.log('\n CUSTOMER ORDERING ENTRY POINTS (Ready to test right now):');
   console.log(`   General Theatre QR (choose screen & show):`);
-  console.log(`   👉 ${theatreUrl}`);
+  console.log(`    ${theatreUrl}`);
   console.log(`\n   Screen 1 QR (Audi 1 - IMAX with Laser, preselected):`);
-  console.log(`   👉 ${screen1Url}`);
+  console.log(`    ${screen1Url}`);
   console.log(`\n   Screen 2 QR (Audi 2 - Dolby Atmos, preselected):`);
-  console.log(`   👉 ${screen2Url}`);
+  console.log(`    ${screen2Url}`);
   console.log('=============================================================\n');
 
   await pool.end();
 }
 
 seedCinema().catch((err) => {
-  console.error('❌ Failed to seed cinema data:', err);
+  console.error(' Failed to seed cinema data:', err);
   process.exit(1);
 });
