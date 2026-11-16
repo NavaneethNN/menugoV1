@@ -283,27 +283,36 @@ export default function CinemaAdminScreensPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-16">
       {/* Header & Actions */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Link
+              href="/cinema/admin/dashboard"
+              className="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1 transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Dashboard</span>
+            </Link>
+          </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Cinema Screens & Auditoriums
           </h1>
-          <p className="text-slate-400 text-xs sm:text-sm mt-1">
-            Configure screens for <span className="text-white font-semibold">{theatreName}</span>.
+          <p className="text-slate-400 text-sm mt-1">
+            Configure screens for <span className="text-white font-semibold">{theatreName}</span>. Screens serve as the foundation for seating layouts and movie show schedules.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <CinemaScreensTabs />
-          <button
-            onClick={handleOpenCreateModal}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Cinema Screen</span>
-          </button>
-        </div>
+        <button
+          onClick={handleOpenCreateModal}
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition self-start sm:self-auto"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Cinema Screen</span>
+        </button>
       </div>
+
+      {/* Screens & Seating Unified Sub-Tab Navigation */}
+      <CinemaScreensTabs />
 
       {/* Alert Messages */}
       {error && (

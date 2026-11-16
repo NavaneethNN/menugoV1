@@ -328,20 +328,38 @@ export default function CinemaPaymentSettingsPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-16">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Link
+              href="/cinema/admin/dashboard"
+              className="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1 transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Dashboard</span>
+            </Link>
+          </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Payment Gateway Architecture
           </h1>
-          <p className="text-slate-400 text-xs sm:text-sm mt-1">
-            Connect merchant accounts to collect customer orders directly ({currency}).
+          <p className="text-slate-400 text-sm mt-1">
+            Connect your theatre&apos;s eligible merchant accounts to collect customer payments directly.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <CinemaSettingsTabs />
+          <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-xs font-medium flex items-center gap-2">
+            <Building2 className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="truncate max-w-[150px]">{theatreName || 'Theatre'}</span>
+          </span>
+          <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-xs font-medium">
+            Currency: <span className="text-white font-bold">{currency}</span>
+          </span>
         </div>
       </div>
+
+      {/* Settings & Operations Unified Sub-Tab Navigation */}
+      <CinemaSettingsTabs />
 
       {/* Notifications */}
       {error && (

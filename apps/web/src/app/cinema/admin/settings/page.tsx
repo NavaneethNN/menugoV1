@@ -217,20 +217,44 @@ export default function CinemaAdminSettingsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-16">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Link
+              href="/cinema/admin/dashboard"
+              className="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1 transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Dashboard</span>
+            </Link>
+          </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Theatre Profile & Settings
           </h1>
-          <p className="text-slate-400 text-xs sm:text-sm mt-1">
+          <p className="text-slate-400 text-sm mt-1">
             Configure your cinema theatre identity, address, contact coordinates, currency, and timezone.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <CinemaSettingsTabs />
-        </div>
+        {theatreSlug && (
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <Link
+              href="/cinema/admin/payments"
+              className="px-3.5 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5"
+            >
+              <span>Payment Gateway Settings</span>
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+            </Link>
+            <div className="px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-xs">
+              <span className="text-slate-500 mr-1.5">Slug:</span>
+              <span className="font-mono text-indigo-400 font-semibold">{theatreSlug}</span>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Settings & Operations Unified Sub-Tab Navigation */}
+      <CinemaSettingsTabs />
 
       {/* Notifications */}
       {error && (

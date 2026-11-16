@@ -24,8 +24,7 @@ import {
   QrCode,
   Zap,
   Settings,
-  ChevronRight,
-  ChevronDown
+  ChevronRight
 } from 'lucide-react';
 
 export default function CinemaAdminDashboardPage() {
@@ -33,7 +32,6 @@ export default function CinemaAdminDashboardPage() {
   const [onboarding, setOnboarding] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [wizardCollapsed, setWizardCollapsed] = useState<boolean>(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -70,9 +68,6 @@ export default function CinemaAdminDashboardPage() {
 
       setSummary(summaryData);
       setOnboarding(onboardingData);
-      if (onboardingData?.isComplete || (onboardingData?.percentage ?? 0) === 100) {
-        setWizardCollapsed(true);
-      }
     } catch (err: any) {
       console.error('Failed to load cinema dashboard data:', err);
       setError(err?.message || 'Failed to fetch cinema summary');
@@ -208,23 +203,13 @@ export default function CinemaAdminDashboardPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setWizardCollapsed(!wizardCollapsed)}
-              className="text-xs font-bold text-slate-400 hover:text-white px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 transition flex items-center gap-1.5"
-            >
-              <span>{wizardCollapsed ? 'Show Milestones' : 'Collapse'}</span>
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${wizardCollapsed ? '-rotate-90' : ''}`} />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <span className="text-2xl font-black text-indigo-400">{percentage}%</span>
-                <span className="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Completed</span>
-              </div>
-              <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <span className="text-2xl font-black text-indigo-400">{percentage}%</span>
+              <span className="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Completed</span>
+            </div>
+            <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <CheckCircle2 className="w-8 h-8" />
             </div>
           </div>
         </div>
@@ -238,7 +223,6 @@ export default function CinemaAdminDashboardPage() {
         </div>
 
         {/* 8-Stage Onboarding Grid */}
-        {!wizardCollapsed && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
           {stages.map((st: any) => {
             const Icon = stageIcons[st.key] || Film;
@@ -323,7 +307,6 @@ export default function CinemaAdminDashboardPage() {
             );
           })}
         </div>
-        )}
       </div>
 
       {/* Metrics Row */}
