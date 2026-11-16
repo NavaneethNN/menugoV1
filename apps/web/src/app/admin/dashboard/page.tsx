@@ -27,7 +27,9 @@ import {
   Film,
   X,
   ChevronDown,
-  User
+  User,
+  Menu,
+  ClipboardList
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -45,6 +47,7 @@ export default function AdminDashboardPage() {
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     if (sessionLoading) return;
@@ -107,7 +110,17 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-slate-100 flex flex-col">
       {/* Top Navbar */}
       <header className="h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-xs">
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+        <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
+          {/* Mobile Navigation Drawer Toggle */}
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(true)}
+            className="md:hidden p-2 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors shrink-0"
+            aria-label="Open Navigation Drawer"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-500 text-white font-black flex items-center justify-center text-lg shadow-sm shadow-orange-500/25 group-hover:scale-105 transition-transform">
               M
@@ -177,6 +190,281 @@ export default function AdminDashboardPage() {
           </button>
         </div>
       </header>
+
+      {/* Mobile Slide-Over Navigation Drawer */}
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs transition-opacity"
+            onClick={() => setMobileNavOpen(false)}
+          />
+
+          {/* Drawer Content */}
+          <div className="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-white shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-200">
+            {/* Drawer Header */}
+            <div className="h-16 px-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-slate-50/60">
+              <Link
+                href="/"
+                onClick={() => setMobileNavOpen(false)}
+                className="flex items-center gap-2.5"
+              >
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-500 text-white font-black flex items-center justify-center text-sm shadow-xs">
+                  M
+                </div>
+                <span className="font-extrabold text-base text-slate-900">
+                  Menu<span className="text-orange-600">Go</span>
+                </span>
+                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-800">
+                  Admin
+                </span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setMobileNavOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+                aria-label="Close menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Drawer Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-5">
+              {/* Restaurant Switcher Card */}
+              {selectedRestaurant && (
+                <div className="p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Active Restaurant
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-800">
+                      <ShieldCheck className="w-3 h-3" />
+                      {currentRole}
+                    </span>
+                  </div>
+
+                  {restaurants.length > 1 ? (
+                    <div className="relative">
+                      <select
+                        value={selectedRestaurant.id}
+                        onChange={(e) => {
+                          const found = restaurants.find((r) => r.restaurant.id === e.target.value);
+                          if (found) setSelectedMembership(found);
+                        }}
+                        className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-orange-500 appearance-none shadow-xs"
+                      >
+                        {restaurants.map((item) => (
+                          <option key={item.restaurant.id} value={item.restaurant.id}>
+                            {item.restaurant.name} ({item.role})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  ) : (
+                    <p className="font-extrabold text-sm text-slate-900 truncate">
+                      {selectedRestaurant.name}
+                    </p>
+                  )}
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={() => {
+                        setMobileNavOpen(false);
+                        setShowProfileModal(true);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition"
+                    >
+                      <Settings className="w-3 h-3 text-slate-500" />
+                      <span>Settings</span>
+                    </button>
+                    {selectedRestaurant.slug && (
+                      <Link
+                        href={`/menu/${selectedRestaurant.slug}`}
+                        target="_blank"
+                        onClick={() => setMobileNavOpen(false)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition"
+                      >
+                        <ExternalLink className="w-3 h-3 text-slate-500" />
+                        <span>Live Menu</span>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Navigation Sections */}
+              <div className="space-y-4">
+                {/* Operations */}
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-2 mb-1.5">
+                    Live Operations
+                  </p>
+                  <div className="space-y-1">
+                    <Link
+                      href="/admin/cashier"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-800 hover:bg-emerald-50 hover:text-emerald-900 transition group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition">
+                        <CreditCard className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Cashier &amp; Tables</span>
+                    </Link>
+
+                    <Link
+                      href="/kitchen"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-800 hover:bg-orange-50 hover:text-orange-900 transition group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition">
+                        <ChefHat className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Kitchen KDS</span>
+                    </Link>
+
+                    <Link
+                      href="/admin/service"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-800 hover:bg-purple-50 hover:text-purple-900 transition group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition">
+                        <Utensils className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Floor Service Pass</span>
+                    </Link>
+
+                    <Link
+                      href="/admin/orders"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-800 hover:bg-blue-50 hover:text-blue-900 transition group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition">
+                        <ClipboardList className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Orders Management</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Restaurant Catalog & Layout */}
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-2 mb-1.5">
+                    Catalog &amp; Layout
+                  </p>
+                  <div className="space-y-1">
+                    <Link
+                      href="/admin/products"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center">
+                        <UtensilsCrossed className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Menu Products</span>
+                    </Link>
+
+                    <Link
+                      href="/admin/categories"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                        <Layers className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Menu Categories</span>
+                    </Link>
+
+                    <Link
+                      href="/admin/tables"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                        <QrCode className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Tables &amp; QR Codes</span>
+                    </Link>
+
+                    <Link
+                      href="/admin/staff"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                        <Users className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Staff &amp; Memberships</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Additional modules / Cinema switch */}
+                {cinemaTheatres.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-2 mb-1.5">
+                      Other Modules
+                    </p>
+                    <Link
+                      href="/cinema/admin/dashboard"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50/70 border border-indigo-200/70 hover:bg-indigo-100 transition"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+                        <Film className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Cinema Console</span>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Drawer Footer */}
+            <div className="p-4 border-t border-slate-200 bg-slate-50/50 space-y-3 shrink-0">
+              <div className="flex items-center gap-2.5 px-2">
+                <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs shrink-0">
+                  <User className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-slate-800 truncate">
+                    {session?.user?.name || 'Logged In'}
+                  </p>
+                  <p className="text-[11px] text-slate-400 truncate">
+                    {session?.user?.email}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  onClick={() => {
+                    setMobileNavOpen(false);
+                    setShowCreateModal(true);
+                  }}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition shadow-xs"
+                >
+                  <Plus className="w-3.5 h-3.5 text-orange-600" />
+                  <span>New Rest.</span>
+                </button>
+
+                <button
+                  onClick={async () => {
+                    await signOut();
+                    router.push('/admin/login');
+                  }}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl text-xs font-bold text-rose-700 transition shadow-xs"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6">

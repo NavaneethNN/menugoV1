@@ -896,8 +896,8 @@ router.post(
         throw new AppError('Payment transaction record not found', 404);
       }
 
-      // If already captured, return success immediately (idempotency)
-      if (transaction.status === 'CAPTURED') {
+      // If already captured or order already paid, return success immediately (idempotency)
+      if (transaction.status === 'CAPTURED' || order.paymentStatus === 'paid') {
         return res.json({
           success: true,
           verified: true,

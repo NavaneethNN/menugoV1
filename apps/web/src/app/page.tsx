@@ -139,7 +139,7 @@ export default function HomePage() {
           </div>
 
           {/* Navigation Links (Desktop) */}
-          <nav className="hidden xl:flex items-center gap-1 text-sm font-semibold text-slate-600">
+          <nav className="hidden lg:flex items-center gap-1 text-sm font-semibold text-slate-600">
             <a
               href="#business-selection"
               className="px-3 py-1.5 rounded-lg hover:text-slate-950 hover:bg-slate-100/80 transition-colors"
@@ -218,10 +218,10 @@ export default function HomePage() {
             {/* Mobile Hamburger Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="xl:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+              className="lg:hidden p-2 text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-xl transition-colors shadow-xs"
               aria-label="Toggle mobile menu"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="w-5 h-5 text-slate-900" /> : <Menu className="w-5 h-5 text-slate-700" />}
             </button>
           </div>
         </div>
@@ -230,76 +230,107 @@ export default function HomePage() {
         {mobileMenuOpen && (
           <>
             <div
-              className="fixed inset-0 top-[72px] sm:top-[80px] bg-slate-950/40 backdrop-blur-xs z-40 xl:hidden animate-in fade-in duration-200"
+              className="fixed inset-0 top-[72px] sm:top-[80px] bg-slate-950/50 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-200"
               onClick={() => setMobileMenuOpen(false)}
             />
-            <div className="xl:hidden border-t border-slate-200 bg-white/98 backdrop-blur-xl px-4 sm:px-6 py-5 space-y-4 shadow-2xl relative z-50 animate-in slide-in-from-top-3 duration-200">
+            <div className="lg:hidden border-t border-slate-200 bg-white/98 backdrop-blur-xl px-4 sm:px-6 py-5 space-y-5 shadow-2xl relative z-50 animate-in slide-in-from-top-3 duration-200 max-h-[calc(100vh-5rem)] overflow-y-auto overscroll-contain">
               {/* Business Toggle for Mobile */}
-              <div className="p-1 bg-slate-100 rounded-2xl border border-slate-200 grid grid-cols-2 gap-1 shadow-inner">
-                <button
-                  onClick={() => {
-                    setActiveBusiness('restaurant');
-                  }}
-                  className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                    activeBusiness === 'restaurant'
-                      ? 'bg-white text-orange-700 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <UtensilsCrossed className="w-4 h-4 text-orange-600" />
-                  <span>Restaurants</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveBusiness('cinema');
-                  }}
-                  className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                    activeBusiness === 'cinema'
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Film className="w-4 h-4" />
-                  <span>Cinema</span>
-                  <span className="text-[9px] bg-indigo-500 text-white px-1.5 py-0.2 rounded-full uppercase font-black">
-                    New
-                  </span>
-                </button>
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">
+                  Select Operating Platform
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => {
+                      setActiveBusiness('restaurant');
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all ${
+                      activeBusiness === 'restaurant'
+                        ? 'bg-orange-50/80 border-orange-300 text-orange-950 shadow-sm ring-1 ring-orange-500/20'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${activeBusiness === 'restaurant' ? 'bg-orange-600 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                        <UtensilsCrossed className="w-3.5 h-3.5" />
+                      </div>
+                      {activeBusiness === 'restaurant' && (
+                        <span className="w-2 h-2 rounded-full bg-orange-600" />
+                      )}
+                    </div>
+                    <div className="font-bold text-xs">Restaurants</div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">Table QR &amp; KDS</div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveBusiness('cinema');
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all ${
+                      activeBusiness === 'cinema'
+                        ? 'bg-indigo-50/80 border-indigo-300 text-indigo-950 shadow-sm ring-1 ring-indigo-500/20'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${activeBusiness === 'cinema' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                        <Film className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-indigo-600 text-white">
+                        New
+                      </span>
+                    </div>
+                    <div className="font-bold text-xs">Cinema Theatres</div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">In-Seat Delivery</div>
+                  </button>
+                </div>
               </div>
 
               {/* Navigation Links */}
-              <div className="space-y-1 pt-1">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1 mb-1">
+                  Explore MenuGo
+                </p>
                 <a
                   href="#business-selection"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100/80 transition"
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 transition"
                 >
-                  <span>Business Models</span>
+                  <div className="flex items-center gap-2.5">
+                    <Layers className="w-4 h-4 text-slate-500" />
+                    <span>Business Models</span>
+                  </div>
                   <ChevronRight className="w-4 h-4 text-slate-400" />
                 </a>
                 <a
                   href="#how-it-works"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100/80 transition"
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 transition"
                 >
-                  <span>How It Works</span>
+                  <div className="flex items-center gap-2.5">
+                    <Clock className="w-4 h-4 text-slate-500" />
+                    <span>How It Works</span>
+                  </div>
                   <ChevronRight className="w-4 h-4 text-slate-400" />
                 </a>
                 <a
                   href="#features"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100/80 transition"
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 transition"
                 >
-                  <span>Platform Features</span>
+                  <div className="flex items-center gap-2.5">
+                    <Sparkles className="w-4 h-4 text-slate-500" />
+                    <span>Platform Features</span>
+                  </div>
                   <ChevronRight className="w-4 h-4 text-slate-400" />
                 </a>
                 <Link
                   href="/menu/demo-cafe"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-orange-600 hover:bg-orange-50 transition"
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-orange-600 bg-orange-50/60 hover:bg-orange-100/80 transition"
                 >
-                  <div className="flex items-center gap-2">
-                    <Eye className="w-4 h-4" />
+                  <div className="flex items-center gap-2.5">
+                    <Eye className="w-4 h-4 text-orange-600" />
                     <span>View Live Demo Cafe</span>
                   </div>
                   <ChevronRight className="w-4 h-4 text-orange-400" />
@@ -307,15 +338,18 @@ export default function HomePage() {
               </div>
 
               {/* Quick Setup Link & Actions for Mobile */}
-              <div className="pt-3 border-t border-slate-100 space-y-2">
+              <div className="pt-3 border-t border-slate-200/80 space-y-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">
+                  Access Console &amp; Workstations
+                </p>
                 {activeBusiness === 'restaurant' ? (
                   <Link
                     href="/staff/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-800 transition"
+                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-bold text-slate-800 transition"
                   >
                     <KeyRound className="w-3.5 h-3.5 text-orange-600" />
-                    <span>Staff Workstation PIN Login</span>
+                    <span>Staff 4-Digit PIN Login</span>
                   </Link>
                 ) : (
                   <Link
@@ -347,10 +381,10 @@ export default function HomePage() {
                         : '/admin/login?mode=signup&business=restaurant'
                     }
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`py-2.5 rounded-xl font-bold text-xs text-white text-center shadow-sm transition ${
+                    className={`py-2.5 rounded-xl font-bold text-xs text-white text-center shadow-md transition ${
                       activeBusiness === 'cinema'
-                        ? 'bg-indigo-600 hover:bg-indigo-700'
-                        : 'bg-orange-600 hover:bg-orange-700'
+                        ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500'
+                        : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500'
                     }`}
                   >
                     {activeBusiness === 'cinema' ? 'Get Started' : 'Register Free'}
