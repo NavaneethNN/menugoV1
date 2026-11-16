@@ -337,9 +337,6 @@ export default function CinemaAdminStaffPage() {
               <Users className="w-6 h-6 text-indigo-400" />
               Staff Management & Permissions
             </h1>
-            <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded">
-              Task 19
-            </span>
           </div>
           <p className="text-sm text-slate-400 mt-1">
             Manage theatre administrators, kitchen food prep staff, and in-auditorium seat delivery runners.

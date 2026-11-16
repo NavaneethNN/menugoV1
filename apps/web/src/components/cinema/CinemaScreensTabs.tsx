@@ -11,29 +11,29 @@ export function CinemaScreensTabs() {
   const isSeating = pathname.startsWith('/cinema/admin/seating');
 
   return (
-    <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-inner max-w-fit mb-6">
+    <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-800 rounded-xl max-w-fit mb-6 shadow-xs">
       <Link
         href="/cinema/admin/screens"
-        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
           isScreens
-            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-            : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            ? 'bg-indigo-600 text-white shadow-sm'
+            : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
         }`}
       >
         <Tv className="w-3.5 h-3.5" />
-        <span>Auditoriums & Screens</span>
+        <span>Auditoriums</span>
       </Link>
 
       <Link
         href="/cinema/admin/seating"
-        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
           isSeating
-            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-            : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            ? 'bg-indigo-600 text-white shadow-sm'
+            : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
         }`}
       >
         <Armchair className="w-3.5 h-3.5" />
-        <span>Seating Layout & Rows</span>
+        <span>Seating Layout</span>
       </Link>
     </div>
   );

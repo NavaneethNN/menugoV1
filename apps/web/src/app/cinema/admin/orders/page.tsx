@@ -592,8 +592,9 @@ export default function CinemaAdminOrdersPage() {
             </Link>
           </div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              Task 17 • Cinema Orders
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Live Orders
             </span>
             <span className="text-slate-500">•</span>
             <span className="text-xs text-slate-400 font-medium">{theatreName || 'Cinema Admin'}</span>

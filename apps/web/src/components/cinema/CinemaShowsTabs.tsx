@@ -11,25 +11,25 @@ export function CinemaShowsTabs() {
   const isMovies = pathname.startsWith('/cinema/admin/movies');
 
   return (
-    <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-inner max-w-fit mb-6">
+    <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-800 rounded-xl max-w-fit mb-6 shadow-xs">
       <Link
         href="/cinema/admin/shows"
-        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
           isShows
-            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-            : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            ? 'bg-indigo-600 text-white shadow-sm'
+            : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
         }`}
       >
         <CalendarDays className="w-3.5 h-3.5" />
-        <span>Daily Show Schedules</span>
+        <span>Show Schedule</span>
       </Link>
 
       <Link
         href="/cinema/admin/movies"
-        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
           isMovies
-            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-            : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            ? 'bg-indigo-600 text-white shadow-sm'
+            : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
         }`}
       >
         <Clapperboard className="w-3.5 h-3.5" />

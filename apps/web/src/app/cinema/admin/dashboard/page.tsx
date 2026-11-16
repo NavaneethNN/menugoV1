@@ -171,7 +171,7 @@ export default function CinemaAdminDashboardPage() {
               className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 transition"
             >
               <Settings className="w-3.5 h-3.5" />
-              <span>Theatre Settings (Task 02)</span>
+              <span>Theatre Settings</span>
             </Link>
 
             <Link
@@ -179,7 +179,7 @@ export default function CinemaAdminDashboardPage() {
               className="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-700 transition"
             >
               <Tv className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Configure Screens (Task 03)</span>
+              <span>Configure Screens</span>
             </Link>
           </div>
         </div>
@@ -260,7 +260,7 @@ export default function CinemaAdminDashboardPage() {
                       </span>
                     ) : !st.isLocked ? (
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 animate-pulse">
-                        Next Up (Task 03)
+                        Next Up
                       </span>
                     ) : (
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-500 border border-slate-700/50 flex items-center gap-1">

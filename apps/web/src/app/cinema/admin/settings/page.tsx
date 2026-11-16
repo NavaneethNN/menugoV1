@@ -228,11 +228,8 @@ export default function CinemaAdminSettingsPage() {
               <span>Back to Dashboard</span>
             </Link>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
-            <span>Theatre Profile & Settings</span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-              Task 02
-            </span>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            Theatre Profile & Settings
           </h1>
           <p className="text-slate-400 text-sm mt-1">
             Configure your cinema theatre identity, address, contact coordinates, currency, and timezone.

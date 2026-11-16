@@ -294,11 +294,8 @@ export default function CinemaAdminScreensPage() {
               <span>Back to Dashboard</span>
             </Link>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
-            <span>Cinema Screens & Auditoriums</span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-              Task 03
-            </span>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            Cinema Screens & Auditoriums
           </h1>
           <p className="text-slate-400 text-sm mt-1">
             Configure screens for <span className="text-white font-semibold">{theatreName}</span>. Screens serve as the foundation for seating layouts and movie show schedules.
@@ -329,37 +326,6 @@ export default function CinemaAdminScreensPage() {
         <div className="p-4 bg-emerald-950/40 border border-emerald-800/60 rounded-2xl text-emerald-300 flex items-center gap-3 shadow-lg">
           <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
           <p className="text-sm font-medium">{successMessage}</p>
-        </div>
-      )}
-
-      {/* Step 2 -> Step 3 Guided Next Action Card */}
-      {screens.length > 0 && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-slate-900 to-slate-900 border border-indigo-700/60 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] uppercase font-extrabold tracking-wider bg-emerald-950 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-800">
-                  Step 2 Completed
-                </span>
-                <span className="font-bold text-white text-sm">
-                  {screens.length} Screen{screens.length === 1 ? '' : 's'} Configured
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 mt-1">
-                Next Stage (Step 3 of 8): Set up rows (A-Z) and seat numbering per screen.
-              </p>
-            </div>
-          </div>
-          <Link
-            href={`/cinema/admin/seating${screens[0]?.id ? `?screenId=${screens[0].id}` : ''}`}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-md shadow-indigo-600/30 shrink-0"
-          >
-            <span>Proceed to Step 3: Seating Layout</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
         </div>
       )}
 
@@ -502,7 +468,7 @@ export default function CinemaAdminScreensPage() {
                         {sc.totalSeats > 0 ? sc.totalSeats : 0}
                       </p>
                       <span className="text-[10px] text-slate-500 block">
-                        {sc.seatingConfigured ? 'Layout verified' : 'Configured in Task 04'}
+                        {sc.seatingConfigured ? 'Layout verified' : 'Layout pending'}
                       </span>
                     </div>
 
@@ -515,7 +481,7 @@ export default function CinemaAdminScreensPage() {
                         {sc.totalRows > 0 ? sc.totalRows : 0}
                       </p>
                       <span className="text-[10px] text-slate-500 block">
-                        {sc.seatingConfigured ? 'Rows active' : 'Rows A-Z (Task 04)'}
+                        {sc.seatingConfigured ? 'Rows active' : 'Rows unconfigured'}
                       </span>
                     </div>
                   </div>

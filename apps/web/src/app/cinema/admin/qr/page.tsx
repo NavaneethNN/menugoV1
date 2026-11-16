@@ -326,37 +326,6 @@ export default function CinemaQrManagementPage() {
         </div>
       )}
 
-      {/* Step 7 -> Step 8 Guided Next Action Card */}
-      {(theatreQr || screenQrs.length > 0) && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-slate-900 to-slate-900 border border-indigo-700/60 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] uppercase font-extrabold tracking-wider bg-emerald-950 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-800">
-                  Step 7 Completed
-                </span>
-                <span className="font-bold text-white text-sm">
-                  {(theatreQr ? 1 : 0) + screenQrs.length} QR Code{(theatreQr ? 1 : 0) + screenQrs.length === 1 ? '' : 's'} Deployed &amp; Verified
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 mt-1">
-                Final Stage (Step 8 of 8): Activate in-auditorium customer ordering and enter live dashboard.
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/cinema/admin/dashboard"
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-md shadow-emerald-600/30 shrink-0"
-          >
-            <span>Proceed to Step 8: Go Live &amp; Dashboard</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      )}
-
       {/* Section 1: General Theatre QR Stand */}
       <div className="rounded-3xl bg-slate-900 border border-slate-800 p-6 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
@@ -527,7 +496,7 @@ export default function CinemaQrManagementPage() {
         {screenQrs.length === 0 && screensWithoutQr.length === 0 ? (
           <div className="p-8 text-center bg-slate-900/60 rounded-2xl border border-slate-800">
             <p className="text-xs text-slate-400">
-              No screens configured yet. Please add cinema screens in the Screens module (Task 03) first.
+              No screens configured yet. Please add cinema screens in the Screens section first.
             </p>
           </div>
         ) : (
