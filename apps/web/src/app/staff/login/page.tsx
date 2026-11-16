@@ -729,7 +729,7 @@ function StaffLoginContent() {
 
 export default function StaffLoginPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 flex flex-col items-center justify-center p-4 py-8 overflow-y-auto">
       <Suspense fallback={<div className="text-white text-sm">Loading staff terminal...</div>}>
         <StaffLoginContent />
       </Suspense>

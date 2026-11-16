@@ -334,7 +334,7 @@ function LoginForm() {
 
 export default function AdminLoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50">
+    <div className="min-h-screen flex items-center justify-center p-4 py-8 bg-slate-50 overflow-y-auto">
       <Suspense fallback={<Loader2 className="w-8 h-8 animate-spin text-orange-600" />}>
         <LoginForm />
       </Suspense>

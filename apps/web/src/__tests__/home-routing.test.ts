@@ -7,7 +7,7 @@ describe('Home Page Business Selection & Routing (Task 01 & Section 3)', () => {
     const restaurantRoutes = {
       signup: '/admin/login?mode=signup&business=restaurant',
       signin: '/admin/login',
-      demo: '/menu/demo-cafe',
+      demo: '/menu/hotel',
       staffPin: '/staff/login',
       onboarding: '/admin/onboarding',
       dashboard: '/admin/dashboard'
@@ -15,7 +15,7 @@ describe('Home Page Business Selection & Routing (Task 01 & Section 3)', () => {
 
     assert.equal(restaurantRoutes.signup.includes('mode=signup'), true);
     assert.equal(restaurantRoutes.signin, '/admin/login');
-    assert.equal(restaurantRoutes.demo, '/menu/demo-cafe');
+    assert.equal(restaurantRoutes.demo, '/menu/hotel');
     assert.equal(restaurantRoutes.staffPin, '/staff/login');
     assert.equal(restaurantRoutes.onboarding, '/admin/onboarding');
   });

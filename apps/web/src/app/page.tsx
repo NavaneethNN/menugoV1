@@ -159,7 +159,7 @@ export default function HomePage() {
               Features
             </a>
             <Link
-              href="/menu/demo-cafe"
+              href="/menu/hotel"
               className="px-3 py-1.5 rounded-lg hover:text-orange-600 hover:bg-orange-50/60 flex items-center gap-1.5 transition-colors"
             >
               <Eye className="w-3.5 h-3.5 text-orange-500" />
@@ -325,7 +325,7 @@ export default function HomePage() {
                   <ChevronRight className="w-4 h-4 text-slate-400" />
                 </a>
                 <Link
-                  href="/menu/demo-cafe"
+                  href="/menu/hotel"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-orange-600 bg-orange-50/60 hover:bg-orange-100/80 transition"
                 >
@@ -488,7 +488,7 @@ export default function HomePage() {
                       Get Started with Restaurant
                     </Link>
                     <Link
-                      href="/menu/demo-cafe"
+                      href="/menu/hotel"
                       className="w-full sm:w-auto py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs text-center transition-all flex items-center justify-center gap-1.5"
                     >
                       <Eye className="w-3.5 h-3.5 text-orange-600" />
@@ -1509,7 +1509,7 @@ export default function HomePage() {
                 <span>Kitchen Display System</span>
               </Link>
               <span>•</span>
-              <Link href="/menu/demo-cafe" className="hover:text-white flex items-center gap-1.5 transition-colors">
+              <Link href="/menu/hotel" className="hover:text-white flex items-center gap-1.5 transition-colors">
                 <Eye className="w-4 h-4 text-orange-400" />
                 <span>Customer Menu Preview</span>
               </Link>
@@ -1566,7 +1566,7 @@ export default function HomePage() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/menu/demo-cafe" className="hover:text-orange-600 transition-colors">
+                  <Link href="/menu/hotel" className="hover:text-orange-600 transition-colors">
                     Live Demo Menu
                   </Link>
                 </li>
