@@ -50,11 +50,8 @@ const nextConfig = {
     ];
   },
   async rewrites() {
-    // If an internal backend API URL is configured, proxy /api calls through Next.js
-    const targetApi = process.env.INTERNAL_API_URL;
-    if (!targetApi) {
-      return [];
-    }
+    // Proxy /api calls through Next.js to backend Express service
+    const targetApi = process.env.INTERNAL_API_URL || process.env.API_URL || 'http://localhost:5001';
     return [
       {
         source: '/api/:path*',

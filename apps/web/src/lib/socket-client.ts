@@ -4,8 +4,10 @@ import { getApiBaseUrl } from './api';
 let socket: Socket | null = null;
 
 export function getSocket(token?: string): Socket {
-  const API_URL =
-    getApiBaseUrl() || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5001');
+  let API_URL = getApiBaseUrl();
+  if (!API_URL && typeof window !== 'undefined') {
+    API_URL = `${window.location.protocol}//${window.location.hostname}:5001`;
+  }
   if (!socket) {
     socket = io(API_URL, {
       withCredentials: true,

@@ -340,7 +340,8 @@ router.post('/', async (req: Request, res: Response, next) => {
     const tableId = crypto.randomUUID();
     // 24 cryptographically secure random bytes (192 bits of entropy)
     const tableToken = generateTableToken(24);
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const reqOrigin = (req.headers.origin as string) || (req.headers.referer ? new URL(req.headers.referer).origin : null);
+    const appUrl = (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_URL ? process.env.NEXT_PUBLIC_APP_URL : (reqOrigin || process.env.NEXT_PUBLIC_APP_URL)) || 'http://localhost:3000';
     const targetUrl = buildCustomerTableUrl(appUrl, restaurant.slug, tableToken);
 
     // High-resolution QR code data URL (PNG Base64)
@@ -404,7 +405,8 @@ router.post('/:id/rotate-token', async (req: Request, res: Response, next) => {
 
     const restaurant = req.tenant!.restaurant;
     const newTableToken = generateTableToken(24);
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const reqOrigin = (req.headers.origin as string) || (req.headers.referer ? new URL(req.headers.referer).origin : null);
+    const appUrl = (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_URL ? process.env.NEXT_PUBLIC_APP_URL : (reqOrigin || process.env.NEXT_PUBLIC_APP_URL)) || 'http://localhost:3000';
     const targetUrl = buildCustomerTableUrl(appUrl, restaurant.slug, newTableToken);
 
     const qrCodeDataUrl = await QRCode.toDataURL(targetUrl, {
@@ -469,7 +471,8 @@ router.post('/:id/regenerate-qr', async (req: Request, res: Response, next) => {
 
     const restaurant = req.tenant!.restaurant;
     const newTableToken = generateTableToken(24);
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const reqOrigin = (req.headers.origin as string) || (req.headers.referer ? new URL(req.headers.referer).origin : null);
+    const appUrl = (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_URL ? process.env.NEXT_PUBLIC_APP_URL : (reqOrigin || process.env.NEXT_PUBLIC_APP_URL)) || 'http://localhost:3000';
     const targetUrl = buildCustomerTableUrl(appUrl, restaurant.slug, newTableToken);
 
     const qrCodeDataUrl = await QRCode.toDataURL(targetUrl, {

@@ -724,13 +724,22 @@ export default function CinemaQrManagementPage() {
             </div>
 
             {/* Action Buttons (Pinned footer, always visible, hidden during print) */}
-            <div className="flex items-center justify-end gap-2.5 p-4 sm:p-5 border-t border-slate-800 bg-slate-950/80 rounded-b-3xl shrink-0 print:hidden">
+            <div className="flex flex-wrap items-center justify-end gap-2.5 p-4 sm:p-5 border-t border-slate-800 bg-slate-950/80 rounded-b-3xl shrink-0 print:hidden">
               <button
                 onClick={() => setPreviewQr(null)}
                 className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition"
               >
                 Close
               </button>
+              <a
+                href={previewQr.targetUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition flex items-center gap-1.5"
+              >
+                <ExternalLink className="w-4 h-4 text-indigo-400" />
+                <span>Test Live Menu</span>
+              </a>
               <a
                 href={previewQr.qrCodeData}
                 download={`${previewQr.qrName.toLowerCase().replace(/\s+/g, '-')}.png`}

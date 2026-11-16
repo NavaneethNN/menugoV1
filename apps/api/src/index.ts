@@ -73,7 +73,10 @@ app.use(
 
       if (
         allowedOriginsList.includes(requestOrigin) ||
-        (process.env.NODE_ENV !== 'production' && requestOrigin.startsWith('http://localhost:')) ||
+        (process.env.NODE_ENV !== 'production' &&
+          (requestOrigin.startsWith('http://localhost:') ||
+           requestOrigin.startsWith('http://127.0.0.1:') ||
+           /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(requestOrigin))) ||
         (Boolean(process.env.VERCEL) && requestOrigin.endsWith('.vercel.app'))
       ) {
         return callback(null, true);

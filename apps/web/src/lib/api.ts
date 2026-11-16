@@ -5,10 +5,23 @@
  * - In Node/SSR execution without explicit variable, defaults to port 5001.
  */
 export function getApiBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_API_URL !== undefined) {
-    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '');
+  if (typeof window !== 'undefined') {
+    // In browser execution:
+    // If NEXT_PUBLIC_API_URL is explicitly set to an external domain, honor it.
+    // If it points to localhost/127.0.0.1 but the browser is on an external device (e.g. phone scanning QR on Wi-Fi),
+    // use relative path "" so Next.js rewrites proxy the request to the local backend.
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      const configured = process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '');
+      const isConfiguredLocal = configured.includes('localhost') || configured.includes('127.0.0.1');
+      const isClientLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isConfiguredLocal && !isClientLocal) {
+        return '';
+      }
+      return configured;
+    }
+    return '';
   }
-  return typeof window !== 'undefined' ? '' : 'http://localhost:5001';
+  return process.env.INTERNAL_API_URL || process.env.API_URL || 'http://localhost:5001';
 }
 
 interface RequestOptions extends RequestInit {

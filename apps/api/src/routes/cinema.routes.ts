@@ -3741,7 +3741,8 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const tenant = req.tenant!;
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const reqOrigin = (req.headers.origin as string) || (req.headers.referer ? new URL(req.headers.referer).origin : null);
+      const appUrl = (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_URL ? process.env.NEXT_PUBLIC_APP_URL : (reqOrigin || process.env.NEXT_PUBLIC_APP_URL)) || 'http://localhost:3000';
 
       const theatreToken = generateCinemaQrToken(24);
       const targetUrl = buildCinemaTheatreQrUrl(appUrl, theatreToken);
@@ -3846,7 +3847,8 @@ router.post(
     try {
       const tenant = req.tenant!;
       const screenId = req.params.screenId as string;
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const reqOrigin = (req.headers.origin as string) || (req.headers.referer ? new URL(req.headers.referer).origin : null);
+      const appUrl = (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_URL ? process.env.NEXT_PUBLIC_APP_URL : (reqOrigin || process.env.NEXT_PUBLIC_APP_URL)) || 'http://localhost:3000';
 
       // 1. Verify screen ownership and active state
       const [screen] = await db
@@ -4142,7 +4144,8 @@ router.post(
     try {
       const tenant = req.tenant!;
       const qrId = req.params.id as string;
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const reqOrigin = (req.headers.origin as string) || (req.headers.referer ? new URL(req.headers.referer).origin : null);
+      const appUrl = (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_URL ? process.env.NEXT_PUBLIC_APP_URL : (reqOrigin || process.env.NEXT_PUBLIC_APP_URL)) || 'http://localhost:3000';
 
       const [existing] = await db
         .select()

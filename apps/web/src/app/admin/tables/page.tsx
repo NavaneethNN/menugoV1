@@ -26,7 +26,8 @@ import {
   Copy,
   Check,
   Users,
-  AlertTriangle
+  AlertTriangle,
+  ExternalLink
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -943,6 +944,16 @@ export default function AdminTablesPage() {
 
             {/* Action Buttons Footer (Pinned at bottom, always visible, hidden during print) */}
             <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50/80 flex flex-col sm:flex-row gap-2.5 shrink-0 rounded-b-3xl print:hidden">
+              <Link
+                href={`/menu/${restaurant?.slug || 'restaurant'}?table=${previewQrTable.tableToken}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition shadow-xs"
+              >
+                <ExternalLink className="w-4 h-4 text-orange-400" />
+                <span>Test Live Menu</span>
+              </Link>
+
               {previewQrTable.qrCodeData && (
                 <a
                   href={previewQrTable.qrCodeData}
