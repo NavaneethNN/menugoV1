@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { apiRequest } from '@/lib/api';
 import { formatPaise } from '@menugo/shared';
+import { loadRazorpaySdk } from '@/lib/razorpay';
 import {
   Film,
   Armchair,
@@ -117,6 +119,8 @@ export function CustomerCinemaOrderingView({
   theatreToken,
   screenToken
 }: CustomerCinemaOrderingViewProps) {
+  const router = useRouter();
+
   // Initial Resolution & Data
   const [resolveData, setResolveData] = useState<ResolvedCinemaData | null>(null);
   const [categories, setCategories] = useState<FoodCategory[]>([]);
@@ -219,6 +223,11 @@ export function CustomerCinemaOrderingView({
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
+
+  // Preload Razorpay Checkout SDK in background so checkout opens immediately
+  useEffect(() => {
+    loadRazorpaySdk().catch(() => {});
+  }, []);
 
   // 2. Fetch Shows and Seating when selectedScreenId changes
   useEffect(() => {
@@ -520,21 +529,117 @@ export function CustomerCinemaOrderingView({
         })
       });
 
-      // Close cart drawer & open payment modal
+      const paymentProviders = data.order?.theatre?.paymentProviders || resolveData?.theatre?.paymentProviders || [];
+      const hasRazorpay = paymentProviders.includes('razorpay');
+
+      // If Razorpay is active for this theatre, launch Razorpay Checkout immediately!
+      if (hasRazorpay) {
+        try {
+          const paymentOrderRes = await apiRequest('/api/cinema/payments/order', {
+            method: 'POST',
+            theatreId: data.order.theatre.id,
+            body: JSON.stringify({
+              orderId: data.order.id,
+              statusToken: data.statusToken,
+              provider: 'razorpay'
+            })
+          });
+
+          if (paymentOrderRes.success) {
+            const isLoaded = await loadRazorpaySdk();
+            if (isLoaded && typeof (window as any).Razorpay === 'function') {
+              const razorpayKey = paymentOrderRes.providerPayload?.key || paymentOrderRes.providerPayload?.keyId;
+              const options = {
+                key: razorpayKey,
+                amount: paymentOrderRes.amount || data.order.totalAmount,
+                currency: paymentOrderRes.currency || data.order.theatre?.currency || 'INR',
+                name: resolveData?.theatre?.name || data.order.theatre?.name || 'Cinema Concessions',
+                description: `Order #${data.order.orderNumber} (${data.order.screen?.screenName} • Row ${seatRow}, Seat ${seatNumber})`,
+                image: resolveData?.theatre?.logoUrl || undefined,
+                order_id: paymentOrderRes.providerOrderId,
+                prefill: {
+                  name: customerName.trim(),
+                  contact: customerPhone.replace(/\D/g, '').trim()
+                },
+                notes: {
+                  theatreId: data.order.theatre.id,
+                  orderId: data.order.id,
+                  screen: data.order.screen?.screenName,
+                  seat: `${seatRow}:${seatNumber}`
+                },
+                theme: {
+                  color: '#dc2626'
+                },
+                handler: async function (response: {
+                  razorpay_payment_id: string;
+                  razorpay_order_id: string;
+                  razorpay_signature: string;
+                }) {
+                  try {
+                    setIsSubmittingOrder(true);
+                    const verifyRes = await apiRequest('/api/cinema/payments/verify', {
+                      method: 'POST',
+                      theatreId: data.order.theatre.id,
+                      body: JSON.stringify({
+                        orderId: data.order.id,
+                        statusToken: data.statusToken,
+                        transactionId: paymentOrderRes.transactionId,
+                        provider: 'razorpay',
+                        providerPaymentId: response.razorpay_payment_id,
+                        providerOrderId: response.razorpay_order_id,
+                        providerSignature: response.razorpay_signature,
+                        responsePayload: response
+                      })
+                    });
+
+                    if (verifyRes.verified && verifyRes.status === 'CAPTURED') {
+                      setCartItems([]);
+                      if (theatreToken) {
+                        try {
+                          localStorage.removeItem(getCinemaCartStorageKey(theatreToken));
+                        } catch {}
+                      }
+                      setIsCartDrawerOpen(false);
+                      router.push(`/track/${data.statusToken}`);
+                    } else {
+                      setOrderError('Payment verification could not be confirmed. Please contact theatre staff.');
+                    }
+                  } catch (vErr: any) {
+                    console.error('Payment verification failed:', vErr);
+                    setOrderError(vErr?.message || 'Payment verification failed');
+                  } finally {
+                    setIsSubmittingOrder(false);
+                  }
+                },
+                modal: {
+                  ondismiss: function () {
+                    setIsSubmittingOrder(false);
+                    setOrderError('Payment was cancelled. You can retry paying whenever you are ready.');
+                  }
+                }
+              };
+
+              const rzp = new (window as any).Razorpay(options);
+              rzp.on('payment.failed', function (resp: any) {
+                setIsSubmittingOrder(false);
+                setOrderError(resp.error?.description || 'Payment was declined by payment gateway.');
+              });
+              rzp.open();
+              return;
+            }
+          }
+        } catch (payErr: any) {
+          console.warn('Direct Razorpay checkout initiation failed, opening payment review modal:', payErr);
+        }
+      }
+
+      // Fallback: If Razorpay SDK is blocked, or if Paytm/other gateway is configured
       setIsCartDrawerOpen(false);
       setPreparedOrder({
         ...data.order,
         statusToken: data.statusToken || data.order?.statusToken
       });
       setIsPreparedModalOpen(true);
-
-      // Clear local cart
-      setCartItems([]);
-      if (theatreToken) {
-        try {
-          localStorage.removeItem(getCinemaCartStorageKey(theatreToken));
-        } catch {}
-      }
     } catch (err: any) {
       console.error('Failed to prepare cinema order:', err);
       setOrderError(err?.message || 'Failed to prepare concessions order. Please try again.');
