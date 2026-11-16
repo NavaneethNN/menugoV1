@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "dev": "concurrently -n \"API,WEB\" -c \"blue,green\" \"npm run dev:api\" \"npm run dev:web\"",
+    "clean": "node -e \"const fs=require('fs'); fs.rmSync('apps/web/.next', {recursive:true, force:true})\"",
     "dev:api": "npm run dev --workspace=@menugo/api",
     "dev:web": "npm run dev --workspace=@menugo/web",
     "build": "npm run build --workspaces --if-present",
