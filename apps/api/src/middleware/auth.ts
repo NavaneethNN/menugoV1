@@ -9,6 +9,7 @@ export interface AuthenticatedUser {
   name: string;
   email: string;
   role: string;
+  tenantType?: string;
   image?: string | null;
   emailVerified: boolean;
   createdAt: Date | string;

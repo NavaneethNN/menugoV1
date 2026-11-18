@@ -226,6 +226,10 @@ router.post(
       let targetUserId: string;
 
       if (existingUser) {
+        if (existingUser.tenantType === 'restaurant') {
+          throw new AppError('This user account is registered for restaurants. Cinema staff must use separate theatre accounts.', 400);
+        }
+
         targetUserId = existingUser.id;
 
         // Verify user is not already a member of this theatre
@@ -253,6 +257,7 @@ router.post(
           id: targetUserId,
           name: name.trim(),
           email: email.trim().toLowerCase(),
+          tenantType: 'cinema',
           emailVerified: true,
           createdAt: new Date(),
           updatedAt: new Date()

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { db, restaurants, restaurantMembers, categories, products, restaurantTables, cinemaQrCodes } from '@menugo/database';
+import { db, restaurants, restaurantMembers, categories, products, restaurantTables, cinemaQrCodes, user } from '@menugo/database';
 import { eq, and, asc, ne } from 'drizzle-orm';
 import { createRestaurantSchema, updateRestaurantSchema } from '@menugo/shared';
 import { requireAuth } from '../middleware/auth';
@@ -13,6 +13,20 @@ const router = Router();
 router.post('/', requireAuth, async (req: Request, res: Response, next) => {
   try {
     const validatedData = createRestaurantSchema.parse(req.body);
+
+    // Verify caller is not a cinema theatre user
+    const [callingUser] = await db
+      .select({ tenantType: user.tenantType })
+      .from(user)
+      .where(eq(user.id, req.user!.id))
+      .limit(1);
+
+    if (callingUser?.tenantType === 'cinema') {
+      throw new AppError(
+        'Theatre accounts cannot create or manage restaurant profiles. Please create a dedicated restaurant account.',
+        403
+      );
+    }
 
     const result = await db.transaction(async (tx) => {
       // 1. Check slug uniqueness within transaction
@@ -61,6 +75,12 @@ router.post('/', requireAuth, async (req: Request, res: Response, next) => {
         })
         .returning();
 
+      // 4. Ensure user is stamped as restaurant tenant
+      await tx
+        .update(user)
+        .set({ tenantType: 'restaurant' })
+        .where(eq(user.id, req.user!.id));
+
       return { restaurant, membership };
     });
 
@@ -83,6 +103,27 @@ router.get('/my', requireAuth, async (req: Request, res: Response, next) => {
   try {
     const requestedType = (req.query.tenantType || req.query.type) as string | undefined;
 
+    // Check user tenantType
+    const [callingUser] = await db
+      .select({ tenantType: user.tenantType })
+      .from(user)
+      .where(eq(user.id, req.user!.id))
+      .limit(1);
+
+    const userTenantType = callingUser?.tenantType || req.user?.tenantType;
+
+    // Enforce tenant boundary:
+    // If account is theatre/cinema, it cannot query or receive restaurant memberships
+    if (userTenantType === 'cinema' && requestedType === 'restaurant') {
+      return res.json([]);
+    }
+    // If account is restaurant, it cannot query or receive cinema memberships
+    if (userTenantType === 'restaurant' && requestedType === 'cinema') {
+      return res.json([]);
+    }
+
+    const effectiveType = requestedType || (userTenantType === 'cinema' ? 'cinema' : 'restaurant');
+
     const query = db
       .select({
         membershipId: restaurantMembers.id,
@@ -92,12 +133,10 @@ router.get('/my', requireAuth, async (req: Request, res: Response, next) => {
       .from(restaurantMembers)
       .innerJoin(restaurants, eq(restaurantMembers.restaurantId, restaurants.id))
       .where(
-        requestedType
-          ? and(
-              eq(restaurantMembers.userId, req.user!.id),
-              eq(restaurants.tenantType, requestedType)
-            )
-          : eq(restaurantMembers.userId, req.user!.id)
+        and(
+          eq(restaurantMembers.userId, req.user!.id),
+          eq(restaurants.tenantType, effectiveType)
+        )
       );
 
     const userMemberships = await query;

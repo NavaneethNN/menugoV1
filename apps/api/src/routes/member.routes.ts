@@ -788,16 +788,27 @@ router.post(
         .where(eq(user.email, staffEmail))
         .limit(1);
 
-      if (!staffUser) {
+      if (staffUser) {
+        const [existing] = await db
+          .select({ tenantType: user.tenantType })
+          .from(user)
+          .where(eq(user.id, staffUser.id))
+          .limit(1);
+        if (existing?.tenantType === 'cinema') {
+          throw new AppError('This user account is registered for cinema theatres and cannot be added to a restaurant.', 400);
+        }
+      } else {
         // Create user through Better Auth
         const signupRes = await auth.api.signUpEmail({
           body: {
             email: staffEmail,
             password: tempPassword,
-            name
-          }
+            name,
+            tenantType: 'restaurant'
+          } as any
         });
         staffUser = { id: signupRes.user.id };
+        await db.update(user).set({ tenantType: 'restaurant' }).where(eq(user.id, staffUser.id));
       }
 
       // Insert into restaurantMembers

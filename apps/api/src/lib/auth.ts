@@ -50,6 +50,15 @@ export const auth = betterAuth({
   secret,
   baseURL: apiUrl,
   basePath: '/api/auth',
+  user: {
+    additionalFields: {
+      tenantType: {
+        type: 'string',
+        defaultValue: 'restaurant',
+        input: true
+      }
+    }
+  },
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: {
@@ -64,6 +73,16 @@ export const auth = betterAuth({
     requireEmailVerification: false,
     minPasswordLength: 4,
     maxPasswordLength: 128
+  },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID || process.env.OAUTH_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.OAUTH_CLIENT_SECRET || '',
+      enabled: Boolean(
+        (process.env.GOOGLE_CLIENT_ID || process.env.OAUTH_CLIENT_ID) &&
+        (process.env.GOOGLE_CLIENT_SECRET || process.env.OAUTH_CLIENT_SECRET)
+      )
+    }
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days

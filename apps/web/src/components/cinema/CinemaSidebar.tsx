@@ -46,7 +46,7 @@ export function CinemaSidebar({
 
   const navigationSections = [
     {
-      title: 'MANAGEMENT',
+      title: 'MANAGE',
       items: [
         {
           label: 'Overview',
@@ -81,19 +81,21 @@ export function CinemaSidebar({
           match: (path: string) => path.startsWith('/cinema/admin/menu')
         },
         {
-          label: 'Settings & QR',
-          href: '/cinema/admin/settings',
-          icon: Settings,
-          match: (path: string) =>
-            path.startsWith('/cinema/admin/settings') ||
-            path.startsWith('/cinema/admin/qr') ||
-            path.startsWith('/cinema/admin/payments') ||
-            path.startsWith('/cinema/admin/staff')
+          label: 'Staff',
+          href: '/cinema/admin/staff',
+          icon: Users,
+          match: (path: string) => path.startsWith('/cinema/admin/staff')
+        },
+        {
+          label: 'Reports',
+          href: '/cinema/admin/reports',
+          icon: BarChart3,
+          match: (path: string) => path.startsWith('/cinema/admin/reports')
         }
       ]
     },
     {
-      title: 'LIVE STATIONS',
+      title: 'OPERATIONS',
       items: [
         {
           label: 'Kitchen KDS',
@@ -108,29 +110,52 @@ export function CinemaSidebar({
           match: (path: string) => path.startsWith('/cinema/delivery')
         }
       ]
+    },
+    {
+      title: 'SETUP',
+      items: [
+        {
+          label: 'Payments',
+          href: '/cinema/admin/payments',
+          icon: CreditCard,
+          match: (path: string) => path.startsWith('/cinema/admin/payments')
+        },
+        {
+          label: 'QR Codes',
+          href: '/cinema/admin/qr',
+          icon: QrCode,
+          match: (path: string) => path.startsWith('/cinema/admin/qr')
+        },
+        {
+          label: 'Settings',
+          href: '/cinema/admin/settings',
+          icon: Settings,
+          match: (path: string) => path.startsWith('/cinema/admin/settings')
+        }
+      ]
     }
   ];
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-slate-900 text-slate-300">
+    <div className="flex flex-col h-full bg-white text-slate-700">
       {/* Brand Header */}
-      <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between shrink-0">
+      <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between shrink-0">
         <Link
           href="/cinema/admin/dashboard"
           onClick={handleLinkClick}
           className="flex items-center gap-3 group min-w-0"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-600 text-white font-black flex items-center justify-center shadow-lg shadow-indigo-600/30 group-hover:scale-105 transition-transform shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-red-700 text-white font-black flex items-center justify-center group-hover:bg-red-800 transition-colors shrink-0">
             <Film className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="font-black text-lg text-white tracking-tight leading-tight">MenuGo</span>
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 uppercase tracking-wider">
+              <span className="font-black text-lg text-slate-900 tracking-tight leading-tight">MenuGo</span>
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-50 text-red-700 border border-red-100 uppercase tracking-wider">
                 Cinema
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 truncate max-w-[130px] sm:max-w-[150px] font-medium mt-0.5">
+            <p className="text-[11px] text-slate-500 truncate max-w-[130px] sm:max-w-[150px] font-medium mt-0.5">
               {theatreName || 'Theatre Console'}
             </p>
           </div>
@@ -139,7 +164,7 @@ export function CinemaSidebar({
         {onClose && (
           <button
             onClick={onClose}
-            className="lg:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition"
+            className="lg:hidden p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
             aria-label="Close Navigation"
           >
             <X className="w-5 h-5" />
@@ -148,10 +173,10 @@ export function CinemaSidebar({
       </div>
 
       {/* Navigation Links */}
-      <div className="flex-1 py-4 px-3 space-y-6 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
+      <div className="flex-1 py-4 px-3 space-y-6 overflow-y-auto">
         {navigationSections.map((section) => (
           <div key={section.title} className="space-y-1">
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
               {section.title}
             </p>
             {section.items.map((item) => {
@@ -164,20 +189,20 @@ export function CinemaSidebar({
                   key={item.href}
                   href={item.href}
                   onClick={handleLinkClick}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors group border-l-2 ${
                     isActive
-                      ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-600/25 font-bold border border-indigo-500/30'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      ? 'bg-red-50 text-red-800 font-semibold border-red-700'
+                      : 'text-slate-600 hover:text-slate-950 hover:bg-slate-50 border-transparent'
                   }`}
                 >
                   <Icon
                     className={`w-4 h-4 shrink-0 transition-colors ${
-                      isActive ? 'text-white' : 'text-slate-400 group-hover:text-indigo-400'
+                      isActive ? 'text-red-700' : 'text-slate-500 group-hover:text-slate-800'
                     }`}
                   />
                   <span className="truncate">{item.label}</span>
                   {isActive && (
-                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-300 animate-pulse shrink-0" />
+                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-red-600 shrink-0" />
                   )}
                 </Link>
               );
@@ -188,19 +213,18 @@ export function CinemaSidebar({
 
       {/* Customer Seat View / QR Code Link */}
       {theatreSlug && (
-        <div className="p-3 border-t border-slate-800 bg-slate-950/60 shrink-0">
+        <div className="p-3 border-t border-slate-200 bg-white shrink-0">
           <Link
             href="/cinema/admin/qr"
             onClick={handleLinkClick}
-            className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold transition border border-slate-700/50 group shadow-xs"
+            className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-950 text-xs font-semibold transition border border-slate-200 group"
           >
             <span className="flex items-center gap-2 min-w-0">
-              <QrCode className="w-3.5 h-3.5 text-indigo-400 shrink-0 group-hover:scale-110 transition-transform" />
+              <QrCode className="w-3.5 h-3.5 text-red-700 shrink-0" />
               <span className="truncate font-medium">Customer QR &amp; Seat View</span>
             </span>
-            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider shrink-0 flex items-center gap-1">
-              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-              Live
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-wider shrink-0">
+              Open
             </span>
           </Link>
         </div>
@@ -211,7 +235,7 @@ export function CinemaSidebar({
   return (
     <>
       {/* Desktop Sidebar (hidden on mobile & tablet) */}
-      <aside className="hidden lg:flex flex-col w-64 bg-slate-900 border-r border-slate-800 shrink-0 sticky top-0 h-screen z-20">
+      <aside className="hidden lg:flex flex-col w-60 bg-white border-r border-slate-200 shrink-0 sticky top-0 h-screen z-20">
         {sidebarContent}
       </aside>
 
@@ -220,13 +244,13 @@ export function CinemaSidebar({
         <div className="fixed inset-0 z-50 lg:hidden flex">
           {/* Backdrop Blur Overlay */}
           <div
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-slate-950/30 transition-opacity"
             onClick={onClose}
             aria-hidden="true"
           />
 
           {/* Drawer Body */}
-          <div className="relative flex flex-col w-72 max-w-[85vw] border-r border-slate-800 z-10 shadow-2xl h-full animate-in slide-in-from-left duration-200">
+          <div className="relative flex flex-col w-72 max-w-[85vw] bg-white border-r border-slate-200 z-10 shadow-xl h-full animate-in slide-in-from-left duration-200">
             {sidebarContent}
           </div>
         </div>

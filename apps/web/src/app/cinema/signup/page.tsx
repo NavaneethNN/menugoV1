@@ -12,9 +12,9 @@ export default function CinemaSignupPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white">
-      <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mb-3" />
-      <p className="text-xs text-slate-400">Redirecting to Cinema Registration...</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white text-slate-700">
+      <Loader2 className="w-8 h-8 animate-spin text-red-600 mb-3" />
+      <p className="text-xs text-slate-500">Redirecting to Cinema Registration...</p>
     </div>
   );
 }

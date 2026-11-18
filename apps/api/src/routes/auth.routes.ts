@@ -39,6 +39,7 @@ router.get('/me', requireAuth, async (req: Request, res: Response, next: NextFun
         name: req.user!.name,
         email: req.user!.email,
         role: req.user!.role,
+        tenantType: req.user!.tenantType || 'restaurant',
         image: req.user!.image || null,
         emailVerified: req.user!.emailVerified
       },
@@ -48,6 +49,69 @@ router.get('/me', requireAuth, async (req: Request, res: Response, next: NextFun
       },
       memberships: userMemberships
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * Returns the resolved tenantType ('cinema' | 'restaurant') for the logged in user.
+ */
+router.get('/account-type', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const [dbUser] = await db
+      .select({ tenantType: user.tenantType })
+      .from(user)
+      .where(eq(user.id, req.user!.id))
+      .limit(1);
+
+    const tenantType = dbUser?.tenantType || req.user?.tenantType || 'restaurant';
+
+    res.json({
+      userId: req.user!.id,
+      email: req.user!.email,
+      name: req.user!.name,
+      tenantType
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * Stamps tenantType ('cinema' | 'restaurant') for a user after OAuth signup.
+ * Guarantees that a user cannot switch tenantType once memberships exist.
+ */
+router.post('/set-oauth-tenant-type', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { tenantType } = req.body;
+    if (tenantType !== 'cinema' && tenantType !== 'restaurant') {
+      return res.status(400).json({ error: 'Invalid tenant type' });
+    }
+
+    const existingMemberships = await db
+      .select({ tenantType: restaurants.tenantType })
+      .from(restaurantMembers)
+      .innerJoin(restaurants, eq(restaurantMembers.restaurantId, restaurants.id))
+      .where(eq(restaurantMembers.userId, req.user!.id))
+      .limit(1);
+
+    const firstMembership = existingMemberships[0];
+    if (firstMembership) {
+      const existingType = firstMembership.tenantType === 'cinema' ? 'cinema' : 'restaurant';
+      if (existingType !== tenantType) {
+        return res.status(403).json({
+          error: `This account is already registered for ${existingType} and cannot be used for ${tenantType}.`
+        });
+      }
+    }
+
+    await db
+      .update(user)
+      .set({ tenantType })
+      .where(eq(user.id, req.user!.id));
+
+    res.json({ success: true, tenantType });
   } catch (error) {
     next(error);
   }

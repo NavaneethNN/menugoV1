@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
 import { RestaurantOnboardingForm } from '@/components/RestaurantOnboardingForm';
+import { apiRequest } from '@/lib/api';
 import { Store, Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
@@ -14,6 +15,17 @@ export default function RestaurantOnboardingPage() {
   useEffect(() => {
     if (!isPending && !session) {
       router.push('/admin/login');
+      return;
+    }
+
+    if (session?.user) {
+      apiRequest('/api/auth/account-type')
+        .then((accountInfo) => {
+          if (accountInfo?.tenantType === 'cinema') {
+            router.replace('/cinema/admin/dashboard');
+          }
+        })
+        .catch(() => {});
     }
   }, [session, isPending, router]);
 
@@ -29,19 +41,13 @@ export default function RestaurantOnboardingPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-2xl text-center px-4">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-start mb-4">
           <Link
             href="/"
             className="text-xs font-bold text-slate-500 hover:text-slate-800 transition flex items-center gap-1.5"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Homepage</span>
-          </Link>
-          <Link
-            href="/cinema/onboarding"
-            className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition"
-          >
-            Switch to Cinema Setup →
           </Link>
         </div>
         <Link href="/" className="inline-flex items-center gap-2 mb-4">

@@ -18,7 +18,8 @@ import {
   products,
   orders,
   orderItems,
-  orderStatusHistory
+  orderStatusHistory,
+  user
 } from '@menugo/database';
 import { eq, and, or, sql, count, ne, asc, desc, ilike, gte, lte, inArray } from 'drizzle-orm';
 import {
@@ -124,6 +125,21 @@ async function generateUniqueSlug(baseName: string): Promise<string> {
 router.post('/theatres', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validatedData = createCinemaProfileSchema.parse(req.body);
+
+    // Verify caller is not a restaurant user
+    const [callingUser] = await db
+      .select({ tenantType: user.tenantType })
+      .from(user)
+      .where(eq(user.id, req.user!.id))
+      .limit(1);
+
+    if (callingUser?.tenantType === 'restaurant') {
+      throw new AppError(
+        'Restaurant accounts cannot create or manage cinema theatres. Please create a dedicated theatre account.',
+        403
+      );
+    }
+
     const theatreId = crypto.randomUUID();
     const profileId = crypto.randomUUID();
 
@@ -167,7 +183,13 @@ router.post('/theatres', requireAuth, async (req: Request, res: Response, next: 
         })
         .returning();
 
-      // 3. Insert 1:1 cinema_profiles record with initial onboarding stage
+      // 3. Ensure user is stamped as cinema tenant
+      await tx
+        .update(user)
+        .set({ tenantType: 'cinema' })
+        .where(eq(user.id, req.user!.id));
+
+      // 4. Insert 1:1 cinema_profiles record with initial onboarding stage
       const [profile] = await tx
         .insert(cinemaProfiles)
         .values({

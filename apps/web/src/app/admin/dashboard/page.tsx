@@ -40,7 +40,6 @@ export default function AdminDashboardPage() {
   const initialLoadedRef = useRef(false);
 
   const [restaurants, setRestaurants] = useState<any[]>([]);
-  const [cinemaTheatres, setCinemaTheatres] = useState<any[]>([]);
   const [selectedMembership, setSelectedMembership] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -67,12 +66,18 @@ export default function AdminDashboardPage() {
       if (!isSilent && restaurants.length === 0) {
         setLoading(true);
       }
+
+      // Strictly verify account domain: theatre accounts cannot access restaurant dashboard
+      const accountInfo = await apiRequest('/api/auth/account-type').catch(() => null);
+      if (accountInfo?.tenantType === 'cinema') {
+        router.replace('/cinema/admin/dashboard');
+        return;
+      }
+
       const data = await apiRequest('/api/restaurants/my');
       const restaurantOnly = data.filter((r: any) => (r.restaurant?.tenantType || 'restaurant') === 'restaurant');
-      const cinemaOnly = data.filter((r: any) => r.restaurant?.tenantType === 'cinema');
 
       setRestaurants(restaurantOnly);
-      setCinemaTheatres(cinemaOnly);
 
       if (restaurantOnly.length > 0) {
         if (selectRestaurantId) {
@@ -149,17 +154,6 @@ export default function AdminDashboardPage() {
               </select>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
-          )}
-
-          {/* Switch to Cinema Dashboard if user has cinema accounts */}
-          {cinemaTheatres.length > 0 && (
-            <Link
-              href="/cinema/admin/dashboard"
-              className="px-3 py-1.5 bg-indigo-50/90 border border-indigo-200/90 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-100 transition flex items-center gap-1.5 shrink-0 shadow-xs"
-            >
-              <Film className="w-3.5 h-3.5 text-indigo-600" />
-              <span className="hidden sm:inline">Cinema Console</span>
-            </Link>
           )}
         </div>
 
@@ -400,25 +394,6 @@ export default function AdminDashboardPage() {
                     </Link>
                   </div>
                 </div>
-
-                {/* Additional modules / Cinema switch */}
-                {cinemaTheatres.length > 0 && (
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-2 mb-1.5">
-                      Other Modules
-                    </p>
-                    <Link
-                      href="/cinema/admin/dashboard"
-                      onClick={() => setMobileNavOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50/70 border border-indigo-200/70 hover:bg-indigo-100 transition"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-xs">
-                        <Film className="w-3.5 h-3.5" />
-                      </div>
-                      <span>Cinema Console</span>
-                    </Link>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -469,50 +444,22 @@ export default function AdminDashboardPage() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6">
         {restaurants.length === 0 ? (
-          cinemaTheatres.length > 0 ? (
-            <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 shadow-sm max-w-xl mx-auto p-8">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-4">
-                <Film className="w-8 h-8" />
-              </div>
-              <h3 className="text-2xl font-black text-slate-900">Cinema Account Detected</h3>
-              <p className="text-slate-600 text-sm mt-2 max-w-md mx-auto leading-relaxed">
-                You are registered as a Cinema Theatre administrator ({cinemaTheatres[0]?.restaurant?.name}).
-                Auditorium screens, row seating layouts, and daily movie show schedules are managed in the Cinema Console.
-              </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-                <Link
-                  href="/cinema/admin/dashboard"
-                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-sm shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2"
-                >
-                  <Film className="w-4 h-4" />
-                  <span>Go to Cinema Console</span>
-                </Link>
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-xl text-xs transition"
-                >
-                  Register a Restaurant
-                </button>
-              </div>
+          <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 shadow-sm max-w-xl mx-auto p-8">
+            <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mx-auto mb-4">
+              <Store className="w-8 h-8" />
             </div>
-          ) : (
-            <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 shadow-sm max-w-xl mx-auto p-8">
-              <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mx-auto mb-4">
-                <Store className="w-8 h-8" />
-              </div>
-              <h3 className="text-2xl font-black text-slate-900">Welcome to MenuGo!</h3>
-              <p className="text-slate-600 text-sm mt-2 max-w-md mx-auto leading-relaxed">
-                You haven&apos;t registered any restaurants yet. Set up your restaurant identity and customer QR slug to start serving digital contactless orders.
-              </p>
-              <div className="mt-8">
-                <RestaurantOnboardingForm
-                  onSuccess={(newRest) => {
-                    loadRestaurants(newRest.id);
-                  }}
-                />
-              </div>
+            <h3 className="text-2xl font-black text-slate-900">Welcome to MenuGo!</h3>
+            <p className="text-slate-600 text-sm mt-2 max-w-md mx-auto leading-relaxed">
+              You haven&apos;t registered any restaurants yet. Set up your restaurant identity and customer QR slug to start serving digital contactless orders.
+            </p>
+            <div className="mt-8">
+              <RestaurantOnboardingForm
+                onSuccess={(newRest) => {
+                  loadRestaurants(newRest.id);
+                }}
+              />
             </div>
-          )
+          </div>
         ) : (
           <div className="space-y-6">
             {/* Restaurant Profile Banner */}
