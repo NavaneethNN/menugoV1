@@ -11,6 +11,12 @@ playwright-report/
 # Next.js
 apps/web/.next/
 apps/web/out/
+apps/restaurant-web/.next/
+apps/restaurant-web/out/
+apps/cinema-web/.next/
+apps/cinema-web/out/
+apps/*/.next/
+apps/*/out/
 .next/
 out/
 

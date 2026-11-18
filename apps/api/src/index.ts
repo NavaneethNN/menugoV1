@@ -57,9 +57,13 @@ const allowedOriginsList = Array.from(
   new Set([
     process.env.NEXT_PUBLIC_APP_URL,
     process.env.APP_URL,
+    process.env.CINEMA_APP_URL,
+    process.env.NEXT_PUBLIC_CINEMA_URL,
     ...customTrustedOrigins,
     'http://localhost:3000',
-    'http://127.0.0.1:3000'
+    'http://127.0.0.1:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3001'
   ].filter((o): o is string => Boolean(o)))
 );
 

@@ -1,0 +1,303 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 350 84% 48%; /* MenuGo rich culinary crimson */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 350 84% 48%;
+    --radius: 0.75rem;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Custom Modern Range Slider Styles - Sleek Culinary Crimson */
+input[type='range'].modern-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  outline: none;
+  transition: background 0.2s ease;
+}
+
+input[type='range'].modern-slider:hover {
+  background: #cbd5e1;
+}
+
+input[type='range'].modern-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #dc2626;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.4);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type='range'].modern-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+  box-shadow: 0 6px 14px rgba(220, 38, 38, 0.5);
+}
+
+input[type='range'].modern-slider::-webkit-slider-thumb:active {
+  transform: scale(0.96);
+  background: #b91c1c;
+}
+
+input[type='range'].modern-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #dc2626;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.4);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type='range'].modern-slider::-moz-range-thumb:hover {
+  transform: scale(1.18);
+}
+
+/* Print Styles for QR Stands and Receipts */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  @page {
+    size: auto;
+    margin: 8mm;
+  }
+}
+
+/* Cinema admin: restrained light workspace. Scoped here so the customer
+   ordering experience and restaurant console keep their own presentation. */
+.cinema-admin-theme {
+  color: #1f2937;
+  background: #f8fafc;
+  color-scheme: light;
+}
+
+.cinema-admin-theme :is(
+  [class~="bg-slate-950"], [class*="bg-slate-950/"],
+  [class~="bg-slate-900"], [class*="bg-slate-900/"],
+  [class~="bg-slate-800"], [class*="bg-slate-800/"]
+) {
+  background-color: #fff !important;
+  background-image: none !important;
+}
+
+.cinema-admin-theme :is([class*="bg-red-950"], [class*="bg-red-900"]) {
+  background-color: #fef2f2 !important;
+  background-image: none !important;
+}
+
+.cinema-admin-theme :is([class~="bg-slate-700"], [class*="bg-slate-700/"]) {
+  background-color: #f1f5f9 !important;
+  background-image: none !important;
+}
+
+.cinema-admin-theme :is([class~="text-white"], [class~="text-slate-100"], [class~="text-slate-200"], [class~="text-slate-300"]) {
+  color: #1f2937 !important;
+}
+
+.cinema-admin-theme :is([class~="text-slate-400"], [class~="text-slate-500"]) {
+  color: #64748b !important;
+}
+
+.cinema-admin-theme :is(
+  [class~="border-slate-800"], [class*="border-slate-800/"],
+  [class~="border-slate-700"], [class*="border-slate-700/"],
+  [class*="border-indigo-"], [class*="border-violet-"],
+  [class*="border-emerald-"], [class*="border-amber-"],
+  [class*="border-blue-"], [class*="border-sky-"]
+) {
+  border-color: #e2e8f0 !important;
+}
+
+.cinema-admin-theme :is(
+  [class*="bg-indigo-"], [class*="bg-violet-"], [class*="bg-blue-"], [class*="bg-sky-"]
+) {
+  background-color: #b91c1c !important;
+  background-image: none !important;
+}
+
+.cinema-admin-theme :is(
+  [class~="bg-indigo-500/10"], [class~="bg-indigo-500/20"],
+  [class~="bg-indigo-600/20"], [class~="bg-indigo-600/30"], [class~="bg-indigo-600/80"],
+  [class~="bg-indigo-900/40"], [class~="bg-indigo-900/60"], [class~="bg-indigo-900/80"],
+  [class~="bg-indigo-950/30"], [class~="bg-indigo-950/40"],
+  [class~="bg-violet-500/10"], [class~="bg-violet-500/20"],
+  [class~="bg-violet-600/20"], [class~="bg-violet-600/30"], [class~="bg-violet-950/80"],
+  [class~="bg-blue-500/10"], [class~="bg-blue-500/20"], [class~="bg-blue-950/30"], [class~="bg-blue-950/40"],
+  [class~="bg-sky-500/10"]
+) {
+  background-color: #fef2f2 !important;
+}
+
+.cinema-admin-theme :is(
+  [class~="bg-indigo-900"], [class*="bg-indigo-900/"],
+  [class~="bg-indigo-950"], [class*="bg-indigo-950/"],
+  [class~="bg-violet-900"], [class*="bg-violet-900/"],
+  [class~="bg-violet-950"], [class*="bg-violet-950/"],
+  [class~="bg-blue-900"], [class*="bg-blue-900/"],
+  [class~="bg-blue-950"], [class*="bg-blue-950/"]
+) {
+  background-color: #fef2f2 !important;
+  background-image: none !important;
+}
+
+.cinema-admin-theme :is([class*="from-indigo-"], [class*="from-violet-"], [class*="from-blue-"]) {
+  --tw-gradient-from: #b91c1c var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(185 28 28 / 0%) var(--tw-gradient-to-position) !important;
+}
+
+.cinema-admin-theme :is([class*="to-indigo-"], [class*="to-violet-"], [class*="to-blue-"]) {
+  --tw-gradient-to: #b91c1c var(--tw-gradient-to-position) !important;
+}
+
+.cinema-admin-theme :is(
+  [class*="bg-emerald-"], [class*="bg-amber-"], [class*="bg-rose-"],
+  [class*="bg-sky-"], [class*="bg-blue-"], [class*="bg-orange-"]
+) {
+  background-color: #f1f5f9 !important;
+  background-image: none !important;
+}
+
+.cinema-admin-theme :is(
+  [class*="text-indigo-"], [class*="text-violet-"], [class*="text-blue-"], [class*="text-sky-"]
+) {
+  color: #b91c1c !important;
+}
+
+.cinema-admin-theme :is([class*="text-emerald-"], [class*="text-amber-"]) {
+  color: #475569 !important;
+}
+
+.cinema-admin-theme :is([class*="text-orange-"], [class*="text-green-"]) {
+  color: #475569 !important;
+}
+
+.cinema-admin-theme :is([class*="text-red-300"], [class*="text-red-400"], [class*="text-rose-"]) {
+  color: #b91c1c !important;
+}
+
+.cinema-admin-theme :is([class*="ring-indigo-"], [class*="ring-violet-"]) {
+  --tw-ring-color: rgb(185 28 28 / 0.16) !important;
+}
+
+.cinema-admin-theme :is([class*="shadow-indigo-"], [class*="shadow-violet-"], [class*="shadow-emerald-"]) {
+  --tw-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.06) !important;
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow) !important;
+}
+
+.cinema-admin-theme :is([class*="bg-gradient-to-"][class*="from-slate-"]) {
+  background-color: #fff !important;
+  background-image: none !important;
+}
+
+.cinema-admin-theme :is(
+  [class*="bg-gradient-to-"][class*="from-indigo-600"],
+  [class*="bg-gradient-to-"][class*="from-violet-600"]
+) {
+  background-color: #b91c1c !important;
+  background-image: none !important;
+}
+
+.cinema-admin-theme :is(
+  [class*="bg-gradient-to-"][class*="from-indigo-950"],
+  [class*="bg-gradient-to-"][class*="from-violet-950"],
+  [class*="bg-gradient-to-"][class*="from-emerald-950"]
+) {
+  background-color: #fef2f2 !important;
+  background-image: none !important;
+}
+
+.cinema-admin-theme :is([class~="shadow-md"], [class~="shadow-lg"], [class~="shadow-xl"], [class~="shadow-2xl"]) {
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.08) !important;
+}
+
+.cinema-admin-theme :is([class~="rounded-3xl"], [class~="rounded-2xl"]) {
+  border-radius: 0.75rem !important;
+}
+
+.cinema-admin-theme :is([class~="animate-pulse"], [class~="animate-bounce"]) {
+  animation: none !important;
+}
+
+.cinema-admin-theme :is(
+  [class~="bg-indigo-600"][class~="text-white"], [class~="bg-violet-600"][class~="text-white"],
+  [class~="bg-blue-600"][class~="text-white"], [class~="bg-sky-600"][class~="text-white"],
+  [class~="bg-emerald-600"][class~="text-white"], [class~="bg-rose-600"][class~="text-white"],
+  [class~="bg-red-500"][class~="text-white"], [class~="bg-red-600"][class~="text-white"],
+  [class~="bg-red-700"][class~="text-white"], [class~="bg-red-800"][class~="text-white"]
+) {
+  color: #fff !important;
+}
+
+.cinema-admin-theme :is(
+  [class*="bg-gradient-to-"][class*="from-indigo-600"][class~="text-white"],
+  [class*="bg-gradient-to-"][class*="from-violet-600"][class~="text-white"]
+) {
+  color: #fff !important;
+}
+
+.cinema-admin-theme :is(.bg-red-700, .bg-red-600, .bg-red-500) .text-white {
+  color: #fff !important;
+}
+
+.cinema-admin-theme :is(
+  [class~="bg-indigo-600"][class~="text-white"], [class~="bg-violet-600"][class~="text-white"],
+  [class~="bg-blue-600"][class~="text-white"], [class~="bg-sky-600"][class~="text-white"],
+  [class~="bg-emerald-600"][class~="text-white"], [class~="bg-rose-600"][class~="text-white"]
+) .text-white {
+  color: #fff !important;
+}
+
+
+
