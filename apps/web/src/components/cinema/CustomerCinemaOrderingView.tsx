@@ -51,7 +51,6 @@ import {
 } from '@/lib/cinema-cart';
 import {
   CinemaCartDrawer,
-  CinemaShow,
   SeatingRow
 } from './CinemaCartDrawer';
 import { CinemaOrderPreparedModal } from './CinemaOrderPreparedModal';
@@ -130,9 +129,6 @@ export function CustomerCinemaOrderingView({
 
   // Delivery Context State
   const [selectedScreenId, setSelectedScreenId] = useState<string>('');
-  const [shows, setShows] = useState<CinemaShow[]>([]);
-  const [loadingShows, setLoadingShows] = useState(false);
-  const [selectedShowId, setSelectedShowId] = useState<string>('');
   const [seatingRows, setSeatingRows] = useState<SeatingRow[]>([]);
   const [loadingSeating, setLoadingSeating] = useState(false);
   const [selectedSeatKey, setSelectedSeatKey] = useState<string>(''); // format "ROW:SEAT" e.g. "A:A1"
@@ -229,7 +225,7 @@ export function CustomerCinemaOrderingView({
     loadRazorpaySdk().catch(() => {});
   }, []);
 
-  // 2. Fetch Shows and Seating when selectedScreenId changes
+  // 2. Fetch Seating when selectedScreenId changes
   useEffect(() => {
     if (!theatreToken || !selectedScreenId) return;
 
@@ -237,39 +233,19 @@ export function CustomerCinemaOrderingView({
 
     const fetchScreenDetails = async () => {
       try {
-        setLoadingShows(true);
         setLoadingSeating(true);
-
-        const [showsRes, seatingRes] = await Promise.all([
-          apiRequest<{ shows: CinemaShow[] }>(
-            `/api/cinema/public/shows/${theatreToken}?screenId=${selectedScreenId}`
-          ),
-          apiRequest<{ rows: SeatingRow[] }>(
-            `/api/cinema/public/seating/${theatreToken}/${selectedScreenId}`
-          )
-        ]);
+        const seatingRes = await apiRequest<{ rows: SeatingRow[] }>(
+          `/api/cinema/public/seating/${theatreToken}/${selectedScreenId}`
+        );
 
         if (!isMounted) return;
-
-        const showList: CinemaShow[] = showsRes.shows || [];
-        setShows(showList);
-
-        // Auto-select open show if available, or first show
-        const openShow = showList.find((s) => s.isOrderingOpen) || showList[0];
-        if (openShow) {
-          setSelectedShowId(openShow.id);
-        } else {
-          setSelectedShowId('');
-        }
-
         const rowsList: SeatingRow[] = seatingRes.rows || [];
         setSeatingRows(rowsList);
       } catch (err: any) {
         if (!isMounted) return;
-        console.warn('Could not load shows or seating for screen:', err);
+        console.warn('Could not load seating for screen:', err);
       } finally {
         if (isMounted) {
-          setLoadingShows(false);
           setLoadingSeating(false);
         }
       }
@@ -490,7 +466,7 @@ export function CustomerCinemaOrderingView({
 
   // Place Order Action: Prepares order and triggers payment modal
   const handlePlaceOrder = async () => {
-    if (!theatreToken || !selectedScreenId || !selectedShowId || !selectedSeatKey) {
+    if (!theatreToken || !selectedScreenId || !selectedSeatKey) {
       setOrderError('Screen and seat details are required to place your order.');
       return;
     }
@@ -515,7 +491,6 @@ export function CustomerCinemaOrderingView({
         body: JSON.stringify({
           theatreToken,
           screenId: selectedScreenId,
-          showId: selectedShowId,
           seatRow,
           seatNumber,
           items: cartItems.map((i) => ({
@@ -1502,10 +1477,6 @@ export function CustomerCinemaOrderingView({
           isScreenPreselected={resolveData.isScreenPreselected}
           selectedScreenId={selectedScreenId}
           onScreenChange={handleScreenChange}
-          shows={shows}
-          selectedShowId={selectedShowId}
-          onShowChange={setSelectedShowId}
-          loadingShows={loadingShows}
           seatingRows={seatingRows}
           loadingSeating={loadingSeating}
           selectedSeatKey={selectedSeatKey}

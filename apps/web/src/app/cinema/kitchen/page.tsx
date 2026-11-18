@@ -1050,22 +1050,6 @@ function CinemaOrderCard({
           </div>
         </div>
 
-        {/* Movie Title & Showtime */}
-        {(order.movie?.title || order.showtime) && (
-          <div className="bg-slate-800/60 border border-slate-700/60 rounded-lg px-2.5 py-1.5 mb-3 flex items-center gap-2 text-xs">
-            <Film className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <div className="truncate">
-              <span className="font-bold text-slate-200">
-                {order.movie?.title || 'Feature Presentation'}
-              </span>
-              {order.showtime && (
-                <span className="text-slate-400 font-medium ml-1.5">
-                  ({order.showtime.substring(0, 5)})
-                </span>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Ordered Concession Items List */}
         <div className="space-y-1.5 mb-3 border-t border-slate-800/80 pt-2.5">

@@ -412,7 +412,7 @@ export default function CinemaOnboardingPage() {
 
   if (sessionLoading || checkingExisting) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-900 p-4">
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-slate-50 text-slate-900 p-4">
         <Loader2 className="w-10 h-10 animate-spin text-red-500 mb-4" />
         <p className="text-sm text-slate-600 font-medium">
           Verifying cinema administrator account...
@@ -422,12 +422,12 @@ export default function CinemaOnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col selection:bg-red-600 selection:text-white">
+    <div className="min-h-[100dvh] bg-slate-50 text-slate-900 flex flex-col selection:bg-red-700 selection:text-white">
       {/* Top Header */}
-      <header className="border-b border-slate-200 bg-white backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <header className="border-b border-slate-200 bg-white sticky top-0 z-50 shrink-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl bg-red-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-red-600/30 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-lg bg-red-700 flex items-center justify-center text-white font-bold text-lg">
               <Film className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col">
@@ -461,9 +461,9 @@ export default function CinemaOnboardingPage() {
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 w-full">
         {/* Step Progress Bar & Navigation Stepper */}
-        <div className="mb-8 p-4 sm:p-6 rounded-3xl bg-white border border-slate-200 shadow-xl">
+        <div className="mb-4 sm:mb-5 p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
             <div>
               <span className="text-[10px] uppercase tracking-wider font-extrabold text-red-600 bg-red-50 px-2 py-0.5 rounded-md border border-red-200">
@@ -483,7 +483,7 @@ export default function CinemaOnboardingPage() {
           </div>
 
           {/* Stepper Tabs */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
             {wizardSteps.map((s) => {
               const Icon = s.icon;
               const isCurrent = currentStep === s.step;
@@ -498,7 +498,7 @@ export default function CinemaOnboardingPage() {
                   onClick={() => isClickable && setCurrentStep(s.step)}
                   className={`p-2.5 rounded-2xl border text-left transition-all flex items-center gap-2.5 ${
                     isCurrent
-                      ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-600/30 ring-2 ring-red-400/40'
+                      ? 'bg-red-700 text-white border-red-700 shadow-sm ring-1 ring-red-700/10'
                       : isDone
                       ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-50'
                       : 'bg-slate-50 text-slate-600 border-slate-200 opacity-60'
@@ -531,14 +531,14 @@ export default function CinemaOnboardingPage() {
 
         {/* Global Feedback Notifications */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs flex items-center gap-3 shadow-lg">
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center gap-3">
             <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {successNotice && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs flex items-center gap-3 shadow-lg animate-fade-in">
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center gap-3 animate-fade-in">
             <CheckCircle2 className="w-4 h-4 text-red-600 shrink-0" />
             <span>{successNotice}</span>
           </div>
@@ -546,7 +546,7 @@ export default function CinemaOnboardingPage() {
 
         {/* ================= STEP 1: THEATRE PROFILE ================= */}
         {currentStep === 1 && (
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm">
             <div className="mb-6 border-b border-slate-200 pb-4">
               <h2 className="text-lg font-bold text-slate-900">Step 1: Cinema Identity & Location</h2>
               <p className="text-xs text-slate-600 mt-0.5">
@@ -705,7 +705,7 @@ export default function CinemaOnboardingPage() {
                 <button
                   type="submit"
                   disabled={submittingStep}
-                  className="px-6 py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition flex items-center gap-2 shadow-lg shadow-red-600/30 disabled:opacity-50"
+                  className="px-6 py-3.5 rounded-xl bg-red-700 hover:bg-red-800 text-white font-bold text-sm transition flex items-center gap-2 disabled:opacity-50"
                 >
                   {submittingStep ? (
                     <>
@@ -726,7 +726,7 @@ export default function CinemaOnboardingPage() {
 
         {/* ================= STEP 2: AUDITORIUMS / SCREENS ================= */}
         {currentStep === 2 && (
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm space-y-5">
             <div className="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">Step 2: Add Cinema Screens</h2>
@@ -810,7 +810,7 @@ export default function CinemaOnboardingPage() {
                   type="button"
                   disabled={addingScreen || !screenNameInput.trim()}
                   onClick={() => handleAddScreen(screenNameInput, screenTypeInput)}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-red-700 hover:bg-red-800 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   {addingScreen ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
                   <span>Add Screen</span>
@@ -883,7 +883,7 @@ export default function CinemaOnboardingPage() {
                       setCurrentStep(3);
                     }
                   }}
-                  className="flex-1 sm:flex-none px-6 py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 disabled:opacity-40"
+                  className="flex-1 sm:flex-none px-6 py-3.5 rounded-xl bg-red-700 hover:bg-red-800 text-white font-bold text-sm transition flex items-center justify-center gap-2 disabled:opacity-40"
                 >
                   <span>Continue to Step 3: Seating</span>
                   <ArrowRight className="w-4 h-4" />
@@ -895,7 +895,7 @@ export default function CinemaOnboardingPage() {
 
         {/* ================= STEP 3: SEATING LAYOUT ================= */}
         {currentStep === 3 && (
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm space-y-5">
             <div className="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">Step 3: Seating Layout Setup</h2>
@@ -978,7 +978,7 @@ export default function CinemaOnboardingPage() {
                   type="button"
                   disabled={generatingSeating}
                   onClick={handleGenerateSeating}
-                  className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition flex items-center gap-2 shadow-md shadow-red-600/30 disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-red-700 hover:bg-red-800 text-white font-bold text-xs transition flex items-center gap-2 disabled:opacity-50"
                 >
                   {generatingSeating ? (
                     <>
@@ -999,7 +999,7 @@ export default function CinemaOnboardingPage() {
             <div className="p-6 rounded-2xl bg-white border border-slate-200 text-center space-y-4">
               {/* Cinema Screen Indicator */}
               <div className="w-3/4 mx-auto pb-3">
-                <div className="h-1.5 w-full bg-gradient-to-r from-transparent via-red-400 to-transparent rounded-full shadow-lg shadow-red-500/50" />
+                <div className="h-1.5 w-full bg-slate-200 rounded-full" />
                 <span className="text-[10px] uppercase font-bold tracking-widest text-slate-600 mt-1 block">
                   ALL EYES THIS WAY • CINEMA SCREEN
                 </span>
@@ -1059,7 +1059,7 @@ export default function CinemaOnboardingPage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep(4)}
-                  className="flex-1 sm:flex-none px-6 py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-red-600/30"
+                  className="flex-1 sm:flex-none px-6 py-3 rounded-lg bg-red-700 hover:bg-red-800 text-white font-semibold text-sm transition flex items-center justify-center gap-2"
                 >
                   <span>Continue to Step 4: Food Menu</span>
                   <ArrowRight className="w-4 h-4" />
@@ -1071,7 +1071,7 @@ export default function CinemaOnboardingPage() {
 
         {/* ================= STEP 4: CONCESSIONS MENU ================= */}
         {currentStep === 4 && (
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm space-y-5">
             <div className="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">Step 4: Concessions & Food Menu</h2>
@@ -1122,7 +1122,7 @@ export default function CinemaOnboardingPage() {
                 type="button"
                 disabled={seedingMenu}
                 onClick={handleSeedMenu}
-                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 disabled:opacity-50"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-red-700 hover:bg-red-800 text-white font-bold text-xs transition flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {seedingMenu ? (
                   <>
@@ -1190,7 +1190,7 @@ export default function CinemaOnboardingPage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep(5)}
-                  className="flex-1 sm:flex-none px-6 py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-red-600/30"
+                  className="flex-1 sm:flex-none px-6 py-3 rounded-lg bg-red-700 hover:bg-red-800 text-white font-semibold text-sm transition flex items-center justify-center gap-2"
                 >
                   <span>Complete Setup &amp; Launch</span>
                   <ArrowRight className="w-4 h-4" />
@@ -1202,9 +1202,9 @@ export default function CinemaOnboardingPage() {
 
         {/* ================= STEP 5: LAUNCHPAD & READY ================= */}
         {currentStep === 5 && (
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8 text-center max-w-2xl mx-auto">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-8 shadow-sm space-y-6 text-center max-w-2xl mx-auto">
             {/* Celebration Icon */}
-            <div className="w-16 h-16 rounded-3xl bg-red-50 border border-red-600 text-red-600 flex items-center justify-center mx-auto shadow-2xl shadow-red-950/80">
+            <div className="w-14 h-14 rounded-xl bg-red-50 border border-red-100 text-red-700 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-8 h-8" />
             </div>
 
@@ -1241,7 +1241,7 @@ export default function CinemaOnboardingPage() {
             <div className="space-y-3 pt-2">
               <Link
                 href="/cinema/admin/dashboard"
-                className="w-full py-4 px-6 rounded-2xl bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-bold text-sm transition flex items-center justify-center gap-2 shadow-xl shadow-red-600/30"
+                className="w-full py-3.5 px-6 rounded-lg bg-red-700 hover:bg-red-800 active:bg-red-900 text-white font-semibold text-sm transition flex items-center justify-center gap-2"
               >
                 <span>Enter Cinema Management Console</span>
                 <ArrowRight className="w-4 h-4" />
@@ -1270,7 +1270,7 @@ export default function CinemaOnboardingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-200 py-3 sm:py-4 text-center text-xs text-slate-500 shrink-0">
         <p>MenuGo Cinema Module • Multi-Tenant Enterprise Architecture</p>
       </footer>
     </div>

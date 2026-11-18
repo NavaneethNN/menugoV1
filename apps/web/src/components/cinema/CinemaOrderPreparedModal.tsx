@@ -45,17 +45,17 @@ interface PreparedOrder {
     screenName: string;
     screenType: string;
   };
-  movie: {
+  movie?: {
     id: string;
     title: string;
     posterUrl?: string | null;
-  };
-  show: {
+  } | null;
+  show?: {
     id: string;
     showDate: string;
     startTime: string;
     expectedEndTime: string;
-  };
+  } | null;
   seat: {
     row: string;
     seat: string;
@@ -233,7 +233,7 @@ export function CinemaOrderPreparedModal({
               modal: {
                 ondismiss: function () {
                   setPhase('idle');
-                  setErrorMessage('Payment was dismissed. You can retry anytime before showtime.');
+                  setErrorMessage('Payment was dismissed. You can retry paying now.');
                 }
               }
             };
@@ -296,7 +296,7 @@ export function CinemaOrderPreparedModal({
 
   const handleCancelGateway = () => {
     setPhase('idle');
-    setErrorMessage('Payment was cancelled. You can retry anytime before showtime.');
+    setErrorMessage('Payment was cancelled. You can retry paying now.');
   };
 
   return (
@@ -380,16 +380,18 @@ export function CinemaOrderPreparedModal({
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
                     <span className="text-[10px] text-slate-500 uppercase font-semibold block">Screen</span>
-                    <span className="font-bold text-white">{order.screen.screenName}</span>
+                    <span className="font-bold text-white">{order.screen?.screenName || 'Screen'}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 uppercase font-semibold block">Row & Seat</span>
-                    <span className="font-bold text-emerald-400">Row {order.seat.row} • Seat {order.seat.seat}</span>
+                    <span className="text-[10px] text-slate-500 uppercase font-semibold block">Row &amp; Seat</span>
+                    <span className="font-bold text-emerald-400">Row {order.seat?.row} • Seat {order.seat?.seat}</span>
                   </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 uppercase font-semibold block">Movie</span>
-                    <span className="font-bold text-white truncate block">{order.movie.title}</span>
-                  </div>
+                  {order.movie?.title ? (
+                    <div>
+                      <span className="text-[10px] text-slate-500 uppercase font-semibold block">Movie</span>
+                      <span className="font-bold text-white truncate block">{order.movie.title}</span>
+                    </div>
+                  ) : null}
                   <div>
                     <span className="text-[10px] text-slate-500 uppercase font-semibold block">Amount Paid</span>
                     <span className="font-bold text-white font-mono">{formatPaise(order.totalAmount, currency)}</span>
@@ -542,20 +544,24 @@ export function CinemaOrderPreparedModal({
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
                     <span className="text-[10px] text-slate-500 uppercase font-semibold block">Screen</span>
-                    <span className="font-bold text-white">{order.screen.screenName}</span>
+                    <span className="font-bold text-white">{order.screen?.screenName || 'Screen'}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-500 uppercase font-semibold block">In-Seat Destination</span>
-                    <span className="font-bold text-red-400">Row {order.seat.row} • Seat {order.seat.seat}</span>
+                    <span className="font-bold text-red-400">Row {order.seat?.row} • Seat {order.seat?.seat}</span>
                   </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 uppercase font-semibold block">Movie</span>
-                    <span className="font-bold text-white truncate block">{order.movie.title}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 uppercase font-semibold block">Showtime</span>
-                    <span className="font-bold text-white">{order.show.startTime} ({order.show.showDate})</span>
-                  </div>
+                  {order.movie?.title ? (
+                    <div>
+                      <span className="text-[10px] text-slate-500 uppercase font-semibold block">Movie</span>
+                      <span className="font-bold text-white truncate block">{order.movie.title}</span>
+                    </div>
+                  ) : null}
+                  {order.show?.startTime ? (
+                    <div>
+                      <span className="text-[10px] text-slate-500 uppercase font-semibold block">Showtime</span>
+                      <span className="font-bold text-white">{order.show.startTime} ({order.show.showDate})</span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -695,7 +701,7 @@ export function CinemaOrderPreparedModal({
               className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Done (Enjoy the Show)</span>
+              <span>Done (Order Placed)</span>
             </button>
           ) : phase === 'gateway_modal' || phase === 'initiating' || phase === 'verifying' ? null : (
             <button

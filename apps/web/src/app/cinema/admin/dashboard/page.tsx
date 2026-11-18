@@ -7,7 +7,6 @@ import { formatPaise } from '@/lib/utils';
 import {
   Film,
   Tv,
-  CalendarDays,
   ShoppingBag,
   ChefHat,
   Truck,
@@ -53,22 +52,10 @@ interface RecentOrder {
   createdAt: string;
 }
 
-interface TodayShow {
-  id: string;
-  screenName?: string;
-  movieTitle?: string;
-  startTime: string;
-  expectedEndTime: string;
-  orderingStartTime: string;
-  orderingEndTime: string;
-  status: string;
-}
-
 export default function CinemaAdminDashboardPage() {
   const [summary, setSummary] = useState<any>(null);
   const [onboarding, setOnboarding] = useState<any>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
-  const [todayShows, setTodayShows] = useState<TodayShow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,8 +84,8 @@ export default function CinemaAdminDashboardPage() {
       const activeTheatreId = activeTheatre.restaurant.id;
       const todayStr = new Date().toISOString().split('T')[0]!;
 
-      // Parallel fetch summary, onboarding status, recent orders & today's shows
-      const [summaryData, onboardingData, ordersData, showsData] = await Promise.all([
+      // Parallel fetch summary, onboarding status & recent orders
+      const [summaryData, onboardingData, ordersData] = await Promise.all([
         apiRequest('/api/cinema/dashboard/summary', {
           theatreId: activeTheatreId
         }).catch((err) => {
@@ -117,20 +104,12 @@ export default function CinemaAdminDashboardPage() {
         }).catch((err) => {
           console.warn('Could not load recent orders:', err);
           return { orders: [] };
-        }),
-        apiRequest('/api/cinema/shows', {
-          theatreId: activeTheatreId,
-          params: { date: todayStr }
-        }).catch((err) => {
-          console.warn('Could not load today shows:', err);
-          return { shows: [] };
         })
       ]);
 
       setSummary(summaryData);
       setOnboarding(onboardingData);
       setRecentOrders(ordersData?.orders || []);
-      setTodayShows(showsData?.shows || []);
 
       if (onboardingData?.isComplete || (onboardingData?.percentage ?? 0) === 100) {
         setWizardCollapsed(true);
@@ -181,8 +160,7 @@ export default function CinemaAdminDashboardPage() {
     preparingOrders: 0,
     readyOrders: 0,
     deliveredOrders: 0,
-    activeScreens: 0,
-    todayShows: todayShows.length
+    activeScreens: 0
   };
 
   // Real calculation from loaded orders if stats.todayOrders is 0
@@ -197,13 +175,12 @@ export default function CinemaAdminDashboardPage() {
     { key: 'seating_configured', step: 3, title: 'Seating Layout', description: 'Rows (A-Z) and seat numbers', isCompleted: false, isLocked: true, phase: 1 },
     { key: 'menu_configured', step: 4, title: 'Concessions Menu', description: 'Popcorn, snacks & beverages', isCompleted: false, isLocked: true, phase: 2 },
     { key: 'payment_configured', step: 5, title: 'Payment Gateway', description: 'Razorpay or Paytm merchant account', isCompleted: false, isLocked: true, phase: 2 },
-    { key: 'shows_scheduled', step: 6, title: 'Movie Schedules', description: 'Daily showtimes & ordering windows', isCompleted: false, isLocked: true, phase: 3 },
-    { key: 'qr_generated', step: 7, title: 'Screen QR Codes', description: 'Seat-level & screen entrance QR stands', isCompleted: false, isLocked: true, phase: 3 },
-    { key: 'ordering_activated', step: 8, title: 'In-Seat Ordering', description: 'Accept contactless patron orders', isCompleted: false, isLocked: true, phase: 3 }
+    { key: 'qr_generated', step: 6, title: 'Screen QR Codes', description: 'Seat-level & screen entrance QR stands', isCompleted: false, isLocked: true, phase: 3 },
+    { key: 'ordering_activated', step: 7, title: 'In-Seat Ordering', description: 'Accept contactless patron orders', isCompleted: false, isLocked: true, phase: 3 }
   ];
 
   const completedCount = onboarding?.completedCount ?? stages.filter((s: any) => s.isCompleted).length;
-  const totalCount = onboarding?.totalCount ?? 8;
+  const totalCount = onboarding?.totalCount ?? 7;
   const percentage = onboarding?.percentage ?? Math.round((completedCount / totalCount) * 100);
   const isSetupComplete = percentage === 100 || Boolean(onboarding?.isComplete);
 
@@ -216,7 +193,6 @@ export default function CinemaAdminDashboardPage() {
     seating_configured: '/cinema/admin/seating',
     menu_configured: '/cinema/admin/menu',
     payment_configured: '/cinema/admin/payments',
-    shows_scheduled: '/cinema/admin/shows',
     qr_generated: '/cinema/admin/qr',
     ordering_activated: '/cinema/admin/dashboard'
   };
@@ -255,13 +231,6 @@ export default function CinemaAdminDashboardPage() {
           </span>
         );
     }
-  };
-
-  const isOrderingOpenNow = (show: TodayShow) => {
-    const now = new Date();
-    const start = new Date(show.orderingStartTime);
-    const end = new Date(show.orderingEndTime);
-    return now >= start && now <= end;
   };
 
   return (
@@ -545,22 +514,22 @@ export default function CinemaAdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Phase 3: Shows & QR */}
+              {/* Phase 3: QR Stand & Ordering */}
               <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400">
-                    Phase 3: Shows &amp; QR Stand
+                    Phase 3: QR Stands &amp; Ordering
                   </span>
-                  <span className="text-[10px] text-slate-500 font-bold">3 Milestones</span>
+                  <span className="text-[10px] text-slate-500 font-bold">2 Milestones</span>
                 </div>
                 <div className="space-y-2">
                   <Link
-                    href="/cinema/admin/shows"
+                    href="/cinema/admin/qr"
                     className="p-2.5 rounded-xl bg-slate-900 border border-slate-800/80 hover:border-slate-700 transition flex items-center justify-between text-xs group"
                   >
                     <div className="flex items-center gap-2">
-                      <CalendarDays className="w-3.5 h-3.5 text-indigo-400" />
-                      <span className="font-semibold text-slate-200 group-hover:text-white">Daily Showtimes</span>
+                      <QrCode className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="font-semibold text-slate-200 group-hover:text-white">Auditorium QR Codes</span>
                     </div>
                     {stages[5]?.isCompleted ? (
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
@@ -570,17 +539,17 @@ export default function CinemaAdminDashboardPage() {
                   </Link>
 
                   <Link
-                    href="/cinema/admin/qr"
+                    href="/cinema/kitchen"
                     className="p-2.5 rounded-xl bg-slate-900 border border-slate-800/80 hover:border-slate-700 transition flex items-center justify-between text-xs group"
                   >
                     <div className="flex items-center gap-2">
-                      <QrCode className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="font-semibold text-slate-200 group-hover:text-white">Auditorium QR Codes</span>
+                      <ChefHat className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="font-semibold text-slate-200 group-hover:text-white">Kitchen KDS Active</span>
                     </div>
                     {stages[6]?.isCompleted ? (
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                     ) : (
-                      <span className="text-[10px] text-slate-500 font-bold">Pending →</span>
+                      <span className="text-[10px] text-slate-500 font-bold">Live →</span>
                     )}
                   </Link>
                 </div>
@@ -594,7 +563,7 @@ export default function CinemaAdminDashboardPage() {
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             <span className="font-bold text-white">Full Setup Complete:</span>
-            <span className="text-slate-300">All 8 cinema operational milestones configured and ready.</span>
+            <span className="text-slate-300">All 7 cinema operational milestones configured and ready.</span>
           </div>
           <Link
             href="/cinema/onboarding"
@@ -679,70 +648,65 @@ export default function CinemaAdminDashboardPage() {
           )}
         </div>
 
-        {/* Right Column: Today's Shows & Quick Access (5 Cols) */}
+        {/* Right Column: Screens, KDS & Quick Access (5 Cols) */}
         <div className="lg:col-span-5 space-y-6">
-          {/* Today's Schedule Card */}
+          {/* Auditorium Screens Card */}
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <CalendarDays className="w-4 h-4 text-amber-400" />
-                <h2 className="text-base font-bold text-white">Today&apos;s Showtimes</h2>
+                <Tv className="w-4 h-4 text-amber-400" />
+                <h2 className="text-base font-bold text-white">Auditoriums &amp; Screens</h2>
               </div>
               <Link
-                href="/cinema/admin/shows"
+                href="/cinema/admin/screens"
                 className="text-xs font-bold text-indigo-400 hover:text-indigo-300 transition flex items-center gap-1"
               >
-                <span>Full Schedule</span>
+                <span>Manage</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            {todayShows.length === 0 ? (
-              <div className="py-8 text-center space-y-2">
-                <CalendarDays className="w-8 h-8 text-slate-600 mx-auto" />
-                <p className="text-xs text-slate-400">No movie showtimes scheduled for today yet.</p>
-                <Link
-                  href="/cinema/admin/shows"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-sm"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>+ Schedule Today&apos;s Shows</span>
-                </Link>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800">
+                <span className="text-[10px] font-bold text-slate-400 block uppercase">Active Screens</span>
+                <span className="text-xl font-bold text-white mt-1 block">
+                  {summary?.screensCount ?? summary?.stats?.screensCount ?? 0}
+                </span>
+                <span className="text-[10px] text-slate-500">Auditoriums</span>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {todayShows.slice(0, 4).map((sh) => {
-                  const isOpen = isOrderingOpenNow(sh);
-                  return (
-                    <div
-                      key={sh.id}
-                      className="p-3 rounded-2xl bg-slate-950/70 border border-slate-800 flex items-center justify-between gap-3 text-xs"
-                    >
-                      <div className="min-w-0">
-                        <h4 className="font-bold text-white truncate">{sh.movieTitle || 'Movie Show'}</h4>
-                        <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
-                          <span>{sh.screenName || 'Screen'}</span>
-                          <span>•</span>
-                          <span>
-                            {new Date(sh.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                      </div>
 
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 ${
-                          isOpen
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                            : 'bg-slate-800 text-slate-400 border border-slate-700'
-                        }`}
-                      >
-                        {isOpen ? 'Ordering Open' : 'Closed'}
-                      </span>
-                    </div>
-                  );
-                })}
+              <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800">
+                <span className="text-[10px] font-bold text-slate-400 block uppercase">Total Seats</span>
+                <span className="text-xl font-bold text-white mt-1 block">
+                  {summary?.seatsCount ?? summary?.stats?.seatsCount ?? 0}
+                </span>
+                <span className="text-[10px] text-slate-500">Row-level delivery</span>
               </div>
-            )}
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <Link
+                href="/cinema/admin/screens"
+                className="w-full p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 transition flex items-center justify-between text-xs group"
+              >
+                <div className="flex items-center gap-2">
+                  <Tv className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="font-semibold text-slate-200 group-hover:text-white">Configure Screens &amp; Seating</span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300" />
+              </Link>
+
+              <Link
+                href="/cinema/admin/qr"
+                className="w-full p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 transition flex items-center justify-between text-xs group"
+              >
+                <div className="flex items-center gap-2">
+                  <QrCode className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="font-semibold text-slate-200 group-hover:text-white">Print Seat &amp; Audi QR Stands</span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300" />
+              </Link>
+            </div>
           </div>
 
           {/* Quick Management Center */}
@@ -771,12 +735,12 @@ export default function CinemaAdminDashboardPage() {
               </Link>
 
               <Link
-                href="/cinema/admin/shows"
-                className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-violet-500/50 transition group flex flex-col justify-between"
+                href="/cinema/kitchen"
+                className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-rose-500/50 transition group flex flex-col justify-between"
               >
-                <CalendarDays className="w-4 h-4 text-violet-400 mb-2" />
-                <span className="font-bold text-slate-200 group-hover:text-white">Showtimes &amp; Films</span>
-                <span className="text-[10px] text-slate-500 mt-0.5">Daily scheduling</span>
+                <ChefHat className="w-4 h-4 text-rose-400 mb-2" />
+                <span className="font-bold text-slate-200 group-hover:text-white">Kitchen KDS</span>
+                <span className="text-[10px] text-slate-500 mt-0.5">Live order display</span>
               </Link>
 
               <Link

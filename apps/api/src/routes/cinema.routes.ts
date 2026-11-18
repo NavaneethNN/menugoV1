@@ -4354,12 +4354,12 @@ async function generateUniqueCinemaOrderNumber(tx: any, theatreId: string): Prom
 async function validateAndResolveCinemaContext(params: {
   theatreToken: string;
   screenId: string;
-  showId: string;
+  showId?: string | null;
   seatRow: string;
   seatNumber: string;
   bypassTimeWindow?: boolean;
 }) {
-  const { theatreToken, screenId, showId, seatRow, seatNumber, bypassTimeWindow } = params;
+  const { theatreToken, screenId, showId, seatRow, seatNumber } = params;
 
   // 1. Resolve QR Code
   const [qr] = await db
@@ -4405,43 +4405,7 @@ async function validateAndResolveCinemaContext(params: {
     throw new AppError('Selected screen does not belong to this theatre or is inactive', 400);
   }
 
-  // 4. Validate show
-  const [show] = await db
-    .select()
-    .from(cinemaShows)
-    .where(
-      and(
-        eq(cinemaShows.id, showId),
-        eq(cinemaShows.theatreId, qr.theatreId),
-        eq(cinemaShows.screenId, screenId)
-      )
-    )
-    .limit(1);
-
-  if (!show) {
-    throw new AppError('Selected show does not belong to this screen or theatre', 404);
-  }
-
-  if (show.status !== 'published') {
-    throw new AppError(
-      show.status === 'cancelled'
-        ? 'This movie show has been cancelled'
-        : 'This show is not published for food orders',
-      400
-    );
-  }
-
-  // Check ordering window
-  const now = new Date();
-  if (!bypassTimeWindow) {
-    const oStart = new Date(show.orderingStartTime);
-    const oEnd = new Date(show.orderingEndTime);
-    if (now < oStart || now > oEnd) {
-      throw new AppError('Food ordering window for this movie show is currently closed', 400);
-    }
-  }
-
-  // 5. Validate seat
+  // 4. Validate seat
   const [seat] = await db
     .select()
     .from(cinemaSeats)
@@ -4463,25 +4427,42 @@ async function validateAndResolveCinemaContext(params: {
     );
   }
 
-  // Fetch movie details
-  const [movie] = await db
-    .select()
-    .from(cinemaMovies)
-    .where(eq(cinemaMovies.id, show.movieId))
-    .limit(1);
+  // 5. Optional show & movie lookup (no error thrown if omitted or not scheduled, no ordering window blocking)
+  let show: typeof cinemaShows.$inferSelect | null = null;
+  let movie: typeof cinemaMovies.$inferSelect | null = null;
+
+  if (showId) {
+    const [foundShow] = await db
+      .select()
+      .from(cinemaShows)
+      .where(
+        and(
+          eq(cinemaShows.id, showId),
+          eq(cinemaShows.theatreId, qr.theatreId),
+          eq(cinemaShows.screenId, screenId)
+        )
+      )
+      .limit(1);
+
+    if (foundShow) {
+      show = foundShow;
+      if (foundShow.movieId) {
+        const [foundMovie] = await db
+          .select()
+          .from(cinemaMovies)
+          .where(eq(cinemaMovies.id, foundShow.movieId))
+          .limit(1);
+        movie = foundMovie || null;
+      }
+    }
+  }
 
   return {
     qr,
     theatre,
     screen,
     show,
-    movie: movie || {
-      id: show.movieId,
-      title: 'Featured Movie',
-      posterUrl: null,
-      language: 'N/A',
-      durationMinutes: 120
-    },
+    movie,
     seat
   };
 }
@@ -4655,7 +4636,7 @@ router.post(
           .update(cinemaCarts)
           .set({
             screenId: context.screen.id,
-            showId: context.show.id,
+            showId: context.show?.id || null,
             seatRow: validatedData.seatRow,
             seatNumber: validatedData.seatNumber,
             items: updatedItems,
@@ -4677,7 +4658,7 @@ router.post(
             cartToken,
             theatreId: context.theatre.id,
             screenId: context.screen.id,
-            showId: context.show.id,
+            showId: context.show?.id || null,
             seatRow: validatedData.seatRow,
             seatNumber: validatedData.seatNumber,
             items: updatedItems,
@@ -4714,17 +4695,21 @@ router.post(
               screenName: context.screen.screenName,
               screenType: context.screen.screenType
             },
-            movie: {
-              id: context.movie.id,
-              title: context.movie.title,
-              posterUrl: context.movie.posterUrl
-            },
-            show: {
-              id: context.show.id,
-              showDate: context.show.showDate,
-              startTime: context.show.startTime,
-              expectedEndTime: context.show.expectedEndTime
-            },
+            movie: context.movie
+              ? {
+                  id: context.movie.id,
+                  title: context.movie.title,
+                  posterUrl: context.movie.posterUrl
+                }
+              : null,
+            show: context.show
+              ? {
+                  id: context.show.id,
+                  showDate: context.show.showDate,
+                  startTime: context.show.startTime,
+                  expectedEndTime: context.show.expectedEndTime
+                }
+              : null,
             seat: {
               row: validatedData.seatRow,
               seat: validatedData.seatNumber
@@ -5105,17 +5090,21 @@ const handleCalculateCheckoutSummary = async (
           screenName: context.screen.screenName,
           screenType: context.screen.screenType
         },
-        movie: {
-          id: context.movie.id,
-          title: context.movie.title,
-          posterUrl: context.movie.posterUrl
-        },
-        show: {
-          id: context.show.id,
-          showDate: context.show.showDate,
-          startTime: context.show.startTime,
-          expectedEndTime: context.show.expectedEndTime
-        },
+        movie: context.movie
+          ? {
+              id: context.movie.id,
+              title: context.movie.title,
+              posterUrl: context.movie.posterUrl
+            }
+          : null,
+        show: context.show
+          ? {
+              id: context.show.id,
+              showDate: context.show.showDate,
+              startTime: context.show.startTime,
+              expectedEndTime: context.show.expectedEndTime
+            }
+          : null,
         seat: {
           row: validatedData.seatRow,
           seat: validatedData.seatNumber
@@ -5179,17 +5168,21 @@ router.post(
             screenName: context.screen.screenName,
             screenType: context.screen.screenType
           },
-          movie: {
-            id: context.movie.id,
-            title: context.movie.title,
-            posterUrl: context.movie.posterUrl
-          },
-          show: {
-            id: context.show.id,
-            showDate: context.show.showDate,
-            startTime: context.show.startTime,
-            expectedEndTime: context.show.expectedEndTime
-          },
+          movie: context.movie
+            ? {
+                id: context.movie.id,
+                title: context.movie.title,
+                posterUrl: context.movie.posterUrl
+              }
+            : null,
+          show: context.show
+            ? {
+                id: context.show.id,
+                showDate: context.show.showDate,
+                startTime: context.show.startTime,
+                expectedEndTime: context.show.expectedEndTime
+              }
+            : null,
           seat: {
             row: validatedData.seatRow,
             seat: validatedData.seatNumber
@@ -5281,13 +5274,15 @@ router.post(
             restaurantId: context.theatre.id,
             orderType: 'cinema',
             screenId: context.screen.id,
-            showId: context.show.id,
-            movieId: context.movie.id,
-            showDate: context.show.showDate,
+            showId: context.show?.id || null,
+            movieId: context.movie?.id || null,
+            showDate: context.show?.showDate || null,
             showtime:
-              context.show.startTime instanceof Date
-                ? context.show.startTime.toISOString().substring(11, 19)
-                : String(context.show.startTime).substring(0, 20),
+              context.show?.startTime
+                ? (context.show.startTime instanceof Date
+                    ? context.show.startTime.toISOString().substring(11, 19)
+                    : String(context.show.startTime).substring(0, 20))
+                : null,
             seatRow: validatedData.seatRow,
             seatNumber: validatedData.seatNumber,
             status: 'pending', // Strictly pending, NOT new or confirmed!
@@ -5372,17 +5367,21 @@ router.post(
             screenName: context.screen.screenName,
             screenType: context.screen.screenType
           },
-          movie: {
-            id: context.movie.id,
-            title: context.movie.title,
-            posterUrl: context.movie.posterUrl
-          },
-          show: {
-            id: context.show.id,
-            showDate: context.show.showDate,
-            startTime: context.show.startTime,
-            expectedEndTime: context.show.expectedEndTime
-          },
+          movie: context.movie
+            ? {
+                id: context.movie.id,
+                title: context.movie.title,
+                posterUrl: context.movie.posterUrl
+              }
+            : null,
+          show: context.show
+            ? {
+                id: context.show.id,
+                showDate: context.show.showDate,
+                startTime: context.show.startTime,
+                expectedEndTime: context.show.expectedEndTime
+              }
+            : null,
           seat: {
             row: validatedData.seatRow,
             seat: validatedData.seatNumber

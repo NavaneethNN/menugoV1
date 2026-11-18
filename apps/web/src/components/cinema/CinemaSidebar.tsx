@@ -8,7 +8,6 @@ import {
   Tv,
   Armchair,
   Clapperboard,
-  CalendarDays,
   UtensilsCrossed,
   ShoppingBag,
   ChefHat,
@@ -66,13 +65,6 @@ export function CinemaSidebar({
           icon: Tv,
           match: (path: string) =>
             path.startsWith('/cinema/admin/screens') || path.startsWith('/cinema/admin/seating')
-        },
-        {
-          label: 'Shows & Movies',
-          href: '/cinema/admin/shows',
-          icon: CalendarDays,
-          match: (path: string) =>
-            path.startsWith('/cinema/admin/shows') || path.startsWith('/cinema/admin/movies')
         },
         {
           label: 'Concessions Menu',

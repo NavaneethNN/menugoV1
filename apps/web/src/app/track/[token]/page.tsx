@@ -406,7 +406,7 @@ export default function OrderTrackingPage() {
             <div className="text-center pt-2">
               <Link
                 href={`/cinema/${order.cinema.theatreToken}`}
-                className="inline-flex items-center gap-2 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition"
+                className="inline-flex items-center gap-2 text-xs font-bold text-red-400 hover:text-red-300 transition"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Back to Cinema Concessions Menu</span>

@@ -461,15 +461,6 @@ export default function CinemaDeliveryPage() {
                         <span className="truncate">Row {order.seatRow || '-'} • Seat {order.seatNumber || '-'}</span>
                       </div>
                     </div>
-
-                    <div className="text-right shrink-0">
-                      <div className="text-[10px] text-slate-400 truncate max-w-[120px] font-medium">
-                        {order.movieTitle || 'Movie'}
-                      </div>
-                      <div className="text-[11px] font-semibold text-slate-300">
-                        {order.startTime || ''}
-                      </div>
-                    </div>
                   </div>
 
                   {/* Item List */}

@@ -168,10 +168,28 @@ input[type='range'].modern-slider::-moz-range-thumb:hover {
 }
 
 .cinema-admin-theme :is(
-  [class*="bg-indigo-"][class*="/"], [class*="bg-violet-"][class*="/"],
-  [class*="bg-blue-"][class*="/"], [class*="bg-sky-"][class*="/"]
+  [class~="bg-indigo-500/10"], [class~="bg-indigo-500/20"],
+  [class~="bg-indigo-600/20"], [class~="bg-indigo-600/30"], [class~="bg-indigo-600/80"],
+  [class~="bg-indigo-900/40"], [class~="bg-indigo-900/60"], [class~="bg-indigo-900/80"],
+  [class~="bg-indigo-950/30"], [class~="bg-indigo-950/40"],
+  [class~="bg-violet-500/10"], [class~="bg-violet-500/20"],
+  [class~="bg-violet-600/20"], [class~="bg-violet-600/30"], [class~="bg-violet-950/80"],
+  [class~="bg-blue-500/10"], [class~="bg-blue-500/20"], [class~="bg-blue-950/30"], [class~="bg-blue-950/40"],
+  [class~="bg-sky-500/10"]
 ) {
   background-color: #fef2f2 !important;
+}
+
+.cinema-admin-theme :is(
+  [class~="bg-indigo-900"], [class*="bg-indigo-900/"],
+  [class~="bg-indigo-950"], [class*="bg-indigo-950/"],
+  [class~="bg-violet-900"], [class*="bg-violet-900/"],
+  [class~="bg-violet-950"], [class*="bg-violet-950/"],
+  [class~="bg-blue-900"], [class*="bg-blue-900/"],
+  [class~="bg-blue-950"], [class*="bg-blue-950/"]
+) {
+  background-color: #fef2f2 !important;
+  background-image: none !important;
 }
 
 .cinema-admin-theme :is([class*="from-indigo-"], [class*="from-violet-"], [class*="from-blue-"]) {
@@ -223,8 +241,20 @@ input[type='range'].modern-slider::-moz-range-thumb:hover {
   background-image: none !important;
 }
 
-.cinema-admin-theme :is([class*="bg-gradient-to-"][class*="from-indigo-"], [class*="bg-gradient-to-"][class*="from-violet-"]) {
+.cinema-admin-theme :is(
+  [class*="bg-gradient-to-"][class*="from-indigo-600"],
+  [class*="bg-gradient-to-"][class*="from-violet-600"]
+) {
   background-color: #b91c1c !important;
+  background-image: none !important;
+}
+
+.cinema-admin-theme :is(
+  [class*="bg-gradient-to-"][class*="from-indigo-950"],
+  [class*="bg-gradient-to-"][class*="from-violet-950"],
+  [class*="bg-gradient-to-"][class*="from-emerald-950"]
+) {
+  background-color: #fef2f2 !important;
   background-image: none !important;
 }
 
@@ -241,15 +271,31 @@ input[type='range'].modern-slider::-moz-range-thumb:hover {
 }
 
 .cinema-admin-theme :is(
-  [class*="bg-indigo-600"][class*="text-white"], [class*="bg-violet-600"][class*="text-white"],
-  [class*="bg-emerald-600"][class*="text-white"], [class*="bg-rose-600"][class*="text-white"],
-  [class*="bg-red-500"][class*="text-white"], [class*="bg-red-600"][class*="text-white"],
-  [class*="bg-red-700"][class*="text-white"], [class*="bg-red-800"][class*="text-white"]
+  [class~="bg-indigo-600"][class~="text-white"], [class~="bg-violet-600"][class~="text-white"],
+  [class~="bg-blue-600"][class~="text-white"], [class~="bg-sky-600"][class~="text-white"],
+  [class~="bg-emerald-600"][class~="text-white"], [class~="bg-rose-600"][class~="text-white"],
+  [class~="bg-red-500"][class~="text-white"], [class~="bg-red-600"][class~="text-white"],
+  [class~="bg-red-700"][class~="text-white"], [class~="bg-red-800"][class~="text-white"]
+) {
+  color: #fff !important;
+}
+
+.cinema-admin-theme :is(
+  [class*="bg-gradient-to-"][class*="from-indigo-600"][class~="text-white"],
+  [class*="bg-gradient-to-"][class*="from-violet-600"][class~="text-white"]
 ) {
   color: #fff !important;
 }
 
 .cinema-admin-theme :is(.bg-red-700, .bg-red-600, .bg-red-500) .text-white {
+  color: #fff !important;
+}
+
+.cinema-admin-theme :is(
+  [class~="bg-indigo-600"][class~="text-white"], [class~="bg-violet-600"][class~="text-white"],
+  [class~="bg-blue-600"][class~="text-white"], [class~="bg-sky-600"][class~="text-white"],
+  [class~="bg-emerald-600"][class~="text-white"], [class~="bg-rose-600"][class~="text-white"]
+) .text-white {
   color: #fff !important;
 }
 

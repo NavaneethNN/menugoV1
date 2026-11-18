@@ -968,7 +968,7 @@ export const cinemaCartItemSchema = z.object({
 export const cinemaCartContextSchema = z.object({
   theatreToken: z.string().min(1, 'Theatre QR token is required'),
   screenId: z.string().min(1, 'Screen ID is required'),
-  showId: z.string().min(1, 'Show ID is required'),
+  showId: z.string().optional().nullable(),
   seatRow: z.string().trim().min(1, 'Row identifier is required'),
   seatNumber: z.string().trim().min(1, 'Seat identifier is required'),
   customerName: z.string().trim().max(100).optional().nullable(),
