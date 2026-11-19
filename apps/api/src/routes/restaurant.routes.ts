@@ -1,11 +1,12 @@
 import { Router, Request, Response } from 'express';
-import { db, restaurantDb, cinemaDb, getDb, restaurants, restaurantMembers, categories, products, restaurantTables, cinemaQrCodes, user } from '@menugo/database';
+import { db, restaurantDb, getDb, restaurants, restaurantMembers, categories, products, restaurantTables, user } from '@menugo/database';
 import { eq, and, asc, ne } from 'drizzle-orm';
 import { createRestaurantSchema, updateRestaurantSchema } from '@menugo/shared';
 import { requireAuth } from '../middleware/auth';
 import { requireTenant } from '../middleware/tenant-auth';
 import { AppError } from '../middleware/error-handler';
 import { syncSingleVenueToQros } from '../lib/qros-sync-service';
+import { cinemaApiClient } from '../lib/internal-api-client';
 import crypto from 'crypto';
 
 const router = Router();
@@ -178,65 +179,23 @@ router.get('/by-slug/:slug', async (req: Request, res: Response, next) => {
       .limit(1);
 
     if (!restaurant) {
-      [restaurant] = await cinemaDb
-        .select({
-          id: restaurants.id,
-          name: restaurants.name,
-          slug: restaurants.slug,
-          phone: restaurants.phone,
-          email: restaurants.email,
-          address: restaurants.address,
-          logoUrl: restaurants.logoUrl,
-          coverImageUrl: restaurants.coverImageUrl,
-          currency: restaurants.currency,
-          tenantType: restaurants.tenantType,
-          settings: restaurants.settings
-        })
-        .from(restaurants)
-        .where(and(eq(restaurants.slug, slug), eq(restaurants.isActive, true)))
-        .limit(1);
-    }
+      // Cross-domain check: If slug belongs to a cinema theatre, resolve via Cinema Backend API
+      const cinemaMatch = await cinemaApiClient.getTheatreBySlug(slug).catch(() => null);
+      if (cinemaMatch?.venue) {
+        return res.json({
+          isCinema: true,
+          theatreToken: cinemaMatch.theatreToken,
+          restaurant: {
+            id: cinemaMatch.venue.id,
+            name: cinemaMatch.venue.name,
+            slug: cinemaMatch.venue.slug,
+            tenantType: 'cinema'
+          },
+          categories: []
+        });
+      }
 
-    if (!restaurant) {
       throw new AppError('Restaurant not found or inactive', 404);
-    }
-
-    // Segregation: If tenant is a cinema theatre, do not serve dine-in restaurant menu
-    if (restaurant.tenantType === 'cinema') {
-      const [qr] = await cinemaDb
-        .select({
-          token: cinemaQrCodes.token,
-          theatreToken: cinemaQrCodes.theatreToken
-        })
-        .from(cinemaQrCodes)
-        .where(
-          and(
-            eq(cinemaQrCodes.theatreId, restaurant.id),
-            eq(cinemaQrCodes.status, 'active')
-          )
-        )
-        .limit(1);
-
-      const theatreToken = qr?.theatreToken || qr?.token || null;
-
-      return res.json({
-        isCinema: true,
-        theatreToken,
-        restaurant: {
-          id: restaurant.id,
-          name: restaurant.name,
-          slug: restaurant.slug,
-          phone: restaurant.phone,
-          email: restaurant.email,
-          address: restaurant.address,
-          logoUrl: restaurant.logoUrl,
-          coverImageUrl: restaurant.coverImageUrl,
-          currency: restaurant.currency,
-          settings: restaurant.settings
-        },
-        categories: [],
-        products: []
-      });
     }
 
     // Fetch active categories (only customer-safe fields)
@@ -307,46 +266,26 @@ router.get('/public/:slug', async (req: Request, res: Response, next) => {
       .where(and(eq(restaurants.slug, slug), eq(restaurants.isActive, true)))
       .limit(1);
 
-    if (!restaurant) {
-      throw new AppError('Restaurant not found or inactive', 404);
-    }
+    if (!restaurant || restaurant.tenantType === 'cinema') {
+      const cinemaMatch = await cinemaApiClient.getTheatreBySlug(slug).catch(() => null);
+      if (cinemaMatch?.venue) {
+        return res.json({
+          isCinema: true,
+          theatreToken: cinemaMatch.theatreToken,
+          restaurant: {
+            id: cinemaMatch.venue.id,
+            name: cinemaMatch.venue.name,
+            slug: cinemaMatch.venue.slug,
+            tenantType: 'cinema'
+          },
+          categories: [],
+          products: []
+        });
+      }
 
-    // Segregation: If tenant is a cinema theatre, do not serve dine-in restaurant menu
-    if (restaurant.tenantType === 'cinema') {
-      const [qr] = await db
-        .select({
-          token: cinemaQrCodes.token,
-          theatreToken: cinemaQrCodes.theatreToken
-        })
-        .from(cinemaQrCodes)
-        .where(
-          and(
-            eq(cinemaQrCodes.theatreId, restaurant.id),
-            eq(cinemaQrCodes.status, 'active')
-          )
-        )
-        .limit(1);
-
-      const theatreToken = qr?.theatreToken || qr?.token || null;
-
-      return res.json({
-        isCinema: true,
-        theatreToken,
-        restaurant: {
-          id: restaurant.id,
-          name: restaurant.name,
-          slug: restaurant.slug,
-          phone: restaurant.phone,
-          email: restaurant.email,
-          address: restaurant.address,
-          logoUrl: restaurant.logoUrl,
-          coverImageUrl: restaurant.coverImageUrl,
-          currency: restaurant.currency,
-          settings: restaurant.settings
-        },
-        categories: [],
-        products: []
-      });
+      if (!restaurant) {
+        throw new AppError('Restaurant not found or inactive', 404);
+      }
     }
 
     res.json({ restaurant });

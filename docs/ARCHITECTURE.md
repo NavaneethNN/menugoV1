@@ -159,6 +159,82 @@ QROS features a multi-tiered security model catering to different personas:
 
 ---
 
+## 🏛️ Application & Database Isolation (Inter-Service API Communication)
+
+A foundational architectural invariant in QROS is **Domain and Database Isolation**:
+
+> **Rule:** No service or domain directly connects to or queries another domain's database for everyday operations. All cross-domain interaction, synchronization, and orchestration MUST occur through **Backend APIs**.
+
+```mermaid
+flowchart LR
+    subgraph SuperAdminDomain["🛡️ Platform Super Admin Domain"]
+        QrosAPI["Super Admin Routes<br/>(apps/api/src/routes/super-admin.routes.ts)"]
+        QrosDB[("QROS Master Database<br/>QROS_DATABASE_URL")]
+        ApiClient["Internal API Client<br/>(internal-api-client.ts)"]
+        QrosAPI --> QrosDB
+        QrosAPI --> ApiClient
+    end
+
+    subgraph RestaurantDomain["🍽️ Restaurant Domain"]
+        RestInternalAPI["Restaurant Internal API<br/>/api/internal/restaurant/*"]
+        RestRoutes["Restaurant Routes<br/>(Dine-in, KDS, Menu)"]
+        RestDB[("Restaurant Database<br/>RESTAURANT_DATABASE_URL")]
+        RestRoutes --> RestDB
+        RestInternalAPI --> RestDB
+    end
+
+    subgraph CinemaDomain["🎬 Cinema Domain"]
+        CineInternalAPI["Cinema Internal API<br/>/api/internal/cinema/*"]
+        CineRoutes["Cinema Routes<br/>(Multiplex, Shows, In-Seat)"]
+        CineDB[("Cinema Database<br/>CINEMA_DATABASE_URL")]
+        CineRoutes --> CineDB
+        CineInternalAPI --> CineDB
+    end
+
+    ApiClient -->|HTTP API Call + Service Key| RestInternalAPI
+    ApiClient -->|HTTP API Call + Service Key| CineInternalAPI
+    RestRoutes -->|POST /api/internal/qros/venues/register| QrosAPI
+    CineRoutes -->|POST /api/internal/qros/venues/register| QrosAPI
+```
+
+### 1. Database Separation
+- **`QROS_DATABASE_URL` (Master Platform DB)**:
+  - Owned by: Platform Super Admin / Global QROS Engine.
+  - Contains: Master venue registry (all restaurants & theatres), platform subscription plans (`subscription_plans`), tenant subscriptions (`tenant_subscriptions`), payment transactions (`subscription_payments`), and platform-wide super administrators.
+- **`RESTAURANT_DATABASE_URL` (Operational Dine-In DB)**:
+  - Owned by: Restaurant application.
+  - Contains: Tables, QR tokens, categories, products, dine-in orders, KDS stations, cashier sessions, restaurant staff.
+- **`CINEMA_DATABASE_URL` (Operational Theatre DB)**:
+  - Owned by: Cinema application.
+  - Contains: Multiplex auditoriums, screens, seat grids, movies, shows, seat QR codes, concession carts, in-seat orders, runner dispatch tickets.
+
+### 2. Internal Service APIs
+Dedicated, authenticated internal routes are mounted under `/api/internal/*`:
+
+| Endpoint | Method | Domain | Purpose |
+|---|---|---|---|
+| `/api/internal/restaurant/metrics` | `GET` | Restaurant | Returns operational order counts, GMV paise, and table counts. |
+| `/api/internal/restaurant/tenants` | `GET` | Restaurant | Returns operational tenant details, owners, active subs, and capacity. |
+| `/api/internal/restaurant/tenants/:id/status` | `PATCH` | Restaurant | Updates `isActive` on restaurant venue. |
+| `/api/internal/restaurant/tenants/:id/plan` | `POST` | Restaurant | Assigns/updates subscription plan in restaurant DB. |
+| `/api/internal/restaurant/plans/sync` | `POST` | Restaurant | Synchronizes platform subscription plan into restaurant DB. |
+| `/api/internal/restaurant/sync-export` | `GET` | Restaurant | Exports all restaurant entities for platform synchronization. |
+| `/api/internal/cinema/metrics` | `GET` | Cinema | Returns operational order counts, GMV paise, and screen counts. |
+| `/api/internal/cinema/tenants` | `GET` | Cinema | Returns operational cinema details, profiles, screens, and order stats. |
+| `/api/internal/cinema/tenants/:id/status` | `PATCH` | Cinema | Updates `isActive` on cinema theatre. |
+| `/api/internal/cinema/tenants/:id/plan` | `POST` | Cinema | Assigns/updates subscription plan in cinema DB. |
+| `/api/internal/cinema/plans/sync` | `POST` | Cinema | Synchronizes platform subscription plan into cinema DB. |
+| `/api/internal/cinema/sync-export` | `GET` | Cinema | Exports all cinema entities for platform synchronization. |
+| `/api/internal/qros/venues/register` | `POST` | Platform / QROS | Called by Restaurant/Cinema onboarding to register venue in master DB. |
+| `/api/internal/qros/subscriptions/sync` | `POST` | Platform / QROS | Called by tenant checkout to mirror subscription & payment into master DB. |
+
+### 3. Service-to-Service Security
+- Internal APIs require the `x-internal-service-key` header matching `INTERNAL_SERVICE_KEY` or `SUPER_ADMIN_KEY`.
+- Unauthenticated requests receive `403 Forbidden` (`requireInternalService` middleware).
+- If services are deployed into independent microservices on different domains (`restaurant-api.menugo.in`, `cinema-api.menugo.in`, `admin-api.menugo.in`), no database connection changes are required; only URLs and service keys are configured.
+
+---
+
 ## ⚡ Real-Time WebSocket Infrastructure (Socket.io)
 
 Real-time capabilities are powered by a singleton Socket.io server integrated directly into `apps/api`:

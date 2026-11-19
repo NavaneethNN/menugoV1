@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description:
     'Powering smart table ordering for dining restaurants and seamless in-seat delivery for cinema theatres across India.',
   icons: {
-    icon: '/qros_logo.png'
+    icon: '/qros_favicon.png'
   }
 };
 

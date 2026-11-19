@@ -1,26 +1,28 @@
 import {
   qrosDb,
-  restaurantDb,
-  cinemaDb,
   restaurants,
   cinemaProfiles,
   subscriptionPlans,
   tenantSubscriptions,
-  subscriptionPayments,
   restaurantMembers,
   user
 } from '@menugo/database';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { DEFAULT_SUBSCRIPTION_PLANS } from '../routes/super-admin.routes';
+import {
+  restaurantApiClient,
+  cinemaApiClient,
+  qrosApiClient
+} from './internal-api-client';
 
 /**
  * Ensures all subscription plans exist in QROS master DB,
- * and are harmonized across restaurantDb and cinemaDb.
+ * and synchronizes them to Restaurant and Cinema domains via their Backend APIs.
  */
 export async function syncSubscriptionPlans(): Promise<void> {
   try {
-    const existingQrosPlans = await qrosDb.select().from(subscriptionPlans);
-    
+    const existingQrosPlans = await qrosDb.select().from(subscriptionPlans).catch(() => []);
+
     if (existingQrosPlans.length === 0) {
       console.log('[QROS SYNC] Seeding default subscription plans into QROS Master DB...');
       for (const plan of DEFAULT_SUBSCRIPTION_PLANS) {
@@ -31,84 +33,70 @@ export async function syncSubscriptionPlans(): Promise<void> {
       }
     }
 
-    // Ensure restaurantDb and cinemaDb also have the plans
+    // Sync plans to Restaurant and Cinema via their Backend APIs
     const allQrosPlans = await qrosDb.select().from(subscriptionPlans);
     for (const plan of allQrosPlans) {
       await Promise.allSettled([
-        restaurantDb
-          .insert(subscriptionPlans)
-          .values({
-            id: plan.id,
-            name: plan.name,
-            slug: plan.slug,
-            description: plan.description,
-            tenantType: plan.tenantType,
-            priceMonthlyPaise: plan.priceMonthlyPaise,
-            priceAnnualPaise: plan.priceAnnualPaise,
-            maxTables: plan.maxTables,
-            maxScreens: plan.maxScreens,
-            maxStaff: plan.maxStaff,
-            features: plan.features,
-            isPopular: plan.isPopular,
-            isActive: plan.isActive,
-            sortOrder: plan.sortOrder
-          })
-          .onConflictDoUpdate({
-            target: subscriptionPlans.id,
-            set: {
-              name: plan.name,
-              priceMonthlyPaise: plan.priceMonthlyPaise,
-              priceAnnualPaise: plan.priceAnnualPaise,
-              isActive: plan.isActive,
-              sortOrder: plan.sortOrder
-            }
-          }),
-        cinemaDb
-          .insert(subscriptionPlans)
-          .values({
-            id: plan.id,
-            name: plan.name,
-            slug: plan.slug,
-            description: plan.description,
-            tenantType: plan.tenantType,
-            priceMonthlyPaise: plan.priceMonthlyPaise,
-            priceAnnualPaise: plan.priceAnnualPaise,
-            maxTables: plan.maxTables,
-            maxScreens: plan.maxScreens,
-            maxStaff: plan.maxStaff,
-            features: plan.features,
-            isPopular: plan.isPopular,
-            isActive: plan.isActive,
-            sortOrder: plan.sortOrder
-          })
-          .onConflictDoUpdate({
-            target: subscriptionPlans.id,
-            set: {
-              name: plan.name,
-              priceMonthlyPaise: plan.priceMonthlyPaise,
-              priceAnnualPaise: plan.priceAnnualPaise,
-              isActive: plan.isActive,
-              sortOrder: plan.sortOrder
-            }
-          })
+        restaurantApiClient.syncPlan(plan),
+        cinemaApiClient.syncPlan(plan)
       ]);
     }
-    console.log(`[QROS SYNC] Harmonized ${allQrosPlans.length} subscription plans across all databases.`);
+    console.log(`[QROS SYNC] Harmonized ${allQrosPlans.length} subscription plans across APIs.`);
   } catch (error: any) {
-    console.error('[QROS SYNC] Error syncing subscription plans:', error?.message || error);
+    console.error('[QROS SYNC] Error syncing subscription plans via API:', error?.message || error);
   }
 }
 
 /**
- * Synchronizes all restaurant venues from restaurantDb and all cinema venues from cinemaDb
- * into the central QROS master database (qrosDb).
+ * Synchronizes all venues, profiles, and accounts into QROS Master DB
+ * by calling Restaurant and Cinema Backend APIs (Application & DB Isolation).
  */
 export async function syncVenuesToQros(): Promise<void> {
+  const toDate = (v: any) => (v ? new Date(v) : new Date());
+  const toNullableDate = (v: any) => (v ? new Date(v) : null);
+
   try {
-    // 1. Fetch from restaurantDb
-    const restVenues = await restaurantDb.select().from(restaurants).catch(() => []);
+    // 1. Fetch data from Restaurant Backend API
+    const restData = await restaurantApiClient.getSyncExport().catch((err: any) => {
+      console.warn('[QROS SYNC] Notice: Restaurant API export failed:', err?.message || err);
+      return { venues: [], users: [], members: [], subscriptions: [], payments: [] };
+    });
+
+    // 2. Fetch data from Cinema Backend API
+    const cineData = await cinemaApiClient.getSyncExport().catch((err: any) => {
+      console.warn('[QROS SYNC] Notice: Cinema API export failed:', err?.message || err);
+      return { venues: [], profiles: [], users: [], members: [], subscriptions: [], payments: [] };
+    });
+
+    // 3. Ingest Users into QROS Master DB first (preserves foreign keys)
+    const combinedUsers = [...(restData.users || []), ...(cineData.users || [])];
+    for (const u of combinedUsers) {
+      await qrosDb
+        .insert(user)
+        .values({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          emailVerified: u.emailVerified,
+          image: u.image,
+          role: u.role,
+          tenantType: u.tenantType,
+          createdAt: toDate(u.createdAt),
+          updatedAt: toDate(u.updatedAt)
+        })
+        .onConflictDoUpdate({
+          target: user.id,
+          set: {
+            role: u.role,
+            tenantType: u.tenantType,
+            updatedAt: new Date()
+          }
+        });
+    }
+
+    // 4. Ingest Restaurant venues into QROS Master DB
     let restSynced = 0;
-    for (const r of restVenues) {
+    for (const r of restData.venues || []) {
       await qrosDb
         .insert(restaurants)
         .values({
@@ -126,8 +114,8 @@ export async function syncVenuesToQros(): Promise<void> {
           tenantType: 'restaurant',
           isActive: r.isActive,
           settings: r.settings,
-          createdAt: r.createdAt,
-          updatedAt: r.updatedAt
+          createdAt: toDate(r.createdAt),
+          updatedAt: toDate(r.updatedAt)
         })
         .onConflictDoUpdate({
           target: restaurants.id,
@@ -145,12 +133,9 @@ export async function syncVenuesToQros(): Promise<void> {
       restSynced++;
     }
 
-    // 2. Fetch from cinemaDb
-    const cineVenues = await cinemaDb.select().from(restaurants).catch(() => []);
-    const cineProfiles = await cinemaDb.select().from(cinemaProfiles).catch(() => []);
+    // 5. Ingest Cinema venues into QROS Master DB
     let cineSynced = 0;
-
-    for (const c of cineVenues) {
+    for (const c of cineData.venues || []) {
       await qrosDb
         .insert(restaurants)
         .values({
@@ -168,8 +153,8 @@ export async function syncVenuesToQros(): Promise<void> {
           tenantType: 'cinema',
           isActive: c.isActive,
           settings: c.settings,
-          createdAt: c.createdAt,
-          updatedAt: c.updatedAt
+          createdAt: toDate(c.createdAt),
+          updatedAt: toDate(c.updatedAt)
         })
         .onConflictDoUpdate({
           target: restaurants.id,
@@ -187,8 +172,8 @@ export async function syncVenuesToQros(): Promise<void> {
       cineSynced++;
     }
 
-    // Sync cinema profiles into qrosDb
-    for (const p of cineProfiles) {
+    // 6. Ingest Cinema Profiles into QROS Master DB
+    for (const p of cineData.profiles || []) {
       await qrosDb
         .insert(cinemaProfiles)
         .values({
@@ -210,8 +195,8 @@ export async function syncVenuesToQros(): Promise<void> {
           onboardingStage: p.onboardingStage,
           onboardingCompleted: p.onboardingCompleted,
           onboardingStagesCompleted: p.onboardingStagesCompleted,
-          createdAt: p.createdAt,
-          updatedAt: p.updatedAt
+          createdAt: toDate(p.createdAt),
+          updatedAt: toDate(p.updatedAt)
         })
         .onConflictDoUpdate({
           target: cinemaProfiles.id,
@@ -227,44 +212,9 @@ export async function syncVenuesToQros(): Promise<void> {
         });
     }
 
-    // 3. Sync user accounts FIRST so foreign keys on restaurant_members are satisfied
-    const [restUsers, cineUsers] = await Promise.all([
-      restaurantDb.select().from(user).catch(() => []),
-      cinemaDb.select().from(user).catch(() => [])
-    ]);
-
-    for (const u of [...restUsers, ...cineUsers]) {
-      await qrosDb
-        .insert(user)
-        .values({
-          id: u.id,
-          name: u.name,
-          email: u.email,
-          emailVerified: u.emailVerified,
-          image: u.image,
-          role: u.role,
-          tenantType: u.tenantType,
-          createdAt: u.createdAt,
-          updatedAt: u.updatedAt
-        })
-        .onConflictDoUpdate({
-          target: user.id,
-          set: {
-            role: u.role,
-            tenantType: u.tenantType,
-            updatedAt: new Date()
-          }
-        });
-    }
-
-    // 4. Sync memberships for venue owners so Super Admin can display contact info
-    const [restMembers, cineMembers] = await Promise.all([
-      restaurantDb.select().from(restaurantMembers).where(eq(restaurantMembers.role, 'owner')).catch(() => []),
-      cinemaDb.select().from(restaurantMembers).where(eq(restaurantMembers.role, 'owner')).catch(() => [])
-    ]);
-
-    const allOwnerMembers = [...restMembers, ...cineMembers];
-    for (const m of allOwnerMembers) {
+    // 7. Ingest Memberships into QROS Master DB
+    const combinedMembers = [...(restData.members || []), ...(cineData.members || [])];
+    for (const m of combinedMembers) {
       await qrosDb
         .insert(restaurantMembers)
         .values({
@@ -272,19 +222,15 @@ export async function syncVenuesToQros(): Promise<void> {
           restaurantId: m.restaurantId,
           userId: m.userId,
           role: m.role,
-          createdAt: m.createdAt,
-          updatedAt: m.updatedAt
+          createdAt: toDate(m.createdAt),
+          updatedAt: toDate(m.updatedAt)
         })
         .onConflictDoNothing();
     }
 
-    // 4. Sync subscriptions into qrosDb
-    const [restSubs, cineSubs] = await Promise.all([
-      restaurantDb.select().from(tenantSubscriptions).catch(() => []),
-      cinemaDb.select().from(tenantSubscriptions).catch(() => [])
-    ]);
-
-    for (const s of [...restSubs, ...cineSubs]) {
+    // 8. Ingest Subscriptions into QROS Master DB
+    const combinedSubs = [...(restData.subscriptions || []), ...(cineData.subscriptions || [])];
+    for (const s of combinedSubs) {
       await qrosDb
         .insert(tenantSubscriptions)
         .values({
@@ -293,32 +239,32 @@ export async function syncVenuesToQros(): Promise<void> {
           planId: s.planId,
           billingCycle: s.billingCycle,
           status: s.status,
-          currentPeriodStart: s.currentPeriodStart,
-          currentPeriodEnd: s.currentPeriodEnd,
+          currentPeriodStart: toDate(s.currentPeriodStart),
+          currentPeriodEnd: toDate(s.currentPeriodEnd),
           cancelAtPeriodEnd: s.cancelAtPeriodEnd,
-          trialEndsAt: s.trialEndsAt,
-          createdAt: s.createdAt,
-          updatedAt: s.updatedAt
+          trialEndsAt: toNullableDate(s.trialEndsAt),
+          createdAt: toDate(s.createdAt),
+          updatedAt: toDate(s.updatedAt)
         })
         .onConflictDoUpdate({
           target: tenantSubscriptions.id,
           set: {
             status: s.status,
-            currentPeriodEnd: s.currentPeriodEnd,
+            currentPeriodEnd: toDate(s.currentPeriodEnd),
             planId: s.planId,
             updatedAt: new Date()
           }
         });
     }
 
-    console.log(`[QROS SYNC] Successfully synced ${restSynced} restaurants and ${cineSynced} cinema theatres into QROS Master DB.`);
+    console.log(`[QROS SYNC] Successfully synced ${restSynced} restaurants and ${cineSynced} cinema theatres into QROS Master DB via API.`);
   } catch (error: any) {
-    console.error('[QROS SYNC] Error syncing venues to QROS DB:', error?.message || error);
+    console.error('[QROS SYNC] Error syncing venues to QROS DB via API:', error?.message || error);
   }
 }
 
 /**
- * Upserts a single venue (restaurant or cinema) directly into the QROS master database.
+ * Registers a single venue into QROS Master DB via the QROS Internal API.
  * Called immediately upon restaurant creation or cinema onboarding.
  */
 export async function syncSingleVenueToQros(
@@ -326,46 +272,9 @@ export async function syncSingleVenueToQros(
   profileData?: any
 ): Promise<void> {
   try {
-    await qrosDb
-      .insert(restaurants)
-      .values(venueData)
-      .onConflictDoUpdate({
-        target: restaurants.id,
-        set: {
-          name: venueData.name,
-          slug: venueData.slug,
-          phone: venueData.phone,
-          email: venueData.email,
-          address: venueData.address,
-          logoUrl: venueData.logoUrl,
-          coverImageUrl: venueData.coverImageUrl,
-          currency: venueData.currency,
-          tenantType: venueData.tenantType,
-          isActive: venueData.isActive,
-          settings: venueData.settings,
-          updatedAt: new Date()
-        }
-      });
-
-    if (profileData) {
-      await qrosDb
-        .insert(cinemaProfiles)
-        .values(profileData)
-        .onConflictDoUpdate({
-          target: cinemaProfiles.id,
-          set: {
-            theatreName: profileData.theatreName,
-            chainOrBrand: profileData.chainOrBrand,
-            city: profileData.city,
-            state: profileData.state,
-            contactNumber: profileData.contactNumber,
-            contactEmail: profileData.contactEmail,
-            updatedAt: new Date()
-          }
-        });
-    }
+    await qrosApiClient.registerVenue(venueData, profileData);
   } catch (err: any) {
-    console.warn(`[QROS SYNC] Non-critical error syncing venue ${venueData.id} to QROS DB:`, err?.message || err);
+    console.warn(`[QROS SYNC] Non-critical notice: syncing venue ${venueData?.id} via API:`, err?.message || err);
   }
 }
 
@@ -373,8 +282,8 @@ export async function syncSingleVenueToQros(
  * Master initialization runner for QROS DB.
  */
 export async function syncQrosDatabase(): Promise<void> {
-  console.log('[QROS] Running tri-database harmonization & sync...');
+  console.log('[QROS] Running API-driven tri-database harmonization & sync...');
   await syncSubscriptionPlans();
   await syncVenuesToQros();
-  console.log('[QROS] Tri-database sync complete. QROS DB is fully up to date.');
+  console.log('[QROS] API-driven sync complete. QROS DB is fully up to date.');
 }

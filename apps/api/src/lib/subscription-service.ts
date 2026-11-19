@@ -9,6 +9,7 @@ import {
 } from '@menugo/database';
 import { eq, and, lt, desc, sql } from 'drizzle-orm';
 import { generateRazorpaySignature, verifyRazorpaySignature } from './payment/razorpay.adapter';
+import { qrosApiClient } from './internal-api-client';
 
 /**
  * Platform Razorpay credentials for collecting subscription revenue from owners.
@@ -334,6 +335,28 @@ export async function activateSubscriptionFromPayment(params: {
       updatedAt: now
     })
     .where(eq(restaurants.id, restaurantId));
+
+  // 8. Mirror subscription & payment to QROS Master DB via Backend API
+  if (newSubscription) {
+    qrosApiClient
+      .syncSubscription(newSubscription, {
+        id: crypto.randomUUID(),
+        subscriptionId: newSubscription.id,
+        restaurantId,
+        planId,
+        amountPaise: billingCycle === 'annual' ? plan.priceAnnualPaise : plan.priceMonthlyPaise,
+        currency: 'INR',
+        billingCycle,
+        provider: 'razorpay',
+        razorpayOrderId,
+        razorpayPaymentId,
+        razorpaySignature,
+        status: 'success'
+      })
+      .catch((apiErr: any) => {
+        console.warn('[QROS API Sync Notice]: Failed to mirror subscription to QROS DB:', apiErr?.message || apiErr);
+      });
+  }
 
   return {
     success: true,

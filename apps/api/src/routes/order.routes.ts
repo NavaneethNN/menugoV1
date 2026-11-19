@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { db, restaurantDb, cinemaDb, getDb, orders, orderItems, products, restaurantTables, restaurants, orderStatusHistory, tableSessions, cinemaQrCodes } from '@menugo/database';
+import { db, restaurantDb, getDb, orders, orderItems, products, restaurantTables, restaurants, orderStatusHistory, tableSessions, cinemaQrCodes } from '@menugo/database';
 import { eq, and, or, desc, inArray, gte, lte, count, ilike } from 'drizzle-orm';
 import { createOrderSchema, updateOrderStatusSchema, OrderStatus, validateStatusTransition } from '@menugo/shared';
 import { requireAuth } from '../middleware/auth';
@@ -7,6 +7,7 @@ import { requireTenant } from '../middleware/tenant-auth';
 import { AppError } from '../middleware/error-handler';
 import { orderCreationRateLimiter, orderTrackingRateLimiter } from '../middleware/rate-limiter';
 import { publishOrderCreated, publishOrderUpdated } from '../lib/realtime';
+import { cinemaApiClient } from '../lib/internal-api-client';
 import crypto from 'crypto';
 
 const router = Router();
@@ -472,9 +473,9 @@ router.get(['/status/:token', '/track/:token'], orderTrackingRateLimiter, async 
       throw new AppError('Order not found or tracking token is invalid', 404);
     }
 
-    // Dual Database Resolution: Check restaurantDb first, fall back to cinemaDb
-    let targetDb = restaurantDb;
-    let [orderRecord] = await restaurantDb
+    // Dual Domain Resolution: Check restaurantDb first; if not found, resolve via Cinema Backend API
+    const targetDb = restaurantDb;
+    const [orderRecord] = await restaurantDb
       .select({
         order: orders,
         table: {
@@ -493,31 +494,12 @@ router.get(['/status/:token', '/track/:token'], orderTrackingRateLimiter, async 
       .limit(1);
 
     if (!orderRecord) {
-      const [cinemaOrderRecord] = await cinemaDb
-        .select({
-          order: orders,
-          table: {
-            tableNumber: restaurantTables.tableNumber
-          },
-          restaurant: {
-            name: restaurants.name,
-            slug: restaurants.slug,
-            currency: restaurants.currency
-          }
-        })
-        .from(orders)
-        .leftJoin(restaurantTables, eq(orders.tableId, restaurantTables.id))
-        .leftJoin(restaurants, eq(orders.restaurantId, restaurants.id))
-        .where(eq(orders.statusToken, token))
-        .limit(1);
-
-      if (cinemaOrderRecord) {
-        orderRecord = cinemaOrderRecord;
-        targetDb = cinemaDb;
+      // Resolve tracking through Cinema domain Backend API (Application & DB Isolation)
+      const cinemaTracking = await cinemaApiClient.trackOrderByToken(token).catch(() => null);
+      if (cinemaTracking?.order) {
+        return res.json(cinemaTracking.order);
       }
-    }
 
-    if (!orderRecord) {
       throw new AppError('Order not found or tracking token is invalid', 404);
     }
 

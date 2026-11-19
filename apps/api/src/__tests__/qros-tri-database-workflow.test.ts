@@ -210,4 +210,67 @@ describe('QROS Tri-Database Workflow & Master Synchronization Suite', () => {
       .limit(1);
     assert.strictEqual(deactivatedQrosPlan?.isActive, false);
   });
+
+  it('11. Internal Service Security: Blocks unauthenticated requests without service key', async () => {
+    const res = await request(app).get('/api/internal/restaurant/metrics');
+    assert.strictEqual(res.status, 403, 'Should reject call without internal service key');
+    assert.ok(res.body.error === 'Forbidden');
+  });
+
+  it('12. Restaurant Internal API: Returns operational metrics using service key', async () => {
+    const res = await request(app)
+      .get('/api/internal/restaurant/metrics')
+      .set('x-internal-service-key', MASTER_KEY);
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.success, true);
+    assert.strictEqual(res.body.domain, 'restaurant');
+    assert.ok(typeof res.body.totalVenues === 'number');
+    assert.ok(typeof res.body.totalOrders === 'number');
+    assert.ok(typeof res.body.totalGmvPaise === 'number');
+  });
+
+  it('13. Cinema Internal API: Returns operational metrics using service key', async () => {
+    const res = await request(app)
+      .get('/api/internal/cinema/metrics')
+      .set('x-internal-service-key', MASTER_KEY);
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.success, true);
+    assert.strictEqual(res.body.domain, 'cinema');
+    assert.ok(typeof res.body.totalVenues === 'number');
+    assert.ok(typeof res.body.totalCapacity === 'number');
+  });
+
+  it('14. QROS Internal API: Registers a new venue into QROS Master DB via API call', async () => {
+    const testVenueId = `test-venue-${Date.now()}`;
+    const res = await request(app)
+      .post('/api/internal/qros/venues/register')
+      .set('x-internal-service-key', MASTER_KEY)
+      .send({
+        venue: {
+          id: testVenueId,
+          name: 'API Isolated Cafe',
+          slug: `api-cafe-${Date.now()}`,
+          tenantType: 'restaurant',
+          isActive: true
+        }
+      });
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.success, true);
+    assert.strictEqual(res.body.venue.id, testVenueId);
+
+    // Verify it exists in QROS master DB
+    const [found] = await qrosDb
+      .select({ id: restaurants.id, name: restaurants.name })
+      .from(restaurants)
+      .where(eq(restaurants.id, testVenueId));
+
+    assert.ok(found, 'Venue must exist in QROS master DB after API registration');
+    assert.strictEqual(found.name, 'API Isolated Cafe');
+
+    // Clean up test venue
+    await qrosDb.delete(restaurants).where(eq(restaurants.id, testVenueId)).catch(() => {});
+  });
 });

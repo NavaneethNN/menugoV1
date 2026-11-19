@@ -26,6 +26,9 @@ import cashierRoutes from './routes/cashier.routes';
 import cinemaRoutes from './routes/cinema.routes';
 import { superAdminRouter, getPublicSubscriptionPlans } from './routes/super-admin.routes';
 import { subscriptionRouter } from './routes/subscription.routes';
+import { restaurantInternalRouter } from './routes/internal/restaurant-internal.routes';
+import { cinemaInternalRouter } from './routes/internal/cinema-internal.routes';
+import { qrosInternalRouter } from './routes/internal/qros-internal.routes';
 import { ensureSuperAdminExists } from './lib/super-admin-seed';
 import { syncSubscriptionExpirations } from './lib/subscription-service';
 import { syncQrosDatabase } from './lib/qros-sync-service';
@@ -202,6 +205,11 @@ app.use('/api/cashier', cashierRoutes);
 app.use('/api/cinema', cinemaRoutes);
 app.use('/api/subscriptions', subscriptionRouter);
 app.use('/api/super-admin', superAdminRouter);
+
+// Internal Service-to-Service APIs (Enforcing Application & Database Isolation)
+app.use('/api/internal/restaurant', restaurantInternalRouter);
+app.use('/api/internal/cinema', cinemaInternalRouter);
+app.use('/api/internal/qros', qrosInternalRouter);
 
 // Global Error Handler
 app.use(errorHandler);

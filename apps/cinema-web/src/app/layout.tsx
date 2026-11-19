@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/qros_logo.png', type: 'image/png' }
+      { url: '/qros_favicon.png', type: 'image/png' }
     ],
     apple: [{ url: '/apple-icon' }]
   },

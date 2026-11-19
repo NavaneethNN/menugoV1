@@ -1,26 +1,24 @@
 import { Router, Request, Response } from 'express';
 import {
-  db,
   qrosDb,
-  restaurantDb,
-  cinemaDb,
   restaurants,
   restaurantMembers,
   user,
-  orders,
-  restaurantTables,
-  cinemaScreens,
   cinemaProfiles,
   subscriptionPlans,
   tenantSubscriptions,
   subscriptionPayments
 } from '@menugo/database';
-import { eq, desc, sql, and, ilike, count } from 'drizzle-orm';
+import { eq, desc, and, count } from 'drizzle-orm';
 import { requireSuperAdmin } from '../middleware/super-admin-auth';
 import { auth } from '../lib/auth';
 import { forwardAuthCookies } from './auth.routes';
 import { syncSubscriptionExpirations } from '../lib/subscription-service';
 import { syncQrosDatabase, syncSubscriptionPlans } from '../lib/qros-sync-service';
+import {
+  restaurantApiClient,
+  cinemaApiClient
+} from '../lib/internal-api-client';
 import {
   createSubscriptionPlanSchema,
   updateSubscriptionPlanSchema,
@@ -177,26 +175,17 @@ export const DEFAULT_SUBSCRIPTION_PLANS = [
  */
 export async function getPublicSubscriptionPlans(req: Request, res: Response) {
   try {
-    // Read from central QROS master DB (with auto-seed if empty)
     let existing = await qrosDb.select().from(subscriptionPlans).limit(1).catch(() => []);
     if (existing.length === 0) {
       await syncSubscriptionPlans().catch(() => {});
     }
 
-    let plans = await qrosDb
+    const plans = await qrosDb
       .select()
       .from(subscriptionPlans)
       .where(eq(subscriptionPlans.isActive, true))
       .orderBy(subscriptionPlans.sortOrder)
       .catch(() => []);
-
-    if (plans.length === 0) {
-      plans = await db
-        .select()
-        .from(subscriptionPlans)
-        .where(eq(subscriptionPlans.isActive, true))
-        .orderBy(subscriptionPlans.sortOrder);
-    }
 
     res.json(plans);
   } catch (error: any) {
@@ -355,12 +344,13 @@ superAdminRouter.get('/me', (req: Request, res: Response) => {
 
 /**
  * GET /api/super-admin/metrics
- * High-level platform KPIs across all restaurants and theatres
+ * High-level platform KPIs across all restaurants and theatres.
+ * Reads master venues & subscriptions from qrosDb, and calls Restaurant & Cinema APIs for operational metrics.
  */
 superAdminRouter.get('/metrics', async (req: Request, res: Response) => {
   try {
-    // 1. Venue counts from central QROS master DB (with fallback to restaurantDb and cinemaDb)
-    let allVenues = await qrosDb
+    // 1. Venue counts from central QROS master DB
+    const allVenues = await qrosDb
       .select({
         id: restaurants.id,
         name: restaurants.name,
@@ -372,34 +362,6 @@ superAdminRouter.get('/metrics', async (req: Request, res: Response) => {
       .from(restaurants)
       .catch(() => []);
 
-    if (allVenues.length === 0) {
-      const [restaurantVenues, cinemaVenues] = await Promise.all([
-        restaurantDb
-          .select({
-            id: restaurants.id,
-            name: restaurants.name,
-            slug: restaurants.slug,
-            tenantType: restaurants.tenantType,
-            isActive: restaurants.isActive,
-            createdAt: restaurants.createdAt
-          })
-          .from(restaurants)
-          .catch(() => []),
-        cinemaDb
-          .select({
-            id: restaurants.id,
-            name: restaurants.name,
-            slug: restaurants.slug,
-            tenantType: restaurants.tenantType,
-            isActive: restaurants.isActive,
-            createdAt: restaurants.createdAt
-          })
-          .from(restaurants)
-          .catch(() => [])
-      ]);
-      allVenues = [...restaurantVenues, ...cinemaVenues];
-    }
-
     const restaurantVenues = allVenues.filter((v) => v.tenantType === 'restaurant');
     const cinemaVenues = allVenues.filter((v) => v.tenantType === 'cinema');
 
@@ -409,60 +371,25 @@ superAdminRouter.get('/metrics', async (req: Request, res: Response) => {
     const activeTheatres = cinemaVenues.filter((v) => v.isActive).length;
     const totalSuspended = allVenues.filter((v) => !v.isActive).length;
 
-    // 2. Order counts and GMV across operational databases
-    const [restaurantOrderStats, cinemaOrderStats] = await Promise.all([
-      restaurantDb
-        .select({
-          totalOrders: count(orders.id),
-          totalGmvPaise: sql<number>`coalesce(sum(${orders.totalAmount}), 0)`
-        })
-        .from(orders)
-        .catch(() => [{ totalOrders: 0, totalGmvPaise: 0 }]),
-      cinemaDb
-        .select({
-          totalOrders: count(orders.id),
-          totalGmvPaise: sql<number>`coalesce(sum(${orders.totalAmount}), 0)`
-        })
-        .from(orders)
-        .catch(() => [{ totalOrders: 0, totalGmvPaise: 0 }])
+    // 2. Fetch order metrics and capacity via Restaurant and Cinema Backend APIs
+    const [restMetrics, cineMetrics] = await Promise.all([
+      restaurantApiClient.getMetrics().catch(() => ({ totalOrders: 0, totalGmvPaise: 0, totalCapacity: 0 })),
+      cinemaApiClient.getMetrics().catch(() => ({ totalOrders: 0, totalGmvPaise: 0, totalCapacity: 0 }))
     ]);
 
-    const totalOrders =
-      Number(restaurantOrderStats[0]?.totalOrders || 0) +
-      Number(cinemaOrderStats[0]?.totalOrders || 0);
-    const totalGmvPaise =
-      Number(restaurantOrderStats[0]?.totalGmvPaise || 0) +
-      Number(cinemaOrderStats[0]?.totalGmvPaise || 0);
+    const totalOrders = (restMetrics.totalOrders || 0) + (cineMetrics.totalOrders || 0);
+    const totalGmvPaise = (restMetrics.totalGmvPaise || 0) + (cineMetrics.totalGmvPaise || 0);
 
-    // 3. Subscriptions summary from QROS master DB (with operational fallback)
-    let activeSubscriptions = 0;
+    // 3. Subscriptions summary from QROS master DB
     const qrosSubStats = await qrosDb
       .select({ totalSubscriptions: count(tenantSubscriptions.id) })
       .from(tenantSubscriptions)
       .where(eq(tenantSubscriptions.status, 'active'))
       .catch(() => []);
 
-    if (qrosSubStats.length > 0 && Number(qrosSubStats[0]?.totalSubscriptions || 0) > 0) {
-      activeSubscriptions = Number(qrosSubStats[0]?.totalSubscriptions || 0);
-    } else {
-      const [restaurantSubStats, cinemaSubStats] = await Promise.all([
-        restaurantDb
-          .select({ totalSubscriptions: count(tenantSubscriptions.id) })
-          .from(tenantSubscriptions)
-          .where(eq(tenantSubscriptions.status, 'active'))
-          .catch(() => [{ totalSubscriptions: 0 }]),
-        cinemaDb
-          .select({ totalSubscriptions: count(tenantSubscriptions.id) })
-          .from(tenantSubscriptions)
-          .where(eq(tenantSubscriptions.status, 'active'))
-          .catch(() => [{ totalSubscriptions: 0 }])
-      ]);
-      activeSubscriptions =
-        Number(restaurantSubStats[0]?.totalSubscriptions || 0) +
-        Number(cinemaSubStats[0]?.totalSubscriptions || 0);
-    }
+    const activeSubscriptions = Number(qrosSubStats[0]?.totalSubscriptions || 0);
 
-    // 4. Recent venues across both databases
+    // 4. Recent venues across both domains
     const recentVenues = allVenues
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 5);
@@ -484,6 +411,10 @@ superAdminRouter.get('/metrics', async (req: Request, res: Response) => {
       subscriptions: {
         activeSubscriptions
       },
+      capacity: {
+        totalTables: restMetrics.totalCapacity || 0,
+        totalScreens: cineMetrics.totalCapacity || 0
+      },
       recentVenues
     });
   } catch (error: any) {
@@ -494,14 +425,15 @@ superAdminRouter.get('/metrics', async (req: Request, res: Response) => {
 
 /**
  * GET /api/super-admin/tenants
- * Lists venues (restaurants and theatres) with search, filter, owner, and plan info
+ * Lists venues (restaurants and theatres) from QROS Master DB,
+ * enriched with live operational metrics from Restaurant and Cinema Backend APIs.
  */
 superAdminRouter.get('/tenants', async (req: Request, res: Response) => {
   try {
     const { tenantType, status, search } = req.query;
 
-    // 1. Fetch venues from central QROS master DB (with parallel fallback to restaurantDb and cinemaDb)
-    let allVenues = await qrosDb
+    // 1. Fetch master venues registry from QROS Master DB
+    const allVenues = await qrosDb
       .select({
         id: restaurants.id,
         name: restaurants.name,
@@ -518,213 +450,40 @@ superAdminRouter.get('/tenants', async (req: Request, res: Response) => {
       .from(restaurants)
       .catch(() => []);
 
-    if (allVenues.length === 0) {
-      const [restaurantVenues, cinemaVenues] = await Promise.all([
-        restaurantDb
-          .select({
-            id: restaurants.id,
-            name: restaurants.name,
-            slug: restaurants.slug,
-            phone: restaurants.phone,
-            email: restaurants.email,
-            address: restaurants.address,
-            currency: restaurants.currency,
-            tenantType: restaurants.tenantType,
-            isActive: restaurants.isActive,
-            createdAt: restaurants.createdAt,
-            updatedAt: restaurants.updatedAt
-          })
-          .from(restaurants)
-          .catch(() => []),
-        cinemaDb
-          .select({
-            id: restaurants.id,
-            name: restaurants.name,
-            slug: restaurants.slug,
-            phone: restaurants.phone,
-            email: restaurants.email,
-            address: restaurants.address,
-            currency: restaurants.currency,
-            tenantType: restaurants.tenantType,
-            isActive: restaurants.isActive,
-            createdAt: restaurants.createdAt,
-            updatedAt: restaurants.updatedAt
-          })
-          .from(restaurants)
-          .catch(() => [])
-      ]);
-      allVenues = [...restaurantVenues, ...cinemaVenues];
-    }
-
     allVenues.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
-    // 2. Retrieve owner info across both databases
-    const [restaurantMembersList, cinemaMembersList] = await Promise.all([
-      restaurantDb
-        .select({
-          restaurantId: restaurantMembers.restaurantId,
-          role: restaurantMembers.role,
-          userName: user.name,
-          userEmail: user.email
-        })
-        .from(restaurantMembers)
-        .leftJoin(user, eq(restaurantMembers.userId, user.id))
-        .where(eq(restaurantMembers.role, 'owner'))
-        .catch(() => []),
-      cinemaDb
-        .select({
-          restaurantId: restaurantMembers.restaurantId,
-          role: restaurantMembers.role,
-          userName: user.name,
-          userEmail: user.email
-        })
-        .from(restaurantMembers)
-        .leftJoin(user, eq(restaurantMembers.userId, user.id))
-        .where(eq(restaurantMembers.role, 'owner'))
-        .catch(() => [])
+    // 2. Fetch operational details via Restaurant & Cinema Backend APIs
+    const [restData, cineData] = await Promise.all([
+      restaurantApiClient.getTenants().catch(() => ({
+        ownerMap: {},
+        subMap: {},
+        orderStatsMap: {},
+        capacityMap: {}
+      })),
+      cinemaApiClient.getTenants().catch(() => ({
+        cinemaProfileMap: {},
+        ownerMap: {},
+        subMap: {},
+        orderStatsMap: {},
+        capacityMap: {}
+      }))
     ]);
 
-    const ownerMap = new Map<string, { name: string; email: string }>();
-    for (const m of [...restaurantMembersList, ...cinemaMembersList]) {
-      if (m.restaurantId && m.userEmail) {
-        ownerMap.set(m.restaurantId, {
-          name: m.userName || 'Owner',
-          email: m.userEmail
-        });
-      }
-    }
+    const ownerMap = { ...(restData.ownerMap || {}), ...(cineData.ownerMap || {}) };
+    const subMap = { ...(restData.subMap || {}), ...(cineData.subMap || {}) };
+    const orderStatsMap = { ...(restData.orderStatsMap || {}), ...(cineData.orderStatsMap || {}) };
+    const capacityMap = { ...(restData.capacityMap || {}), ...(cineData.capacityMap || {}) };
+    const cinemaProfileMap = cineData.cinemaProfileMap || {};
 
-    // 3. Retrieve cinema profiles from cinemaDb
-    const allCinemaProfiles = await cinemaDb
-      .select({
-        theatreId: cinemaProfiles.theatreId,
-        theatreName: cinemaProfiles.theatreName,
-        city: cinemaProfiles.city,
-        state: cinemaProfiles.state,
-        chainOrBrand: cinemaProfiles.chainOrBrand,
-        contactNumber: cinemaProfiles.contactNumber,
-        contactEmail: cinemaProfiles.contactEmail,
-        onboardingCompleted: cinemaProfiles.onboardingCompleted
-      })
-      .from(cinemaProfiles)
-      .catch(() => []);
-
-    const cinemaProfileMap = new Map<string, any>();
-    for (const cp of allCinemaProfiles) {
-      cinemaProfileMap.set(cp.theatreId, cp);
-    }
-
-    // 4. Retrieve active subscriptions across both databases
-    const [restSubs, cineSubs] = await Promise.all([
-      restaurantDb
-        .select({
-          restaurantId: tenantSubscriptions.restaurantId,
-          status: tenantSubscriptions.status,
-          billingCycle: tenantSubscriptions.billingCycle,
-          planId: tenantSubscriptions.planId,
-          planName: subscriptionPlans.name,
-          planSlug: subscriptionPlans.slug,
-          priceMonthlyPaise: subscriptionPlans.priceMonthlyPaise
-        })
-        .from(tenantSubscriptions)
-        .leftJoin(subscriptionPlans, eq(tenantSubscriptions.planId, subscriptionPlans.id))
-        .where(eq(tenantSubscriptions.status, 'active'))
-        .catch(() => []),
-      cinemaDb
-        .select({
-          restaurantId: tenantSubscriptions.restaurantId,
-          status: tenantSubscriptions.status,
-          billingCycle: tenantSubscriptions.billingCycle,
-          planId: tenantSubscriptions.planId,
-          planName: subscriptionPlans.name,
-          planSlug: subscriptionPlans.slug,
-          priceMonthlyPaise: subscriptionPlans.priceMonthlyPaise
-        })
-        .from(tenantSubscriptions)
-        .leftJoin(subscriptionPlans, eq(tenantSubscriptions.planId, subscriptionPlans.id))
-        .where(eq(tenantSubscriptions.status, 'active'))
-        .catch(() => [])
-    ]);
-
-    const subMap = new Map<string, any>();
-    for (const s of [...restSubs, ...cineSubs]) {
-      subMap.set(s.restaurantId, s);
-    }
-
-    // 5. Retrieve order stats from both databases
-    const [restOrders, cineOrders] = await Promise.all([
-      restaurantDb
-        .select({
-          restaurantId: orders.restaurantId,
-          orderCount: count(orders.id),
-          totalGmvPaise: sql<number>`coalesce(sum(${orders.totalAmount}), 0)`
-        })
-        .from(orders)
-        .groupBy(orders.restaurantId)
-        .catch(() => []),
-      cinemaDb
-        .select({
-          restaurantId: orders.restaurantId,
-          orderCount: count(orders.id),
-          totalGmvPaise: sql<number>`coalesce(sum(${orders.totalAmount}), 0)`
-        })
-        .from(orders)
-        .groupBy(orders.restaurantId)
-        .catch(() => [])
-    ]);
-
-    const orderStatsMap = new Map<string, { count: number; gmvPaise: number }>();
-    for (const o of [...restOrders, ...cineOrders]) {
-      if (o.restaurantId) {
-        orderStatsMap.set(o.restaurantId, {
-          count: Number(o.orderCount || 0),
-          gmvPaise: Number(o.totalGmvPaise || 0)
-        });
-      }
-    }
-
-    // 6. Retrieve screen counts from cinemaDb
-    const screenCounts = await cinemaDb
-      .select({
-        theatreId: cinemaScreens.theatreId,
-        count: count(cinemaScreens.id)
-      })
-      .from(cinemaScreens)
-      .where(eq(cinemaScreens.status, 'active'))
-      .groupBy(cinemaScreens.theatreId)
-      .catch(() => []);
-
-    const screenMap = new Map<string, number>();
-    for (const s of screenCounts) {
-      screenMap.set(s.theatreId, Number(s.count || 0));
-    }
-
-    // 7. Retrieve table counts from restaurantDb
-    const tableCounts = await restaurantDb
-      .select({
-        restaurantId: restaurantTables.restaurantId,
-        count: count(restaurantTables.id)
-      })
-      .from(restaurantTables)
-      .where(eq(restaurantTables.isActive, true))
-      .groupBy(restaurantTables.restaurantId)
-      .catch(() => []);
-
-    const tableMap = new Map<string, number>();
-    for (const t of tableCounts) {
-      tableMap.set(t.restaurantId, Number(t.count || 0));
-    }
-
-    // Compose enriched items
+    // 3. Compose enriched items
     let enriched = allVenues.map((v) => {
-      const owner = ownerMap.get(v.id);
-      const cinemaProfile = cinemaProfileMap.get(v.id);
-      const sub = subMap.get(v.id);
-      const stats = orderStatsMap.get(v.id) || { count: 0, gmvPaise: 0 };
-      const screensCount = screenMap.get(v.id) || 0;
-      const tablesCount = tableMap.get(v.id) || 0;
+      const owner = ownerMap[v.id];
+      const cinemaProfile = cinemaProfileMap[v.id];
+      const sub = subMap[v.id];
+      const stats = orderStatsMap[v.id] || { count: 0, gmvPaise: 0 };
+      const capacity = capacityMap[v.id] || 0;
 
       return {
         ...v,
@@ -734,7 +493,7 @@ superAdminRouter.get('/tenants', async (req: Request, res: Response) => {
         subscription: sub || null,
         ordersCount: stats.count,
         gmvRupees: Math.round(stats.gmvPaise / 100),
-        capacityCount: v.tenantType === 'cinema' ? screensCount : tablesCount
+        capacityCount: capacity
       };
     });
 
@@ -769,7 +528,8 @@ superAdminRouter.get('/tenants', async (req: Request, res: Response) => {
 
 /**
  * PATCH /api/super-admin/tenants/:id/status
- * Toggle isActive status (Suspend or Activate a venue)
+ * Toggle isActive status (Suspend or Activate a venue).
+ * Updates QROS Master DB and communicates change to Restaurant or Cinema domain through its Backend API.
  */
 superAdminRouter.patch('/tenants/:id/status', async (req: Request, res: Response) => {
   try {
@@ -783,8 +543,31 @@ superAdminRouter.patch('/tenants/:id/status', async (req: Request, res: Response
 
     const { isActive } = validation.data;
 
-    // Try restaurantDb first
-    let updated = await restaurantDb
+    // Check venue in QROS master DB to determine tenantType
+    const [venue] = await qrosDb
+      .select({ id: restaurants.id, tenantType: restaurants.tenantType })
+      .from(restaurants)
+      .where(eq(restaurants.id, id))
+      .limit(1);
+
+    if (!venue) {
+      res.status(404).json({ error: 'Tenant not found' });
+      return;
+    }
+
+    // Call domain Backend API based on tenantType (Application & DB Isolation)
+    if (venue.tenantType === 'cinema') {
+      await cinemaApiClient.updateTenantStatus(id, isActive).catch((err: any) => {
+        console.warn(`[Super Admin API] Notice: Cinema API status update: ${err?.message || err}`);
+      });
+    } else {
+      await restaurantApiClient.updateTenantStatus(id, isActive).catch((err: any) => {
+        console.warn(`[Super Admin API] Notice: Restaurant API status update: ${err?.message || err}`);
+      });
+    }
+
+    // Update in QROS master DB
+    const [updated] = await qrosDb
       .update(restaurants)
       .set({
         isActive,
@@ -793,37 +576,10 @@ superAdminRouter.patch('/tenants/:id/status', async (req: Request, res: Response
       .where(eq(restaurants.id, id))
       .returning();
 
-    // If not found in restaurantDb, try cinemaDb
-    if (updated.length === 0) {
-      updated = await cinemaDb
-        .update(restaurants)
-        .set({
-          isActive,
-          updatedAt: new Date()
-        })
-        .where(eq(restaurants.id, id))
-        .returning();
-    }
-
-    if (updated.length === 0) {
-      res.status(404).json({ error: 'Tenant not found' });
-      return;
-    }
-
-    // Mirror status in QROS master DB
-    await qrosDb
-      .update(restaurants)
-      .set({
-        isActive,
-        updatedAt: new Date()
-      })
-      .where(eq(restaurants.id, id))
-      .catch(() => {});
-
     res.json({
       success: true,
       message: isActive ? 'Tenant activated successfully' : 'Tenant suspended successfully',
-      tenant: updated[0]
+      tenant: updated
     });
   } catch (error: any) {
     console.error('[Tenant Status Error]:', error);
@@ -833,7 +589,8 @@ superAdminRouter.patch('/tenants/:id/status', async (req: Request, res: Response
 
 /**
  * PATCH /api/super-admin/tenants/:id/plan
- * Assign or update a tenant's subscription plan
+ * Assign or update a tenant's subscription plan.
+ * Communicates with Restaurant/Cinema domain via Backend API and mirrors into QROS Master DB.
  */
 superAdminRouter.patch('/tenants/:id/plan', async (req: Request, res: Response) => {
   try {
@@ -847,98 +604,67 @@ superAdminRouter.patch('/tenants/:id/plan', async (req: Request, res: Response) 
 
     const { planId, billingCycle, status } = validation.data;
 
-    // Identify target database for this venue
-    let targetDb = restaurantDb;
-    let [venue] = await restaurantDb
+    // 1. Check venue in QROS master DB
+    const [venue] = await qrosDb
       .select({ id: restaurants.id, tenantType: restaurants.tenantType })
       .from(restaurants)
       .where(eq(restaurants.id, restaurantId))
       .limit(1);
 
     if (!venue) {
-      targetDb = cinemaDb;
-      [venue] = await cinemaDb
-        .select({ id: restaurants.id, tenantType: restaurants.tenantType })
-        .from(restaurants)
-        .where(eq(restaurants.id, restaurantId))
-        .limit(1);
-    }
-
-    if (!venue) {
       res.status(404).json({ error: 'Tenant not found' });
       return;
     }
 
-    // Verify plan exists (in targetDb or fallback)
-    let plan = await targetDb.select().from(subscriptionPlans).where(eq(subscriptionPlans.id, planId)).limit(1);
-    if (plan.length === 0) {
-      plan = await (targetDb === restaurantDb ? cinemaDb : restaurantDb)
-        .select()
-        .from(subscriptionPlans)
-        .where(eq(subscriptionPlans.id, planId))
-        .limit(1);
-    }
+    // 2. Verify plan exists in QROS master DB
+    const [plan] = await qrosDb
+      .select()
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.id, planId))
+      .limit(1);
 
-    if (plan.length === 0) {
-      res.status(404).json({ error: 'Subscription plan not found' });
+    if (!plan) {
+      res.status(404).json({ error: 'Subscription plan not found in platform master database' });
       return;
     }
 
-    // Cancel existing active subscriptions for this tenant in target database and qrosDb
-    await Promise.allSettled([
-      targetDb
-        .update(tenantSubscriptions)
-        .set({ status: 'cancelled', updatedAt: new Date() })
-        .where(and(eq(tenantSubscriptions.restaurantId, restaurantId), eq(tenantSubscriptions.status, 'active'))),
-      qrosDb
-        .update(tenantSubscriptions)
-        .set({ status: 'cancelled', updatedAt: new Date() })
-        .where(and(eq(tenantSubscriptions.restaurantId, restaurantId), eq(tenantSubscriptions.status, 'active')))
-    ]);
+    // 3. Dispatch to tenant domain via its Backend API (Application & DB Isolation)
+    let domainResult: any;
+    if (venue.tenantType === 'cinema') {
+      domainResult = await cinemaApiClient.assignTenantPlan(restaurantId, { planId, billingCycle, status });
+    } else {
+      domainResult = await restaurantApiClient.assignTenantPlan(restaurantId, { planId, billingCycle, status });
+    }
 
-    // Create new subscription in target database
-    const newSub = await targetDb
+    // 4. Update in QROS master DB
+    const now = new Date();
+    await qrosDb
+      .update(tenantSubscriptions)
+      .set({ status: 'cancelled', updatedAt: now })
+      .where(
+        and(
+          eq(tenantSubscriptions.restaurantId, restaurantId),
+          eq(tenantSubscriptions.status, 'active')
+        )
+      );
+
+    const [newSub] = await qrosDb
       .insert(tenantSubscriptions)
       .values({
         restaurantId,
         planId,
         billingCycle,
         status,
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: new Date(Date.now() + (billingCycle === 'annual' ? 365 : 30) * 24 * 60 * 60 * 1000)
+        currentPeriodStart: now,
+        currentPeriodEnd: new Date(now.getTime() + (billingCycle === 'annual' ? 365 : 30) * 24 * 60 * 60 * 1000)
       })
       .returning();
 
-    // Mirror subscription into QROS master DB
-    if (newSub[0]) {
-      await qrosDb
-        .insert(tenantSubscriptions)
-        .values({
-          id: newSub[0].id,
-          restaurantId,
-          planId,
-          billingCycle,
-          status,
-          currentPeriodStart: newSub[0].currentPeriodStart,
-          currentPeriodEnd: newSub[0].currentPeriodEnd
-        })
-        .onConflictDoUpdate({
-          target: tenantSubscriptions.id,
-          set: {
-            planId,
-            status,
-            currentPeriodEnd: newSub[0].currentPeriodEnd,
-            updatedAt: new Date()
-          }
-        })
-        .catch(() => {});
-    }
-
     res.json({
       success: true,
-      message: `Subscription plan ${plan[0]!.name} assigned successfully`,
-      subscription: newSub[0],
-      plan: plan[0]
+      message: `Subscription plan ${plan.name} assigned successfully`,
+      subscription: domainResult?.subscription || newSub,
+      plan
     });
   } catch (error: any) {
     console.error('[Assign Plan Error]:', error);
@@ -952,27 +678,11 @@ superAdminRouter.patch('/tenants/:id/plan', async (req: Request, res: Response) 
  */
 superAdminRouter.get('/subscriptions', async (req: Request, res: Response) => {
   try {
-    let plans = await qrosDb
+    const plans = await qrosDb
       .select()
       .from(subscriptionPlans)
       .orderBy(subscriptionPlans.sortOrder)
       .catch(() => []);
-
-    if (plans.length === 0) {
-      plans = await restaurantDb
-        .select()
-        .from(subscriptionPlans)
-        .orderBy(subscriptionPlans.sortOrder)
-        .catch(() => []);
-    }
-
-    if (plans.length === 0) {
-      plans = await cinemaDb
-        .select()
-        .from(subscriptionPlans)
-        .orderBy(subscriptionPlans.sortOrder)
-        .catch(() => []);
-    }
 
     res.json(plans);
   } catch (error: any) {
@@ -983,7 +693,7 @@ superAdminRouter.get('/subscriptions', async (req: Request, res: Response) => {
 
 /**
  * POST /api/super-admin/subscriptions
- * Create a new subscription plan (synced across all three databases)
+ * Create a new subscription plan in QROS master DB and synchronize via Restaurant and Cinema APIs.
  */
 superAdminRouter.post('/subscriptions', async (req: Request, res: Response) => {
   try {
@@ -993,13 +703,18 @@ superAdminRouter.post('/subscriptions', async (req: Request, res: Response) => {
       return;
     }
 
-    const [createdInQros] = await Promise.all([
-      qrosDb.insert(subscriptionPlans).values(validation.data).returning(),
-      restaurantDb.insert(subscriptionPlans).values(validation.data).returning().catch(() => []),
-      cinemaDb.insert(subscriptionPlans).values(validation.data).returning().catch(() => [])
+    const [createdInQros] = await qrosDb
+      .insert(subscriptionPlans)
+      .values(validation.data)
+      .returning();
+
+    // Propagate plan to Restaurant and Cinema via their Backend APIs
+    await Promise.allSettled([
+      restaurantApiClient.syncPlan(createdInQros),
+      cinemaApiClient.syncPlan(createdInQros)
     ]);
 
-    res.status(201).json(createdInQros[0]);
+    res.status(201).json(createdInQros);
   } catch (error: any) {
     console.error('[Create Plan Error]:', error);
     res.status(500).json({ error: 'Failed to create subscription plan' });
@@ -1008,7 +723,7 @@ superAdminRouter.post('/subscriptions', async (req: Request, res: Response) => {
 
 /**
  * PATCH /api/super-admin/subscriptions/:id
- * Update an existing subscription plan (synced across all three databases)
+ * Update an existing subscription plan in QROS master DB and synchronize via Backend APIs.
  */
 superAdminRouter.patch('/subscriptions/:id', async (req: Request, res: Response) => {
   try {
@@ -1019,42 +734,27 @@ superAdminRouter.patch('/subscriptions/:id', async (req: Request, res: Response)
       return;
     }
 
-    const [qrosUpdated] = await Promise.all([
-      qrosDb
-        .update(subscriptionPlans)
-        .set({
-          ...validation.data,
-          updatedAt: new Date()
-        })
-        .where(eq(subscriptionPlans.id, id))
-        .returning()
-        .catch(() => []),
-      restaurantDb
-        .update(subscriptionPlans)
-        .set({
-          ...validation.data,
-          updatedAt: new Date()
-        })
-        .where(eq(subscriptionPlans.id, id))
-        .returning()
-        .catch(() => []),
-      cinemaDb
-        .update(subscriptionPlans)
-        .set({
-          ...validation.data,
-          updatedAt: new Date()
-        })
-        .where(eq(subscriptionPlans.id, id))
-        .returning()
-        .catch(() => [])
-    ]);
+    const [qrosUpdated] = await qrosDb
+      .update(subscriptionPlans)
+      .set({
+        ...validation.data,
+        updatedAt: new Date()
+      })
+      .where(eq(subscriptionPlans.id, id))
+      .returning();
 
-    if (qrosUpdated.length === 0) {
+    if (!qrosUpdated) {
       res.status(404).json({ error: 'Subscription plan not found' });
       return;
     }
 
-    res.json(qrosUpdated[0]);
+    // Synchronize to Restaurant and Cinema via Backend APIs
+    await Promise.allSettled([
+      restaurantApiClient.syncPlan(qrosUpdated),
+      cinemaApiClient.syncPlan(qrosUpdated)
+    ]);
+
+    res.json(qrosUpdated);
   } catch (error: any) {
     console.error('[Update Plan Error]:', error);
     res.status(500).json({ error: 'Failed to update subscription plan' });
@@ -1063,39 +763,30 @@ superAdminRouter.patch('/subscriptions/:id', async (req: Request, res: Response)
 
 /**
  * DELETE /api/super-admin/subscriptions/:id
- * Deactivates a subscription plan (synced across all three databases)
+ * Deactivates a subscription plan in QROS master DB and synchronizes via Backend APIs.
  */
 superAdminRouter.delete('/subscriptions/:id', async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
 
-    const [qrosUpdated] = await Promise.all([
-      qrosDb
-        .update(subscriptionPlans)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(subscriptionPlans.id, id))
-        .returning()
-        .catch(() => []),
-      restaurantDb
-        .update(subscriptionPlans)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(subscriptionPlans.id, id))
-        .returning()
-        .catch(() => []),
-      cinemaDb
-        .update(subscriptionPlans)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(subscriptionPlans.id, id))
-        .returning()
-        .catch(() => [])
-    ]);
+    const [qrosUpdated] = await qrosDb
+      .update(subscriptionPlans)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(subscriptionPlans.id, id))
+      .returning();
 
-    if (qrosUpdated.length === 0) {
+    if (!qrosUpdated) {
       res.status(404).json({ error: 'Subscription plan not found' });
       return;
     }
 
-    res.json({ success: true, message: 'Subscription plan deactivated', plan: qrosUpdated[0] });
+    // Propagate deactivation to Restaurant and Cinema via Backend APIs
+    await Promise.allSettled([
+      restaurantApiClient.deactivatePlan(id),
+      cinemaApiClient.deactivatePlan(id)
+    ]);
+
+    res.json({ success: true, message: 'Subscription plan deactivated', plan: qrosUpdated });
   } catch (error: any) {
     console.error('[Delete Plan Error]:', error);
     res.status(500).json({ error: 'Failed to deactivate subscription plan' });
@@ -1104,7 +795,7 @@ superAdminRouter.delete('/subscriptions/:id', async (req: Request, res: Response
 
 /**
  * POST /api/super-admin/seed-plans
- * Seed default plans if empty (synced to all databases)
+ * Seed default plans in QROS master DB if empty, and sync to operational APIs.
  */
 superAdminRouter.post('/seed-plans', async (req: Request, res: Response) => {
   try {
@@ -1116,7 +807,7 @@ superAdminRouter.post('/seed-plans', async (req: Request, res: Response) => {
 
     await syncSubscriptionPlans();
     const plans = await qrosDb.select().from(subscriptionPlans).orderBy(subscriptionPlans.sortOrder);
-    res.status(201).json({ success: true, message: 'Default subscription plans seeded across databases', plans });
+    res.status(201).json({ success: true, message: 'Default subscription plans seeded across platform APIs', plans });
   } catch (error: any) {
     console.error('[Seed Plans Error]:', error);
     res.status(500).json({ error: 'Failed to seed default subscription plans' });
@@ -1125,15 +816,15 @@ superAdminRouter.post('/seed-plans', async (req: Request, res: Response) => {
 
 /**
  * GET /api/super-admin/tenant-subscriptions
- * Lists all tenant subscriptions across restaurants and theatres with duration, expiration, and owner info.
+ * Lists all tenant subscriptions directly from QROS master DB.
  */
 superAdminRouter.get('/tenant-subscriptions', async (req: Request, res: Response) => {
   try {
-    // 1. Sync live expirations first
+    // 1. Sync live expirations
     await syncSubscriptionExpirations();
 
-    // 2. Fetch subscriptions from QROS master DB (with parallel fallback to restaurantDb and cinemaDb)
-    let allSubs = await qrosDb
+    // 2. Fetch subscriptions from QROS master DB
+    const allSubs = await qrosDb
       .select({
         id: tenantSubscriptions.id,
         restaurantId: tenantSubscriptions.restaurantId,
@@ -1162,99 +853,23 @@ superAdminRouter.get('/tenant-subscriptions', async (req: Request, res: Response
       .orderBy(desc(tenantSubscriptions.createdAt))
       .catch(() => []);
 
-    if (allSubs.length === 0) {
-      const [restSubs, cineSubs] = await Promise.all([
-        restaurantDb
-          .select({
-            id: tenantSubscriptions.id,
-            restaurantId: tenantSubscriptions.restaurantId,
-            planId: tenantSubscriptions.planId,
-            status: tenantSubscriptions.status,
-            billingCycle: tenantSubscriptions.billingCycle,
-            currentPeriodStart: tenantSubscriptions.currentPeriodStart,
-            currentPeriodEnd: tenantSubscriptions.currentPeriodEnd,
-            cancelAtPeriodEnd: tenantSubscriptions.cancelAtPeriodEnd,
-            createdAt: tenantSubscriptions.createdAt,
-            restaurantName: restaurants.name,
-            restaurantSlug: restaurants.slug,
-            tenantType: restaurants.tenantType,
-            isVenueActive: restaurants.isActive,
-            planName: subscriptionPlans.name,
-            planSlug: subscriptionPlans.slug,
-            priceMonthlyPaise: subscriptionPlans.priceMonthlyPaise,
-            priceAnnualPaise: subscriptionPlans.priceAnnualPaise,
-            maxTables: subscriptionPlans.maxTables,
-            maxScreens: subscriptionPlans.maxScreens,
-            maxStaff: subscriptionPlans.maxStaff
-          })
-          .from(tenantSubscriptions)
-          .innerJoin(restaurants, eq(tenantSubscriptions.restaurantId, restaurants.id))
-          .innerJoin(subscriptionPlans, eq(tenantSubscriptions.planId, subscriptionPlans.id))
-          .orderBy(desc(tenantSubscriptions.createdAt))
-          .catch(() => []),
-        cinemaDb
-          .select({
-            id: tenantSubscriptions.id,
-            restaurantId: tenantSubscriptions.restaurantId,
-            planId: tenantSubscriptions.planId,
-            status: tenantSubscriptions.status,
-            billingCycle: tenantSubscriptions.billingCycle,
-            currentPeriodStart: tenantSubscriptions.currentPeriodStart,
-            currentPeriodEnd: tenantSubscriptions.currentPeriodEnd,
-            cancelAtPeriodEnd: tenantSubscriptions.cancelAtPeriodEnd,
-            createdAt: tenantSubscriptions.createdAt,
-            restaurantName: restaurants.name,
-            restaurantSlug: restaurants.slug,
-            tenantType: restaurants.tenantType,
-            isVenueActive: restaurants.isActive,
-            planName: subscriptionPlans.name,
-            planSlug: subscriptionPlans.slug,
-            priceMonthlyPaise: subscriptionPlans.priceMonthlyPaise,
-            priceAnnualPaise: subscriptionPlans.priceAnnualPaise,
-            maxTables: subscriptionPlans.maxTables,
-            maxScreens: subscriptionPlans.maxScreens,
-            maxStaff: subscriptionPlans.maxStaff
-          })
-          .from(tenantSubscriptions)
-          .innerJoin(restaurants, eq(tenantSubscriptions.restaurantId, restaurants.id))
-          .innerJoin(subscriptionPlans, eq(tenantSubscriptions.planId, subscriptionPlans.id))
-          .orderBy(desc(tenantSubscriptions.createdAt))
-          .catch(() => [])
-      ]);
-      allSubs = [...restSubs, ...cineSubs];
-    }
-
-    allSubs.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-
-    // 3. Resolve owners
-    const [restOwners, cineOwners] = await Promise.all([
-      restaurantDb
-        .select({
-          restaurantId: restaurantMembers.restaurantId,
-          name: user.name,
-          email: user.email
-        })
-        .from(restaurantMembers)
-        .innerJoin(user, eq(restaurantMembers.userId, user.id))
-        .where(eq(restaurantMembers.role, 'owner'))
-        .catch(() => []),
-      cinemaDb
-        .select({
-          restaurantId: restaurantMembers.restaurantId,
-          name: user.name,
-          email: user.email
-        })
-        .from(restaurantMembers)
-        .innerJoin(user, eq(restaurantMembers.userId, user.id))
-        .where(eq(restaurantMembers.role, 'owner'))
-        .catch(() => [])
-    ]);
+    // 3. Resolve owners from QROS master DB
+    const owners = await qrosDb
+      .select({
+        restaurantId: restaurantMembers.restaurantId,
+        name: user.name,
+        email: user.email
+      })
+      .from(restaurantMembers)
+      .innerJoin(user, eq(restaurantMembers.userId, user.id))
+      .where(eq(restaurantMembers.role, 'owner'))
+      .catch(() => []);
 
     const ownerMap = new Map<string, { name: string; email: string }>();
-    for (const o of [...restOwners, ...cineOwners]) {
-      ownerMap.set(o.restaurantId, { name: o.name, email: o.email });
+    for (const o of owners) {
+      if (o.restaurantId) {
+        ownerMap.set(o.restaurantId, { name: o.name, email: o.email });
+      }
     }
 
     const now = new Date();
@@ -1287,7 +902,7 @@ superAdminRouter.get('/tenant-subscriptions', async (req: Request, res: Response
 
 /**
  * PATCH /api/super-admin/tenant-subscriptions/:id/duration
- * Adjust or extend subscription duration (e.g. +30 days, +365 days, or set end date)
+ * Adjust or extend subscription duration in QROS master DB.
  */
 superAdminRouter.patch('/tenant-subscriptions/:id/duration', async (req: Request, res: Response) => {
   try {
@@ -1299,25 +914,14 @@ superAdminRouter.patch('/tenant-subscriptions/:id/duration', async (req: Request
 
     const { daysToAdd, currentPeriodEnd, status } = validation.data;
 
-    // Find subscription in restaurantDb or cinemaDb
-    let targetDb = restaurantDb;
-    let [sub] = await restaurantDb
+    const [sub] = await qrosDb
       .select()
       .from(tenantSubscriptions)
       .where(eq(tenantSubscriptions.id, id))
       .limit(1);
 
     if (!sub) {
-      targetDb = cinemaDb;
-      [sub] = await cinemaDb
-        .select()
-        .from(tenantSubscriptions)
-        .where(eq(tenantSubscriptions.id, id))
-        .limit(1);
-    }
-
-    if (!sub) {
-      return res.status(404).json({ error: 'Tenant subscription not found' });
+      return res.status(404).json({ error: 'Tenant subscription not found in QROS master DB' });
     }
 
     let newPeriodEnd: Date;
@@ -1335,7 +939,7 @@ superAdminRouter.patch('/tenant-subscriptions/:id/duration', async (req: Request
     const now = new Date();
     const newStatus = status || (newPeriodEnd > now ? 'active' : 'expired');
 
-    const [updated] = await targetDb
+    const [updated] = await qrosDb
       .update(tenantSubscriptions)
       .set({
         currentPeriodEnd: newPeriodEnd,
@@ -1345,29 +949,12 @@ superAdminRouter.patch('/tenant-subscriptions/:id/duration', async (req: Request
       .where(eq(tenantSubscriptions.id, id))
       .returning();
 
-    // Mirror duration update into QROS master DB
-    await qrosDb
-      .update(tenantSubscriptions)
-      .set({
-        currentPeriodEnd: newPeriodEnd,
-        status: newStatus,
-        updatedAt: now
-      })
-      .where(eq(tenantSubscriptions.id, id))
-      .catch(() => {});
-
-    // If subscription is now active, also ensure the venue is marked isActive = true
+    // If subscription is now active, ensure venue is marked isActive = true in QROS master DB
     if (newStatus === 'active') {
-      await Promise.allSettled([
-        targetDb
-          .update(restaurants)
-          .set({ isActive: true, updatedAt: now })
-          .where(eq(restaurants.id, sub.restaurantId)),
-        qrosDb
-          .update(restaurants)
-          .set({ isActive: true, updatedAt: now })
-          .where(eq(restaurants.id, sub.restaurantId))
-      ]);
+      await qrosDb
+        .update(restaurants)
+        .set({ isActive: true, updatedAt: now })
+        .where(eq(restaurants.id, sub.restaurantId));
     }
 
     res.json({
@@ -1383,7 +970,7 @@ superAdminRouter.patch('/tenant-subscriptions/:id/duration', async (req: Request
 
 /**
  * PATCH /api/super-admin/tenant-subscriptions/:id/status
- * Update status of a tenant subscription ('active', 'expired', 'cancelled', 'past_due')
+ * Update status of a tenant subscription in QROS master DB.
  */
 superAdminRouter.patch('/tenant-subscriptions/:id/status', async (req: Request, res: Response) => {
   try {
@@ -1394,27 +981,7 @@ superAdminRouter.patch('/tenant-subscriptions/:id/status', async (req: Request, 
       return res.status(400).json({ error: 'Status is required' });
     }
 
-    let targetDb = restaurantDb;
-    let [sub] = await restaurantDb
-      .select()
-      .from(tenantSubscriptions)
-      .where(eq(tenantSubscriptions.id, id))
-      .limit(1);
-
-    if (!sub) {
-      targetDb = cinemaDb;
-      [sub] = await cinemaDb
-        .select()
-        .from(tenantSubscriptions)
-        .where(eq(tenantSubscriptions.id, id))
-        .limit(1);
-    }
-
-    if (!sub) {
-      return res.status(404).json({ error: 'Tenant subscription not found' });
-    }
-
-    const [updated] = await targetDb
+    const [updated] = await qrosDb
       .update(tenantSubscriptions)
       .set({
         status,
@@ -1423,15 +990,9 @@ superAdminRouter.patch('/tenant-subscriptions/:id/status', async (req: Request, 
       .where(eq(tenantSubscriptions.id, id))
       .returning();
 
-    // Mirror status update into QROS master DB
-    await qrosDb
-      .update(tenantSubscriptions)
-      .set({
-        status,
-        updatedAt: new Date()
-      })
-      .where(eq(tenantSubscriptions.id, id))
-      .catch(() => {});
+    if (!updated) {
+      return res.status(404).json({ error: 'Tenant subscription not found in QROS master DB' });
+    }
 
     res.json({
       success: true,
@@ -1446,11 +1007,11 @@ superAdminRouter.patch('/tenant-subscriptions/:id/status', async (req: Request, 
 
 /**
  * GET /api/super-admin/subscription-payments
- * Lists all subscription payment transactions from QROS master DB (with operational fallback).
+ * Lists all subscription payment transactions directly from QROS master DB.
  */
 superAdminRouter.get('/subscription-payments', async (req: Request, res: Response) => {
   try {
-    let allPayments = await qrosDb
+    const allPayments = await qrosDb
       .select({
         id: subscriptionPayments.id,
         subscriptionId: subscriptionPayments.subscriptionId,
@@ -1473,63 +1034,6 @@ superAdminRouter.get('/subscription-payments', async (req: Request, res: Respons
       .leftJoin(subscriptionPlans, eq(subscriptionPayments.planId, subscriptionPlans.id))
       .orderBy(desc(subscriptionPayments.createdAt))
       .catch(() => []);
-
-    if (allPayments.length === 0) {
-      const [restPayments, cinePayments] = await Promise.all([
-        restaurantDb
-          .select({
-            id: subscriptionPayments.id,
-            subscriptionId: subscriptionPayments.subscriptionId,
-            restaurantId: subscriptionPayments.restaurantId,
-            planId: subscriptionPayments.planId,
-            amountPaise: subscriptionPayments.amountPaise,
-            currency: subscriptionPayments.currency,
-            billingCycle: subscriptionPayments.billingCycle,
-            provider: subscriptionPayments.provider,
-            razorpayOrderId: subscriptionPayments.razorpayOrderId,
-            razorpayPaymentId: subscriptionPayments.razorpayPaymentId,
-            status: subscriptionPayments.status,
-            createdAt: subscriptionPayments.createdAt,
-            restaurantName: restaurants.name,
-            tenantType: restaurants.tenantType,
-            planName: subscriptionPlans.name
-          })
-          .from(subscriptionPayments)
-          .leftJoin(restaurants, eq(subscriptionPayments.restaurantId, restaurants.id))
-          .leftJoin(subscriptionPlans, eq(subscriptionPayments.planId, subscriptionPlans.id))
-          .orderBy(desc(subscriptionPayments.createdAt))
-          .catch(() => []),
-        cinemaDb
-          .select({
-            id: subscriptionPayments.id,
-            subscriptionId: subscriptionPayments.subscriptionId,
-            restaurantId: subscriptionPayments.restaurantId,
-            planId: subscriptionPayments.planId,
-            amountPaise: subscriptionPayments.amountPaise,
-            currency: subscriptionPayments.currency,
-            billingCycle: subscriptionPayments.billingCycle,
-            provider: subscriptionPayments.provider,
-            razorpayOrderId: subscriptionPayments.razorpayOrderId,
-            razorpayPaymentId: subscriptionPayments.razorpayPaymentId,
-            status: subscriptionPayments.status,
-            createdAt: subscriptionPayments.createdAt,
-            restaurantName: restaurants.name,
-            tenantType: restaurants.tenantType,
-            planName: subscriptionPlans.name
-          })
-          .from(subscriptionPayments)
-          .leftJoin(restaurants, eq(subscriptionPayments.restaurantId, restaurants.id))
-          .leftJoin(subscriptionPlans, eq(subscriptionPayments.planId, subscriptionPlans.id))
-          .orderBy(desc(subscriptionPayments.createdAt))
-          .catch(() => [])
-      ]);
-
-      allPayments = [...restPayments, ...cinePayments];
-    }
-
-    allPayments.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
 
     const formatted = allPayments.map((p) => ({
       ...p,
@@ -1563,14 +1067,14 @@ superAdminRouter.post('/check-expirations', async (req: Request, res: Response) 
 
 /**
  * POST /api/super-admin/sync-qros-db
- * Trigger manual synchronization of all venues, subscriptions, and plans into QROS master DB
+ * Trigger manual synchronization of all venues, subscriptions, and plans into QROS master DB via APIs.
  */
 superAdminRouter.post('/sync-qros-db', async (req: Request, res: Response) => {
   try {
     await syncQrosDatabase();
     res.json({
       success: true,
-      message: 'QROS master database synchronized successfully across restaurants and theatres.'
+      message: 'QROS master database synchronized successfully across restaurants and theatres via APIs.'
     });
   } catch (error: any) {
     console.error('[Sync QROS DB Error]:', error);
