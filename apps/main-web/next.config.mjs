@@ -3,6 +3,10 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  transpilePackages: ['@menugo/shared', 'lucide-react'],
+  experimental: {
+    optimizePackageImports: ['lucide-react']
+  },
   output: process.env.BUILD_STANDALONE === 'true' ? 'standalone' : undefined,
   images: {
     remotePatterns: [
