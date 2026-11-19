@@ -7,6 +7,7 @@ import { requireTenant } from '../middleware/tenant-auth';
 import { AppError } from '../middleware/error-handler';
 import { syncSingleVenueToQros } from '../lib/qros-sync-service';
 import { cinemaApiClient } from '../lib/internal-api-client';
+import { trackMenuBrowseUsage } from '../lib/usage-tracking-service';
 import crypto from 'crypto';
 
 const router = Router();
@@ -238,6 +239,13 @@ router.get('/by-slug/:slug', async (req: Request, res: Response, next) => {
       categories: activeCategories,
       products: publicProducts
     });
+
+    // Track metered infrastructure usage for active customer menu browsing
+    trackMenuBrowseUsage({
+      restaurantId: restaurant.id,
+      tenantType: 'restaurant',
+      action: 'view'
+    }).catch(() => {});
   } catch (error) {
     next(error);
   }

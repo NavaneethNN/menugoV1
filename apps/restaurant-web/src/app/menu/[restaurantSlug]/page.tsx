@@ -315,6 +315,36 @@ function CustomerMenuContent() {
     loadMenu();
   }, [loadMenu]);
 
+  // Active user menu scroll telemetry (Metered usage tracking)
+  useEffect(() => {
+    if (!restaurantSlug) return;
+    let lastTracked = 0;
+
+    const handleScroll = () => {
+      const now = Date.now();
+      // Throttle: report scroll usage at most once every 6 seconds of active customer scrolling
+      if (now - lastTracked > 6000) {
+        lastTracked = now;
+        const scrollDepth = Math.round(
+          (window.scrollY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight)) * 100
+        );
+        fetch('/api/billing/public/track-interaction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slug: restaurantSlug,
+            tenantType: 'restaurant',
+            action: 'scroll',
+            scrollDepth
+          })
+        }).catch(() => {});
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [restaurantSlug]);
+
   useEffect(() => {
     if (tableToken) {
       verifyTableToken(tableToken);

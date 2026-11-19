@@ -32,6 +32,7 @@ import {
   ExternalLink,
   MapPin,
   Eye,
+  Activity,
   Armchair
 } from 'lucide-react';
 
@@ -329,52 +330,26 @@ export default function CinemaAdminDashboardPage() {
         </div>
       </div>
 
-      {/* Subscription Expiration / Warning Alerts */}
-      {subscription?.isExpired && (
-        <div className="bg-rose-950/80 border border-rose-800 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-rose-200">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-rose-900/80 border border-rose-700 text-rose-400 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-white">Theatre Subscription Expired</p>
-              <p className="text-xs text-rose-300">
-                Your plan duration has ended. Renew now via Razorpay to ensure your patrons can continue placing orders seamlessly.
-              </p>
-            </div>
+      {/* Metered Infrastructure Billing Active Banner */}
+      <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-slate-300 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+            <Activity className="w-4 h-4" />
           </div>
-          <Link
-            href="/cinema/admin/billing"
-            className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md shrink-0 transition"
-          >
-            Renew Now via Razorpay
-          </Link>
-        </div>
-      )}
-
-      {!subscription?.isExpired && subscription?.daysRemaining !== null && subscription?.daysRemaining !== undefined && subscription?.daysRemaining <= 5 && (
-        <div className="bg-amber-950/70 border border-amber-800 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-amber-200">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-900/80 border border-amber-700 text-amber-400 flex items-center justify-center shrink-0">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-white">
-                Subscription Expiring Soon ({subscription.daysRemaining} {subscription.daysRemaining === 1 ? 'day' : 'days'} left)
-              </p>
-              <p className="text-xs text-amber-300">
-                Your theatre {subscription.plan?.name || ''} plan expires in {subscription.daysRemaining} {subscription.daysRemaining === 1 ? 'day' : 'days'}. Renew to maintain uninterrupted screen ordering.
-              </p>
-            </div>
+          <div>
+            <p className="text-xs font-bold text-white">Metered Infrastructure Billing Active</p>
+            <p className="text-[11px] text-slate-400">
+              Pay-as-you-go metered billing is active. Consumption records automatically for seat ordering and auditorium updates.
+            </p>
           </div>
-          <Link
-            href="/cinema/admin/billing"
-            className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md shrink-0 transition"
-          >
-            Extend Duration
-          </Link>
         </div>
-      )}
+        <Link
+          href="/cinema/admin/billing"
+          className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 shadow-xs shrink-0 transition"
+        >
+          View Usage &amp; Billing
+        </Link>
+      </div>
 
       {/* Live Operational Metrics Ribbon */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

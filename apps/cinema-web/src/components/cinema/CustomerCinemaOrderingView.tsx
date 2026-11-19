@@ -257,6 +257,36 @@ export function CustomerCinemaOrderingView({
     };
   }, [theatreToken, selectedScreenId]);
 
+  // Active user cinema concessions menu scroll telemetry (Metered usage tracking)
+  useEffect(() => {
+    if (!theatreToken) return;
+    let lastTracked = 0;
+
+    const handleScroll = () => {
+      const now = Date.now();
+      // Throttle: report scroll usage at most once every 6 seconds of active customer scrolling
+      if (now - lastTracked > 6000) {
+        lastTracked = now;
+        const scrollDepth = Math.round(
+          (window.scrollY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight)) * 100
+        );
+        fetch('/api/cinema/billing/public/track-interaction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            theatreToken,
+            tenantType: 'cinema',
+            action: 'scroll',
+            scrollDepth
+          })
+        }).catch(() => {});
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [theatreToken]);
+
   // 3. Restore cart & contact info from localStorage on mount
   useEffect(() => {
     if (!theatreToken) return;

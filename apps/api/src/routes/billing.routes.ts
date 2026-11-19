@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { requireTenant } from '../middleware/tenant-auth';
 import { AppError } from '../middleware/error-handler';
+import { restaurantDb, cinemaDb, restaurants, cinemaQrCodes } from '@menugo/database';
+import { eq } from 'drizzle-orm';
 import {
   getTenantInvoices,
   getTenantInvoiceById,
@@ -10,10 +12,55 @@ import {
   payTenantInvoice,
   generateTenantInvoice
 } from '../lib/billing-engine';
+import { trackMenuBrowseUsage } from '../lib/usage-tracking-service';
 
 export const billingRouter = Router();
 
-// Enforce authentication & tenant boundary on all tenant billing endpoints
+/**
+ * POST /api/billing/public/track-interaction
+ * Public telemetry endpoint for tracking active customer scrolling / browsing through menus
+ */
+billingRouter.post('/public/track-interaction', async (req: Request, res: Response) => {
+  try {
+    const { restaurantId, slug, theatreToken, tenantType, action, scrollDepth } = req.body;
+    let targetId = restaurantId;
+
+    if (!targetId && slug) {
+      const [rest] = await restaurantDb
+        .select({ id: restaurants.id })
+        .from(restaurants)
+        .where(eq(restaurants.slug, slug))
+        .limit(1)
+        .catch(() => []);
+      if (rest) targetId = rest.id;
+    }
+
+    if (!targetId && theatreToken) {
+      const [qr] = await cinemaDb
+        .select({ theatreId: cinemaQrCodes.theatreId })
+        .from(cinemaQrCodes)
+        .where(eq(cinemaQrCodes.token, theatreToken))
+        .limit(1)
+        .catch(() => []);
+      if (qr) targetId = qr.theatreId;
+    }
+
+    if (targetId) {
+      await trackMenuBrowseUsage({
+        restaurantId: targetId,
+        tenantType: tenantType || (theatreToken ? 'cinema' : 'restaurant'),
+        action: action === 'scroll' ? 'scroll' : 'view',
+        scrollDepth
+      });
+    }
+
+    res.json({ success: true });
+  } catch {
+    res.json({ success: true });
+  }
+});
+
+// Enforce authentication & tenant boundary on all authenticated tenant billing endpoints
 billingRouter.use(requireAuth);
 billingRouter.use(requireTenant());
 

@@ -67,6 +67,7 @@ import { AppError } from '../middleware/error-handler';
 import { tableVerificationRateLimiter } from '../middleware/rate-limiter';
 import { publishOrderUpdated } from '../lib/realtime';
 import { syncSingleVenueToQros } from '../lib/qros-sync-service';
+import { trackOrderUsage, trackMenuBrowseUsage } from '../lib/usage-tracking-service';
 import QRCode from 'qrcode';
 import crypto from 'crypto';
 import cinemaPaymentRoutes from './cinema-payment.routes';
@@ -3594,6 +3595,13 @@ router.get(
         categories: activeCategories,
         products: availableProducts
       });
+
+      // Track metered infrastructure usage for active customer concessions menu browsing
+      trackMenuBrowseUsage({
+        restaurantId: qr.theatreId,
+        tenantType: 'cinema',
+        action: 'view'
+      }).catch(() => {});
     } catch (error) {
       next(error);
     }
@@ -5407,6 +5415,17 @@ router.post(
           },
           items: preparedResult.items
         }
+      });
+
+      // Track metered infrastructure usage for cinema order placement
+      trackOrderUsage({
+        restaurantId: context.theatre.id,
+        tenantType: 'cinema',
+        orderId: preparedResult.order.id,
+        totalAmount: summary.totalAmount,
+        itemCount: summary.items.length
+      }).catch((err) => {
+        console.warn('Usage tracking error on cinema order:', err);
       });
     } catch (error) {
       next(error);

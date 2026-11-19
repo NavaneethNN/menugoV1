@@ -3,6 +3,7 @@ import { db, restaurantDb, cinemaDb, restaurants, restaurantMembers } from '@men
 import { eq, and } from 'drizzle-orm';
 import { RestaurantMemberRole, TenantType } from '@menugo/shared';
 import { requireAuth, AuthenticatedUser } from './auth';
+import { trackAdminActionUsage } from '../lib/usage-tracking-service';
 
 export interface TenantPermissions {
   canManageRestaurant: boolean;
@@ -290,6 +291,25 @@ export function requireTenant(
 
       req.restaurantId = membership.restaurant.id;
       req.restaurantRole = role as RestaurantMemberRole;
+
+      // Track metered infrastructure usage for any admin mutation (POST, PUT, PATCH, DELETE)
+      const mutatingMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+      if (
+        mutatingMethods.includes(req.method) &&
+        !req.path.includes('/billing/pay')
+      ) {
+        res.on('finish', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            trackAdminActionUsage({
+              restaurantId: membership.restaurant.id,
+              tenantType,
+              method: req.method,
+              path: req.baseUrl ? `${req.baseUrl}${req.path}` : req.path,
+              userEmail: (req.user as any)?.email
+            }).catch(() => {});
+          }
+        });
+      }
 
       next();
     } catch (error) {

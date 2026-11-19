@@ -25,6 +25,7 @@ import {
   Users,
   CreditCard,
   Film,
+  Activity,
   X,
   ChevronDown,
   User,
@@ -214,52 +215,26 @@ export default function AdminDashboardPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Subscription Expiration Alert */}
-            {subscription?.isExpired && (
-              <div className="bg-red-50 border border-red-200 p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-red-900 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
-                    <AlertTriangle className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-red-900">Restaurant Subscription Expired</p>
-                    <p className="text-xs text-red-700">
-                      Your restaurant subscription plan has ended. Renew now to ensure patrons can place contactless table orders without interruption.
-                    </p>
-                  </div>
+            {/* Metered Usage Active Banner */}
+            <div className="bg-slate-50 border border-slate-200/80 p-3.5 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-slate-800 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                  <Activity className="w-4 h-4" />
                 </div>
-                <Link
-                  href="/admin/billing"
-                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm shrink-0 transition"
-                >
-                  Renew Now via Razorpay
-                </Link>
-              </div>
-            )}
-
-            {!subscription?.isExpired && subscription?.daysRemaining !== null && subscription?.daysRemaining !== undefined && subscription?.daysRemaining <= 5 && (
-              <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-amber-900 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                    <Clock className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-amber-900">
-                      Subscription Expiring Soon ({subscription.daysRemaining} {subscription.daysRemaining === 1 ? 'day' : 'days'} left)
-                    </p>
-                    <p className="text-xs text-amber-700">
-                      Your {subscription.plan?.name || ''} plan expires in {subscription.daysRemaining} {subscription.daysRemaining === 1 ? 'day' : 'days'}. Renew your subscription to maintain active service.
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-900">Metered Infrastructure Billing Active</p>
+                  <p className="text-[11px] text-slate-500">
+                    Pay-as-you-go metered billing is active. Track usage in real time and settle monthly.
+                  </p>
                 </div>
-                <Link
-                  href="/admin/billing"
-                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm shrink-0 transition"
-                >
-                  Extend Subscription
-                </Link>
               </div>
-            )}
+              <Link
+                href="/admin/billing"
+                className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs shadow-xs shrink-0 transition"
+              >
+                View Usage &amp; Billing
+              </Link>
+            </div>
 
             {/* Restaurant Profile Banner */}
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">

@@ -8,6 +8,7 @@ import { AppError } from '../middleware/error-handler';
 import { orderCreationRateLimiter, orderTrackingRateLimiter } from '../middleware/rate-limiter';
 import { publishOrderCreated, publishOrderUpdated } from '../lib/realtime';
 import { cinemaApiClient } from '../lib/internal-api-client';
+import { trackOrderUsage } from '../lib/usage-tracking-service';
 import crypto from 'crypto';
 
 const router = Router();
@@ -449,6 +450,17 @@ router.post('/', orderCreationRateLimiter, async (req: Request, res: Response, n
       }
     }, transactionResult.items).catch((err) => {
       console.warn('Realtime publish order-created error:', err);
+    });
+
+    // Track metered infrastructure usage for order placement
+    trackOrderUsage({
+      restaurantId: restaurant.id,
+      tenantType: 'restaurant',
+      orderId: transactionResult.order.id,
+      totalAmount,
+      itemCount: transactionResult.items.length
+    }).catch((err) => {
+      console.warn('Usage tracking error on order placement:', err);
     });
 
     res.status(201).json({
