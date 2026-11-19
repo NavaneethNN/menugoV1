@@ -388,7 +388,7 @@ export default function AdminCashierPage() {
       case 'preparing':
         return 'bg-amber-100 text-amber-800 border-amber-200';
       case 'ready':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
+        return 'bg-red-100 text-red-800 border-red-200';
       case 'served':
         return 'bg-emerald-100 text-emerald-800 border-emerald-200';
       case 'cancelled':
@@ -481,7 +481,7 @@ export default function AdminCashierPage() {
             href="/admin/service"
             className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-2xs"
           >
-            <UtensilsCrossed className="w-3.5 h-3.5 text-purple-600" />
+            <UtensilsCrossed className="w-3.5 h-3.5 text-red-600" />
             <span>Service Pass</span>
           </Link>
 
@@ -489,7 +489,7 @@ export default function AdminCashierPage() {
             href="/kitchen"
             className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-2xs"
           >
-            <ChefHat className="w-3.5 h-3.5 text-orange-600" />
+            <ChefHat className="w-3.5 h-3.5 text-red-600" />
             <span>Kitchen</span>
           </Link>
         </div>
@@ -497,7 +497,7 @@ export default function AdminCashierPage() {
 
       {/* Toast Alert */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-700 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-700 text-white px-5 py-3 rounded-lg shadow-sm flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
           <CheckCircle2 className="w-5 h-5 text-emerald-200" />
           <span className="text-sm font-bold">{toast}</span>
         </div>
@@ -507,7 +507,7 @@ export default function AdminCashierPage() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6 print:hidden">
         {/* Error Alert */}
         {error && (
-          <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-sm flex items-center justify-between">
+          <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-sm flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
               <span>{error}</span>
@@ -521,7 +521,7 @@ export default function AdminCashierPage() {
         {/* Summary Metric Cards */}
         {summary && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div className="bg-white p-4 sm:p-5 rounded-lg border border-slate-200 shadow-xs flex items-center justify-between">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
                   Total Tables
@@ -530,12 +530,12 @@ export default function AdminCashierPage() {
                   {summary.totalTables}
                 </span>
               </div>
-              <div className="w-11 h-11 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
                 <UtensilsCrossed className="w-5 h-5" />
               </div>
             </div>
 
-            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div className="bg-white p-4 sm:p-5 rounded-lg border border-slate-200 shadow-xs flex items-center justify-between">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 block mb-1">
                   Available (Free)
@@ -544,12 +544,12 @@ export default function AdminCashierPage() {
                   {summary.availableCount}
                 </span>
               </div>
-              <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
             </div>
 
-            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div className="bg-white p-4 sm:p-5 rounded-lg border border-slate-200 shadow-xs flex items-center justify-between">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-amber-600 block mb-1">
                   Occupied (Dining)
@@ -558,12 +558,12 @@ export default function AdminCashierPage() {
                   {summary.occupiedCount}
                 </span>
               </div>
-              <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
                 <Clock className="w-5 h-5" />
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-emerald-600 to-teal-700 p-4 sm:p-5 rounded-2xl text-white shadow-md flex items-center justify-between">
+            <div className="bg-gradient-to-br from-emerald-600 to-teal-700 p-4 sm:p-5 rounded-lg text-white shadow-sm flex items-center justify-between">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-100 block mb-1">
                   Active Running Bills
@@ -575,7 +575,7 @@ export default function AdminCashierPage() {
                   Across {summary.activeOrdersCount} active orders
                 </span>
               </div>
-              <div className="w-11 h-11 rounded-2xl bg-white/20 text-white flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
                 <CreditCard className="w-5 h-5" />
               </div>
             </div>
@@ -583,7 +583,7 @@ export default function AdminCashierPage() {
         )}
 
         {/* Filter Tabs & Search Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-lg border border-slate-200">
           <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl overflow-x-auto">
             <button
               onClick={() => setActiveTab('all')}
@@ -638,7 +638,7 @@ export default function AdminCashierPage() {
             <p className="text-sm font-bold text-slate-600">Loading live table sessions...</p>
           </div>
         ) : filteredTables.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200">
+          <div className="bg-white rounded-xl p-12 text-center border border-slate-200">
             <UtensilsCrossed className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <h3 className="text-base font-bold text-slate-800">No tables found</h3>
             <p className="text-xs text-slate-500 mt-1">
@@ -654,9 +654,9 @@ export default function AdminCashierPage() {
               return (
                 <div
                   key={table.id}
-                  className={`rounded-3xl border transition shadow-xs flex flex-col justify-between overflow-hidden ${
+                  className={`rounded-xl border transition shadow-xs flex flex-col justify-between overflow-hidden ${
                     isOccupied
-                      ? 'bg-white border-amber-300 ring-1 ring-amber-200 hover:shadow-md'
+                      ? 'bg-white border-amber-300 ring-1 ring-amber-200 hover:shadow-sm'
                       : 'bg-white border-slate-200 hover:border-slate-300'
                   }`}
                 >
@@ -770,7 +770,7 @@ export default function AdminCashierPage() {
                       </div>
                     ) : (
                       <div className="py-4 text-center space-y-2">
-                        <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
                           <Check className="w-5 h-5" />
                         </div>
                         <p className="text-xs text-slate-500 font-medium">
@@ -820,8 +820,8 @@ export default function AdminCashierPage() {
       {/* Modal 1: Close Table Session & Release Confirmation */}
       {closingTable && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-sm border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
               <CreditCard className="w-6 h-6" />
             </div>
 
@@ -837,7 +837,7 @@ export default function AdminCashierPage() {
 
             {/* Bill Summary Notice */}
             {closingTable.activeSession && (
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-500">
                   <span>Total Orders:</span>
                   <span className="font-bold text-slate-800">
@@ -855,7 +855,7 @@ export default function AdminCashierPage() {
 
             {/* Unserved warning if orders still cooking */}
             {closingTable.activeSession && closingTable.activeSession.unservedCount > 0 && (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 flex items-start gap-2">
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <span>
                   Notice: <strong>{closingTable.activeSession.unservedCount}</strong> order(s) are still not marked as served.
@@ -887,7 +887,7 @@ export default function AdminCashierPage() {
       {/* Modal 2: Itemized Bill / Receipt Statement */}
       {activeBillTable && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:static print:block">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-150 print:shadow-none print:border-none print:max-w-none print:w-full print:p-0">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 sm:p-7 shadow-sm border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-150 print:shadow-none print:border-none print:max-w-none print:w-full print:p-0">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 print:hidden">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
@@ -919,7 +919,7 @@ export default function AdminCashierPage() {
             ) : billData ? (
               <div className="space-y-4">
                 {/* Receipt Header */}
-                <div className="text-center p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                <div className="text-center p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-1">
                   <h4 className="text-base font-black text-slate-900">{billData.restaurant.name}</h4>
                   <p className="text-xs text-slate-500">
                     {billData.table.tableNumber} • Seated {new Date(billData.session.openedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({billData.session.durationMinutes} min)
@@ -945,7 +945,7 @@ export default function AdminCashierPage() {
                 {/* Orders Breakdown */}
                 <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
                   {billData.orders.map((order) => (
-                    <div key={order.id} className="p-3 bg-slate-50/70 rounded-2xl border border-slate-100 space-y-2">
+                    <div key={order.id} className="p-3 bg-slate-50/70 rounded-lg border border-slate-100 space-y-2">
                       <div className="flex items-center justify-between text-xs font-bold text-slate-700 pb-1 border-b border-slate-200">
                         <span>Order #{order.orderNumber}</span>
                         <span className="font-extrabold text-slate-900">{order.totalFormatted}</span>
@@ -965,7 +965,7 @@ export default function AdminCashierPage() {
                 </div>
 
                 {/* Grand Total Bar */}
-                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 flex items-center justify-between">
+                <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200 flex items-center justify-between">
                   <span className="text-sm font-black text-emerald-950 uppercase tracking-wide">
                     Grand Total
                   </span>
@@ -1008,7 +1008,7 @@ export default function AdminCashierPage() {
       {/* Modal 3: Manual Open Table Session */}
       {showManualOpenModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-sm border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
@@ -1056,7 +1056,7 @@ export default function AdminCashierPage() {
                 />
               </div>
 
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-900">
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900">
                 Opening this session will mark the table as Occupied immediately and activate the dining session.
               </div>
 

@@ -28,7 +28,6 @@ import {
   X,
   ChevronDown,
   User,
-  Menu,
   ClipboardList,
   Coins,
   AlertTriangle,
@@ -50,7 +49,6 @@ export default function AdminDashboardPage() {
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     if (sessionLoading) return;
@@ -116,30 +114,19 @@ export default function AdminDashboardPage() {
   if ((sessionLoading || loading) && !initialLoadedRef.current) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-red-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#f8f8f9] flex flex-col">
       {/* Top Navbar */}
-      <header className="h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-xs">
+      <header className="h-16 bg-white/95  border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-xs">
         <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
           {/* Mobile Navigation Drawer Toggle */}
-          <button
-            type="button"
-            onClick={() => setMobileNavOpen(true)}
-            className="md:hidden p-2 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors shrink-0"
-            aria-label="Open Navigation Drawer"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-
-          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-500 text-white font-black flex items-center justify-center text-lg shadow-sm shadow-orange-500/25 group-hover:scale-105 transition-transform">
-              M
-            </div>
+          <Link href="/" className="flex items-center gap-2.5 shrink-0 group lg:hidden">
+            <img src="/qros_logo.png" alt="The QROS" className="h-10 w-28 object-contain" />
             <span className="font-extrabold text-base sm:text-xl text-slate-900 leading-none">
               The QROS
             </span>
@@ -154,7 +141,7 @@ export default function AdminDashboardPage() {
                   const found = restaurants.find((r) => r.restaurant.id === e.target.value);
                   if (found) setSelectedMembership(found);
                 }}
-                className="w-full pl-3 pr-8 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-orange-500 truncate appearance-none cursor-pointer shadow-xs"
+                className="w-full pl-3 pr-8 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-red-500 truncate appearance-none cursor-pointer shadow-xs"
               >
                 {restaurants.map((item) => (
                   <option key={item.restaurant.id} value={item.restaurant.id}>
@@ -170,7 +157,7 @@ export default function AdminDashboardPage() {
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-200/90 rounded-xl text-xs sm:text-sm font-bold hover:bg-orange-100 transition shadow-xs whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 border border-red-200/90 rounded-xl text-xs sm:text-sm font-bold hover:bg-red-100 transition shadow-xs whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">New Restaurant</span>
@@ -178,7 +165,7 @@ export default function AdminDashboardPage() {
           </button>
 
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-700 font-semibold max-w-[170px] truncate shadow-xs">
-            <User className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+            <User className="w-3.5 h-3.5 text-red-600 shrink-0" />
             <span className="truncate">{session?.user?.name || session?.user?.email}</span>
           </div>
 
@@ -195,297 +182,41 @@ export default function AdminDashboardPage() {
         </div>
       </header>
 
-      {/* Mobile Slide-Over Navigation Drawer */}
-      {mobileNavOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs transition-opacity"
-            onClick={() => setMobileNavOpen(false)}
-          />
-
-          {/* Drawer Content */}
-          <div className="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-white shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-200">
-            {/* Drawer Header */}
-            <div className="h-16 px-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-slate-50/60">
-              <Link
-                href="/"
-                onClick={() => setMobileNavOpen(false)}
-                className="flex items-center gap-2.5"
-              >
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-500 text-white font-black flex items-center justify-center text-sm shadow-xs">
-                  M
-                </div>
-                <span className="font-extrabold text-base text-slate-900">
-                  The QROS
-                </span>
-                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-800">
-                  Admin
-                </span>
-              </Link>
-
-              <button
-                type="button"
-                onClick={() => setMobileNavOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
-                aria-label="Close menu"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Drawer Scrollable Body */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-5">
-              {/* Restaurant Switcher Card */}
-              {selectedRestaurant && (
-                <div className="p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      Active Restaurant
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-800">
-                      <ShieldCheck className="w-3 h-3" />
-                      {currentRole}
-                    </span>
-                  </div>
-
-                  {restaurants.length > 1 ? (
-                    <div className="relative">
-                      <select
-                        value={selectedRestaurant.id}
-                        onChange={(e) => {
-                          const found = restaurants.find((r) => r.restaurant.id === e.target.value);
-                          if (found) setSelectedMembership(found);
-                        }}
-                        className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-orange-500 appearance-none shadow-xs"
-                      >
-                        {restaurants.map((item) => (
-                          <option key={item.restaurant.id} value={item.restaurant.id}>
-                            {item.restaurant.name} ({item.role})
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    </div>
-                  ) : (
-                    <p className="font-extrabold text-sm text-slate-900 truncate">
-                      {selectedRestaurant.name}
-                    </p>
-                  )}
-
-                  <div className="flex items-center gap-2 pt-1">
-                    <button
-                      onClick={() => {
-                        setMobileNavOpen(false);
-                        setShowProfileModal(true);
-                      }}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition"
-                    >
-                      <Settings className="w-3 h-3 text-slate-500" />
-                      <span>Settings</span>
-                    </button>
-                    {selectedRestaurant.slug && (
-                      <Link
-                        href={`/menu/${selectedRestaurant.slug}`}
-                        target="_blank"
-                        onClick={() => setMobileNavOpen(false)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition"
-                      >
-                        <ExternalLink className="w-3 h-3 text-slate-500" />
-                        <span>Live Menu</span>
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Navigation Sections */}
-              <div className="space-y-4">
-                {/* Operations */}
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-2 mb-1.5">
-                    Live Operations
-                  </p>
-                  <div className="space-y-1">
-                    <Link
-                      href="/admin/cashier"
-                      onClick={() => setMobileNavOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-800 hover:bg-emerald-50 hover:text-emerald-900 transition group"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition">
-                        <CreditCard className="w-3.5 h-3.5" />
-                      </div>
-                      <span>Cashier &amp; Tables</span>
-                    </Link>
-
-                    <Link
-                      href="/kitchen"
-                      onClick={() => setMobileNavOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-800 hover:bg-orange-50 hover:text-orange-900 transition group"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition">
-                        <ChefHat className="w-3.5 h-3.5" />
-                      </div>
-                      <span>Kitchen KDS</span>
-                    </Link>
-
-                    <Link
-                      href="/admin/service"
-                      onClick={() => setMobileNavOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-800 hover:bg-purple-50 hover:text-purple-900 transition group"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition">
-                        <Utensils className="w-3.5 h-3.5" />
-                      </div>
-                      <span>Floor Service Pass</span>
-                    </Link>
-
-                    <Link
-                      href="/admin/orders"
-                      onClick={() => setMobileNavOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-800 hover:bg-blue-50 hover:text-blue-900 transition group"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition">
-                        <ClipboardList className="w-3.5 h-3.5" />
-                      </div>
-                      <span>Orders Management</span>
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Restaurant Catalog & Layout */}
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-2 mb-1.5">
-                    Catalog &amp; Layout
-                  </p>
-                  <div className="space-y-1">
-                    <Link
-                      href="/admin/products"
-                      onClick={() => setMobileNavOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center">
-                        <UtensilsCrossed className="w-3.5 h-3.5" />
-                      </div>
-                      <span>Menu Products</span>
-                    </Link>
-
-                    <Link
-                      href="/admin/categories"
-                      onClick={() => setMobileNavOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                        <Layers className="w-3.5 h-3.5" />
-                      </div>
-                      <span>Menu Categories</span>
-                    </Link>
-
-                    <Link
-                      href="/admin/tables"
-                      onClick={() => setMobileNavOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                        <QrCode className="w-3.5 h-3.5" />
-                      </div>
-                      <span>Tables &amp; QR Codes</span>
-                    </Link>
-
-                    <Link
-                      href="/admin/staff"
-                      onClick={() => setMobileNavOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                        <Users className="w-3.5 h-3.5" />
-                      </div>
-                      <span>Staff &amp; Memberships</span>
-                    </Link>
-
-                    <Link
-                      href="/admin/billing"
-                      onClick={() => setMobileNavOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center">
-                        <Coins className="w-3.5 h-3.5" />
-                      </div>
-                      <span>Billing &amp; Subscriptions</span>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Drawer Footer */}
-            <div className="p-4 border-t border-slate-200 bg-slate-50/50 space-y-3 shrink-0">
-              <div className="flex items-center gap-2.5 px-2">
-                <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs shrink-0">
-                  <User className="w-4 h-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-slate-800 truncate">
-                    {session?.user?.name || 'Logged In'}
-                  </p>
-                  <p className="text-[11px] text-slate-400 truncate">
-                    {session?.user?.email}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <button
-                  onClick={() => {
-                    setMobileNavOpen(false);
-                    setShowCreateModal(true);
-                  }}
-                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition shadow-xs"
-                >
-                  <Plus className="w-3.5 h-3.5 text-orange-600" />
-                  <span>New Rest.</span>
-                </button>
-
-                <button
-                  onClick={async () => {
-                    await signOut();
-                    router.push('/admin/login');
-                  }}
-                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl text-xs font-bold text-rose-700 transition shadow-xs"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Sign Out</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6">
         {restaurants.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 shadow-sm max-w-xl mx-auto p-8">
-            <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mx-auto mb-4">
-              <Store className="w-8 h-8" />
-            </div>
-            <h3 className="text-2xl font-black text-slate-900">Welcome to The QROS!</h3>
-            <p className="text-slate-600 text-sm mt-2 max-w-md mx-auto leading-relaxed">
-              You haven&apos;t registered any restaurants yet. Set up your restaurant identity and customer QR slug to start serving digital contactless orders.
-            </p>
-            <div className="mt-8">
-              <RestaurantOnboardingForm
-                onSuccess={(newRest) => {
-                  loadRestaurants(newRest.id);
-                }}
-              />
-            </div>
+          <div className="mx-auto grid max-w-6xl gap-6 py-5 lg:grid-cols-[0.78fr_1.22fr] lg:gap-8">
+            <section className="flex flex-col justify-between rounded-lg bg-[#a81023] p-7 text-white shadow-sm sm:p-9">
+              <div>
+                <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/10"><Store className="h-5 w-5" /></div>
+                <p className="mt-8 text-xs font-bold uppercase tracking-[0.17em] text-red-100">Welcome to QROS</p>
+                <h1 className="mt-2 max-w-md text-3xl font-semibold leading-tight">Let&apos;s get your restaurant set up.</h1>
+                <p className="mt-4 max-w-md text-sm leading-6 text-red-100">Add your business details to create your restaurant workspace and customer menu address.</p>
+              </div>
+              <div className="mt-8 border-t border-white/20 pt-6">
+                <div className="flex items-start gap-3"><QrCode className="mt-0.5 h-5 w-5 shrink-0 text-white" /><div><p className="text-sm font-semibold">Your digital service starts here</p><p className="mt-1 text-xs leading-5 text-red-100">Create a clear, shareable menu identity for your guests.</p></div></div>
+              </div>
+            </section>
+            <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-100 px-6 py-5 sm:px-8">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-700">Restaurant profile</p>
+                <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">Business details</h2>
+                <p className="mt-1 text-sm text-slate-500">Enter the information guests will use to find your restaurant.</p>
+              </div>
+              <div className="p-6 sm:p-8">
+                <RestaurantOnboardingForm
+                  onSuccess={(newRest) => {
+                    loadRestaurants(newRest.id);
+                  }}
+                />
+              </div>
+            </section>
           </div>
         ) : (
           <div className="space-y-6">
             {/* Subscription Expiration Alert */}
             {subscription?.isExpired && (
-              <div className="bg-red-50 border border-red-200 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-red-900 shadow-sm">
+              <div className="bg-red-50 border border-red-200 p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-red-900 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
                     <AlertTriangle className="w-5 h-5" />
@@ -507,7 +238,7 @@ export default function AdminDashboardPage() {
             )}
 
             {!subscription?.isExpired && subscription?.daysRemaining !== null && subscription?.daysRemaining !== undefined && subscription?.daysRemaining <= 5 && (
-              <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-amber-900 shadow-sm">
+              <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-amber-900 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
                     <Clock className="w-5 h-5" />
@@ -531,11 +262,11 @@ export default function AdminDashboardPage() {
             )}
 
             {/* Restaurant Profile Banner */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-black text-slate-900">{selectedRestaurant?.name}</h1>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-orange-100 text-orange-800">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-red-100 text-red-800">
                     <ShieldCheck className="w-3.5 h-3.5" />
                     {currentRole}
                   </span>
@@ -548,7 +279,7 @@ export default function AdminDashboardPage() {
 
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
                   <span className="font-mono text-slate-700">
-                    Slug: <strong className="text-orange-600">/{selectedRestaurant?.slug}</strong>
+                    Slug: <strong className="text-red-600">/{selectedRestaurant?.slug}</strong>
                   </span>
                   <span>•</span>
                   <span>Currency: <strong>{selectedRestaurant?.currency}</strong></span>
@@ -577,7 +308,7 @@ export default function AdminDashboardPage() {
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href="/admin/billing"
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold transition shadow-sm"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition shadow-sm"
                 >
                   <Coins className="w-4 h-4" />
                   <span>Billing &amp; Plans</span>
@@ -602,7 +333,7 @@ export default function AdminDashboardPage() {
 
                 <Link
                   href="/admin/cashier"
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition shadow-md"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition shadow-sm"
                 >
                   <CreditCard className="w-4 h-4" />
                   <span>Cashier Desk</span>
@@ -610,7 +341,7 @@ export default function AdminDashboardPage() {
 
                 <Link
                   href="/kitchen"
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold transition shadow-md"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition shadow-sm"
                 >
                   <ChefHat className="w-4 h-4" />
                   <span>Kitchen KDS</span>
@@ -618,7 +349,7 @@ export default function AdminDashboardPage() {
 
                 <Link
                   href="/admin/service"
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold transition shadow-md"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition shadow-sm"
                 >
                   <Utensils className="w-4 h-4" />
                   <span>Service Pass</span>
@@ -630,9 +361,9 @@ export default function AdminDashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <Link
                 href="/admin/cashier"
-                className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition block group"
+                className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-sm transition block group"
               >
-                <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-white transition">
+                <div className="w-12 h-12 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-white transition">
                   <CreditCard className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 group-hover:text-emerald-600 transition flex items-center gap-2">
@@ -646,14 +377,14 @@ export default function AdminDashboardPage() {
 
               <Link
                 href="/admin/service"
-                className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition block group"
+                className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-sm transition block group"
               >
-                <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center mb-4 group-hover:bg-purple-600 group-hover:text-white transition">
+                <div className="w-12 h-12 rounded-lg bg-red-100 text-red-600 flex items-center justify-center mb-4 group-hover:bg-red-600 group-hover:text-white transition">
                   <Utensils className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 group-hover:text-purple-600 transition flex items-center gap-2">
+                <h3 className="text-lg font-bold text-slate-900 group-hover:text-red-600 transition flex items-center gap-2">
                   <span>Floor Service Pass</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-100 text-purple-700">Ready</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-red-100 text-red-700">Ready</span>
                 </h3>
                 <p className="text-sm text-slate-500 mt-1">
                   Dedicated view for floor waitstaff. Realtime READY order queue, table numbers, and served actions.
@@ -661,12 +392,12 @@ export default function AdminDashboardPage() {
               </Link>
               <Link
                 href="/admin/products"
-                className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition block group"
+                className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-sm transition block group"
               >
-                <div className="w-12 h-12 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center mb-4 group-hover:bg-orange-600 group-hover:text-white transition">
+                <div className="w-12 h-12 rounded-lg bg-red-100 text-red-600 flex items-center justify-center mb-4 group-hover:bg-red-600 group-hover:text-white transition">
                   <UtensilsCrossed className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 group-hover:text-orange-600 transition">
+                <h3 className="text-lg font-bold text-slate-900 group-hover:text-red-600 transition">
                   Menu Products
                 </h3>
                 <p className="text-sm text-slate-500 mt-1">
@@ -676,9 +407,9 @@ export default function AdminDashboardPage() {
 
               <Link
                 href="/admin/categories"
-                className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition block group"
+                className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-sm transition block group"
               >
-                <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mb-4 group-hover:bg-amber-600 group-hover:text-white transition">
+                <div className="w-12 h-12 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center mb-4 group-hover:bg-amber-600 group-hover:text-white transition">
                   <Layers className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 group-hover:text-amber-600 transition">
@@ -691,9 +422,9 @@ export default function AdminDashboardPage() {
 
               <Link
                 href="/admin/tables"
-                className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition block group"
+                className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-sm transition block group"
               >
-                <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition">
+                <div className="w-12 h-12 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition">
                   <QrCode className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition">
@@ -706,9 +437,9 @@ export default function AdminDashboardPage() {
 
               <Link
                 href="/admin/orders"
-                className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition block group"
+                className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-sm transition block group"
               >
-                <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-white transition">
+                <div className="w-12 h-12 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-white transition">
                   <ChefHat className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 group-hover:text-emerald-600 transition">
@@ -721,9 +452,9 @@ export default function AdminDashboardPage() {
 
               <Link
                 href="/admin/staff"
-                className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition block group"
+                className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-sm transition block group"
               >
-                <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition">
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition">
                   <Users className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition">
@@ -741,10 +472,10 @@ export default function AdminDashboardPage() {
       {/* Create New Restaurant Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-8 shadow-2xl border border-slate-200 my-8">
+          <div className="bg-white rounded-xl max-w-xl w-full p-8 shadow-sm border border-slate-200 my-8">
             <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-bold">
                   <Store className="w-5 h-5" />
                 </div>
                 <div>

@@ -312,7 +312,7 @@ export default function AdminCategoriesPage() {
   if (sessionLoading && !initialLoadedRef.current) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-red-600" />
       </div>
     );
   }
@@ -345,7 +345,7 @@ export default function AdminCategoriesPage() {
                 const found = restaurants.find((r) => r.restaurant.id === e.target.value);
                 if (found) setSelectedMembership(found);
               }}
-              className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-orange-500"
+              className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-red-500"
             >
               {restaurants.map((item) => (
                 <option key={item.restaurant.id} value={item.restaurant.id}>
@@ -357,7 +357,7 @@ export default function AdminCategoriesPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-orange-100 text-orange-800">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-red-100 text-red-800">
             <ShieldCheck className="w-3.5 h-3.5" />
             {currentRole}
           </span>
@@ -378,10 +378,10 @@ export default function AdminCategoriesPage() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-5xl w-full mx-auto p-6 space-y-6">
         {/* Page Title & Action Bar */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <div>
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold">
+              <div className="w-9 h-9 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-bold">
                 <Layers className="w-5 h-5" />
               </div>
               <h1 className="text-2xl font-black text-slate-900">Category Management</h1>
@@ -397,7 +397,7 @@ export default function AdminCategoriesPage() {
                 resetForm();
                 setShowAddModal(true);
               }}
-              className="flex items-center gap-2 px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition"
+              className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold shadow-sm hover:shadow-sm transition"
             >
               <Plus className="w-4 h-4" />
               <span>Add Category</span>
@@ -407,7 +407,7 @@ export default function AdminCategoriesPage() {
 
         {/* Global Alert Messages */}
         {serverError && (
-          <div className="p-4 bg-red-50 text-red-800 text-sm rounded-2xl border border-red-200 flex items-start gap-3 shadow-sm">
+          <div className="p-4 bg-red-50 text-red-800 text-sm rounded-lg border border-red-200 flex items-start gap-3 shadow-sm">
             <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="font-bold">Action Failed</p>
@@ -420,7 +420,7 @@ export default function AdminCategoriesPage() {
         )}
 
         {successMessage && (
-          <div className="p-4 bg-emerald-50 text-emerald-800 text-sm rounded-2xl border border-emerald-200 flex items-center gap-3 shadow-sm animate-fade-in">
+          <div className="p-4 bg-emerald-50 text-emerald-800 text-sm rounded-lg border border-emerald-200 flex items-center gap-3 shadow-sm animate-fade-in">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
             <p className="font-semibold text-xs">{successMessage}</p>
           </div>
@@ -428,14 +428,14 @@ export default function AdminCategoriesPage() {
 
         {/* Category List */}
         {loading ? (
-          <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center shadow-sm">
-            <Loader2 className="w-8 h-8 animate-spin text-orange-600 mx-auto mb-3" />
+          <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm">
+            <Loader2 className="w-8 h-8 animate-spin text-red-600 mx-auto mb-3" />
             <p className="text-sm text-slate-500">Loading restaurant categories...</p>
           </div>
         ) : categories.length === 0 ? (
           /* Empty State */
-          <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center shadow-sm max-w-lg mx-auto">
-            <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm max-w-lg mx-auto">
+            <div className="w-16 h-16 rounded-lg bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-4">
               <UtensilsCrossed className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-bold text-slate-900">No Categories Yet</h3>
@@ -448,7 +448,7 @@ export default function AdminCategoriesPage() {
                   resetForm();
                   setShowAddModal(true);
                 }}
-                className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-sm font-bold shadow-md transition"
+                className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold shadow-sm transition"
               >
                 <Plus className="w-4 h-4" />
                 <span>Create First Category</span>
@@ -460,7 +460,7 @@ export default function AdminCategoriesPage() {
             {categories.map((cat, index) => (
               <div
                 key={cat.id}
-                className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow transition flex items-center justify-between gap-4"
+                className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm hover:shadow transition flex items-center justify-between gap-4"
               >
                 {/* Reorder and Info */}
                 <div className="flex items-center gap-4 flex-1">
@@ -549,7 +549,7 @@ export default function AdminCategoriesPage() {
       {/* Add Category Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-sm border border-slate-200 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <h3 className="text-lg font-bold text-slate-900">Add Menu Category</h3>
               <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-700">
@@ -572,7 +572,7 @@ export default function AdminCategoriesPage() {
                   className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none transition focus:ring-2 ${
                     fieldErrors.name
                       ? 'border-red-300 focus:ring-red-200 bg-red-50/30'
-                      : 'border-slate-300 focus:border-orange-500 focus:ring-orange-100'
+                      : 'border-slate-300 focus:border-red-500 focus:ring-red-100'
                   }`}
                 />
                 {fieldErrors.name && <p className="text-xs text-red-600 mt-1">{fieldErrors.name}</p>}
@@ -588,7 +588,7 @@ export default function AdminCategoriesPage() {
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   placeholder="Crispy fried snacks, soup, and starter delicacies..."
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 resize-none"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 resize-none"
                 />
                 {fieldErrors.description && <p className="text-xs text-red-600 mt-1">{fieldErrors.description}</p>}
               </div>
@@ -599,7 +599,7 @@ export default function AdminCategoriesPage() {
                   type="checkbox"
                   checked={formIsActive}
                   onChange={(e) => setFormIsActive(e.target.checked)}
-                  className="w-4 h-4 text-orange-600 rounded border-slate-300 focus:ring-orange-500"
+                  className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"
                 />
               </div>
 
@@ -614,7 +614,7 @@ export default function AdminCategoriesPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-sm font-bold shadow-md transition disabled:opacity-50"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold shadow-sm transition disabled:opacity-50"
                 >
                   {submitting ? (
                     <>
@@ -634,7 +634,7 @@ export default function AdminCategoriesPage() {
       {/* Edit Category Modal */}
       {editingCategory && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-sm border border-slate-200 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <h3 className="text-lg font-bold text-slate-900">Edit Category</h3>
               <button onClick={() => setEditingCategory(null)} className="text-slate-400 hover:text-slate-700">
@@ -656,7 +656,7 @@ export default function AdminCategoriesPage() {
                   className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none transition focus:ring-2 ${
                     fieldErrors.name
                       ? 'border-red-300 focus:ring-red-200 bg-red-50/30'
-                      : 'border-slate-300 focus:border-orange-500 focus:ring-orange-100'
+                      : 'border-slate-300 focus:border-red-500 focus:ring-red-100'
                   }`}
                 />
                 {fieldErrors.name && <p className="text-xs text-red-600 mt-1">{fieldErrors.name}</p>}
@@ -671,7 +671,7 @@ export default function AdminCategoriesPage() {
                   disabled={submitting}
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 resize-none"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 resize-none"
                 />
                 {fieldErrors.description && <p className="text-xs text-red-600 mt-1">{fieldErrors.description}</p>}
               </div>
@@ -682,7 +682,7 @@ export default function AdminCategoriesPage() {
                   type="checkbox"
                   checked={formIsActive}
                   onChange={(e) => setFormIsActive(e.target.checked)}
-                  className="w-4 h-4 text-orange-600 rounded border-slate-300 focus:ring-orange-500"
+                  className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"
                 />
               </div>
 
@@ -697,7 +697,7 @@ export default function AdminCategoriesPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-sm font-bold shadow-md transition disabled:opacity-50"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold shadow-sm transition disabled:opacity-50"
                 >
                   {submitting ? (
                     <>
@@ -717,8 +717,8 @@ export default function AdminCategoriesPage() {
       {/* Delete Confirmation Modal */}
       {deletingCategory && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
-            <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mb-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-sm border border-slate-200 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
+            <div className="w-12 h-12 rounded-lg bg-red-100 text-red-600 flex items-center justify-center mb-4">
               <Trash2 className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-bold text-slate-900">Delete Category</h3>
@@ -741,7 +741,7 @@ export default function AdminCategoriesPage() {
                 type="button"
                 disabled={submitting}
                 onClick={handleDeleteCategory}
-                className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold shadow-md transition disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold shadow-sm transition disabled:opacity-50"
               >
                 {submitting ? (
                   <>

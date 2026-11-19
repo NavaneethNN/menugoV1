@@ -7,7 +7,9 @@ import {
   cinemaProfiles,
   subscriptionPlans,
   tenantSubscriptions,
-  subscriptionPayments
+  subscriptionPayments,
+  sharedCostPools,
+  tenantInvoices
 } from '@menugo/database';
 import { eq, desc, and, count } from 'drizzle-orm';
 import { requireSuperAdmin } from '../middleware/super-admin-auth';
@@ -19,6 +21,14 @@ import {
   restaurantApiClient,
   cinemaApiClient
 } from '../lib/internal-api-client';
+import {
+  createSharedCostPool,
+  allocateSharedCostPool,
+  getUnattributedCosts,
+  resolveUnattributedCost,
+  generateTenantInvoice,
+  recordTenantUsageEvent
+} from '../lib/billing-engine';
 import {
   createSubscriptionPlanSchema,
   updateSubscriptionPlanSchema,
@@ -1079,5 +1089,212 @@ superAdminRouter.post('/sync-qros-db', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('[Sync QROS DB Error]:', error);
     res.status(500).json({ error: 'Failed to synchronize QROS database' });
+  }
+});
+
+// ===========================================================================
+// STRICT TENANT COST ISOLATION & BILLING ENGINE (Super Admin Control)
+// ===========================================================================
+
+/**
+ * GET /api/super-admin/billing/cost-pools
+ * Lists all shared provider infrastructure cost pools
+ */
+superAdminRouter.get('/billing/cost-pools', async (req: Request, res: Response) => {
+  try {
+    const pools = await qrosDb
+      .select()
+      .from(sharedCostPools)
+      .orderBy(desc(sharedCostPools.createdAt));
+
+    res.json(pools);
+  } catch (error: any) {
+    console.error('[Billing Cost Pools Error]:', error);
+    res.status(500).json({ error: 'Failed to retrieve shared cost pools' });
+  }
+});
+
+/**
+ * POST /api/super-admin/billing/cost-pools
+ * Records a new provider infrastructure expense pool (Neon, Railway, Cloudflare, AWS)
+ */
+superAdminRouter.post('/billing/cost-pools', async (req: Request, res: Response) => {
+  try {
+    const { poolName, provider, providerInvoiceRef, metricType, totalCostPaise, periodStart, periodEnd } = req.body;
+
+    if (!poolName || !provider || !metricType || !totalCostPaise || !periodStart || !periodEnd) {
+      res.status(400).json({ error: 'Missing required cost pool parameters' });
+      return;
+    }
+
+    const pool = await createSharedCostPool({
+      poolName,
+      provider,
+      providerInvoiceRef,
+      metricType,
+      totalCostPaise: Number(totalCostPaise),
+      periodStart: new Date(periodStart),
+      periodEnd: new Date(periodEnd)
+    });
+
+    res.status(201).json(pool);
+  } catch (error: any) {
+    console.error('[Create Cost Pool Error]:', error);
+    res.status(400).json({ error: error.message || 'Failed to create shared cost pool' });
+  }
+});
+
+/**
+ * POST /api/super-admin/billing/cost-pools/:id/allocate
+ * Executes proportional allocation of a shared provider pool strictly by measured tenant consumption
+ */
+superAdminRouter.post('/billing/cost-pools/:id/allocate', async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const result = await allocateSharedCostPool(id);
+    res.json({
+      success: true,
+      message: 'Shared cost pool allocated successfully',
+      result
+    });
+  } catch (error: any) {
+    console.error('[Allocate Cost Pool Error]:', error);
+    res.status(400).json({ error: error.message || 'Failed to allocate shared cost pool' });
+  }
+});
+
+/**
+ * GET /api/super-admin/billing/unattributed-costs
+ * Lists unallocated infrastructure costs requiring investigation
+ */
+superAdminRouter.get('/billing/unattributed-costs', async (req: Request, res: Response) => {
+  try {
+    const status = req.query.status as string | undefined;
+    const items = await getUnattributedCosts(status);
+    res.json(items);
+  } catch (error: any) {
+    console.error('[Unattributed Costs Error]:', error);
+    res.status(500).json({ error: 'Failed to retrieve unattributed costs' });
+  }
+});
+
+/**
+ * POST /api/super-admin/billing/unattributed-costs/:id/resolve
+ * Administrative resolution workflow for unattributed expenses
+ */
+superAdminRouter.post('/billing/unattributed-costs/:id/resolve', async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { resolvedToRestaurantId, resolutionNotes, writeOff } = req.body;
+
+    if (!resolutionNotes) {
+      res.status(400).json({ error: 'Resolution notes are mandatory' });
+      return;
+    }
+
+    const resolved = await resolveUnattributedCost(id, {
+      resolvedToRestaurantId,
+      resolutionNotes,
+      resolvedBy: (req.user as any)?.email || 'super_admin',
+      writeOff: Boolean(writeOff)
+    });
+
+    res.json({ success: true, item: resolved });
+  } catch (error: any) {
+    console.error('[Resolve Unattributed Cost Error]:', error);
+    res.status(400).json({ error: error.message || 'Failed to resolve unattributed cost' });
+  }
+});
+
+/**
+ * POST /api/super-admin/billing/invoices/generate
+ * Finalizes and issues a tenant invoice with strict pre-validation checklist
+ */
+superAdminRouter.post('/billing/invoices/generate', async (req: Request, res: Response) => {
+  try {
+    const { restaurantId, periodStart, periodEnd, invoiceNumber } = req.body;
+
+    if (!restaurantId || !periodStart || !periodEnd) {
+      res.status(400).json({ error: 'restaurantId, periodStart, and periodEnd are required' });
+      return;
+    }
+
+    const invoice = await generateTenantInvoice({
+      restaurantId,
+      periodStart: new Date(periodStart),
+      periodEnd: new Date(periodEnd),
+      invoiceNumber
+    });
+
+    res.status(201).json(invoice);
+  } catch (error: any) {
+    console.error('[Generate Invoice Error]:', error);
+    res.status(400).json({ error: error.message || 'Failed to generate tenant invoice' });
+  }
+});
+
+/**
+ * GET /api/super-admin/billing/invoices
+ * Lists all tenant invoices across platform with gross margin audit
+ */
+superAdminRouter.get('/billing/invoices', async (req: Request, res: Response) => {
+  try {
+    const invoices = await qrosDb
+      .select({
+        id: tenantInvoices.id,
+        invoiceNumber: tenantInvoices.invoiceNumber,
+        restaurantId: tenantInvoices.restaurantId,
+        restaurantName: restaurants.name,
+        tenantType: tenantInvoices.tenantType,
+        periodStart: tenantInvoices.periodStart,
+        periodEnd: tenantInvoices.periodEnd,
+        directTenantCostPaise: tenantInvoices.directTenantCostPaise,
+        sharedInfrastructureCostPaise: tenantInvoices.sharedInfrastructureCostPaise,
+        tenantTotalCostPaise: tenantInvoices.tenantTotalCostPaise,
+        customerChargePaise: tenantInvoices.customerChargePaise,
+        grossMarginPercent: tenantInvoices.grossMarginPercent,
+        status: tenantInvoices.status,
+        reconciliationValidated: tenantInvoices.reconciliationValidated,
+        createdAt: tenantInvoices.createdAt
+      })
+      .from(tenantInvoices)
+      .innerJoin(restaurants, eq(tenantInvoices.restaurantId, restaurants.id))
+      .orderBy(desc(tenantInvoices.createdAt));
+
+    res.json(invoices);
+  } catch (error: any) {
+    console.error('[Get All Invoices Error]:', error);
+    res.status(500).json({ error: 'Failed to retrieve platform invoices' });
+  }
+});
+
+/**
+ * POST /api/super-admin/billing/record-usage
+ * Records a tenant infrastructure usage event (worker tasks, compute, storage, egress)
+ */
+superAdminRouter.post('/billing/record-usage', async (req: Request, res: Response) => {
+  try {
+    const { restaurantId, tenantType, eventType, quantity, unit, directCostPaise, metadata, billingPeriod } = req.body;
+
+    if (!restaurantId || !tenantType || !eventType || quantity === undefined || !unit) {
+      res.status(400).json({ error: 'Missing required usage event fields' });
+      return;
+    }
+
+    const event = await recordTenantUsageEvent({
+      restaurantId,
+      tenantType,
+      eventType,
+      quantity: Number(quantity),
+      unit,
+      directCostPaise: directCostPaise ? Number(directCostPaise) : 0,
+      metadata,
+      billingPeriod
+    });
+
+    res.status(201).json(event);
+  } catch (error: any) {
+    console.error('[Record Usage Error]:', error);
+    res.status(400).json({ error: error.message || 'Failed to record usage event' });
   }
 });

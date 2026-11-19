@@ -72,7 +72,7 @@ export default function InvitationAcceptPage() {
   if (sessionLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <RefreshCw className="w-8 h-8 animate-spin text-orange-600" />
+        <RefreshCw className="w-8 h-8 animate-spin text-red-600" />
       </div>
     );
   }
@@ -84,7 +84,7 @@ export default function InvitationAcceptPage() {
       <div className="bg-white max-w-md w-full p-8 rounded-3xl border border-slate-200 shadow-xl space-y-6 text-center animate-in fade-in zoom-in-95 duration-200">
         {/* Brand header */}
         <div className="flex items-center justify-center gap-2 mb-2">
-          <div className="w-8 h-8 rounded-xl bg-orange-600 text-white font-black flex items-center justify-center text-sm shadow-md">
+          <div className="w-8 h-8 rounded-xl bg-red-600 text-white font-black flex items-center justify-center text-sm shadow-md">
             M
           </div>
           <span className="font-black text-xl text-slate-900">
@@ -127,12 +127,12 @@ export default function InvitationAcceptPage() {
           </div>
         ) : (
           <div className="space-y-5">
-            <div className="w-16 h-16 rounded-3xl bg-orange-50 text-orange-600 flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 rounded-3xl bg-red-50 text-red-600 flex items-center justify-center mx-auto">
               <Store className="w-8 h-8" />
             </div>
 
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-orange-600 block mb-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-red-600 block mb-1">
                 Team Invitation
               </span>
               <h2 className="text-2xl font-black text-slate-900">
@@ -167,7 +167,7 @@ export default function InvitationAcceptPage() {
                 <button
                   onClick={handleAccept}
                   disabled={accepting}
-                  className="w-full py-3 px-4 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-sm transition shadow-md shadow-orange-950/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-3 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm transition shadow-md shadow-red-950/20 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {accepting ? (
                     <>
@@ -189,7 +189,7 @@ export default function InvitationAcceptPage() {
                 </p>
                 <Link
                   href={`/admin/login?redirect=/admin/invitations/${token}`}
-                  className="w-full py-3 px-4 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-sm transition shadow-md flex items-center justify-center gap-2"
+                  className="w-full py-3 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm transition shadow-md flex items-center justify-center gap-2"
                 >
                   <LogIn className="w-4 h-4" />
                   <span>Sign In to Accept</span>

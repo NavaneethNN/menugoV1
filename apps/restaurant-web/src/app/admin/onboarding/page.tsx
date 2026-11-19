@@ -64,7 +64,7 @@ export default function RestaurantOnboardingPage() {
         </div>
 
         <div className="grid items-stretch gap-6 lg:grid-cols-[0.78fr_1.42fr] lg:gap-8">
-          <aside className="relative overflow-hidden rounded-2xl bg-[#a81023] p-7 text-white shadow-sm sm:p-9">
+          <aside className="relative overflow-hidden rounded-lg bg-[#a81023] p-7 text-white shadow-sm sm:p-9">
             <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full border border-white/10" />
             <div className="absolute -right-10 -top-14 h-52 w-52 rounded-full border border-white/10" />
             <div className="relative">
@@ -80,7 +80,7 @@ export default function RestaurantOnboardingPage() {
             </div>
           </aside>
 
-          <section className="rounded-2xl border border-slate-200 bg-white shadow-[0_12px_40px_-30px_rgba(15,23,42,0.3)]">
+          <section className="rounded-lg border border-slate-200 bg-white shadow-[0_12px_40px_-30px_rgba(15,23,42,0.3)]">
             <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5 sm:px-8">
               <div>
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-red-700"><BadgeCheck className="h-4 w-4" /> Business profile</div>

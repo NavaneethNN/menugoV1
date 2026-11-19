@@ -3,6 +3,7 @@ import {
   text,
   varchar,
   integer,
+  doublePrecision,
   boolean,
   timestamp,
   jsonb,
@@ -1256,5 +1257,211 @@ export const subscriptionPaymentsRelations = relations(subscriptionPayments, ({ 
   plan: one(subscriptionPlans, {
     fields: [subscriptionPayments.planId],
     references: [subscriptionPlans.id]
+  })
+}));
+
+// ---------------------------------------------------------------------------
+// 20. Strict Tenant Cost Isolation & Infrastructure Billing System
+// ---------------------------------------------------------------------------
+
+/**
+ * 20.1 Tenant Usage Events
+ * Every infrastructure event attributed to exactly one tenant.
+ */
+export const tenantUsageEvents = pgTable(
+  'tenant_usage_events',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    restaurantId: text('restaurant_id')
+      .notNull()
+      .references(() => restaurants.id, { onDelete: 'cascade' }),
+    tenantType: varchar('tenant_type', { length: 20 }).notNull(), // 'restaurant' | 'cinema'
+    eventType: varchar('event_type', { length: 50 }).notNull(), // 'compute_cpu', 'memory', 'database_query', 'storage_media', 'network_egress', 'websocket_connection', 'worker_task'
+    quantity: doublePrecision('quantity').notNull(),
+    unit: varchar('unit', { length: 30 }).notNull(), // 'cpu_ms', 'memory_mb_hours', 'db_queries', 'db_query_ms', 'storage_gb_hours', 'egress_bytes', 'ws_connection_seconds', 'worker_execution_ms'
+    directCostPaise: integer('direct_cost_paise').default(0).notNull(), // Attributable direct cost in integer paise
+    metadata: jsonb('metadata').default({}),
+    billingPeriod: varchar('billing_period', { length: 20 }), // e.g. '2026-11'
+    recordedAt: timestamp('recorded_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('tenant_usage_restaurant_idx').on(table.restaurantId),
+    index('tenant_usage_tenant_type_idx').on(table.tenantType),
+    index('tenant_usage_event_type_idx').on(table.eventType),
+    index('tenant_usage_period_idx').on(table.billingPeriod),
+    index('tenant_usage_recorded_at_idx').on(table.recordedAt)
+  ]
+);
+
+/**
+ * 20.2 Shared Cost Pools
+ * Provider infrastructure expense records (Neon, Railway, Cloudflare, etc.) to be allocated proportionally.
+ */
+export const sharedCostPools = pgTable(
+  'shared_cost_pools',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    poolName: varchar('pool_name', { length: 100 }).notNull(),
+    provider: varchar('provider', { length: 50 }).notNull(), // 'neon', 'railway', 'cloudflare', 'render', 'aws'
+    providerInvoiceRef: varchar('provider_invoice_ref', { length: 100 }), // Unique reference preventing duplicate allocations
+    metricType: varchar('metric_type', { length: 30 }).notNull(), // 'cpu_ms', 'db_queries', 'storage_gb_hours', 'egress_bytes', 'ws_connection_seconds'
+    totalCostPaise: integer('total_cost_paise').notNull(), // Original provider cost in paise
+    allocatedCostPaise: integer('allocated_cost_paise').default(0).notNull(),
+    unallocatedCostPaise: integer('unallocated_cost_paise').default(0).notNull(),
+    status: varchar('status', { length: 30 }).default('pending').notNull(), // 'pending', 'fully_allocated', 'partially_allocated', 'unallocated'
+    periodStart: timestamp('period_start', { withTimezone: true }).notNull(),
+    periodEnd: timestamp('period_end', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('shared_cost_pool_provider_ref_idx').on(table.providerInvoiceRef),
+    index('shared_cost_pool_provider_idx').on(table.provider),
+    index('shared_cost_pool_status_idx').on(table.status),
+    index('shared_cost_pool_period_idx').on(table.periodStart, table.periodEnd)
+  ]
+);
+
+/**
+ * 20.3 Shared Cost Allocations
+ * Measured, proportional allocation of a shared provider pool to exactly one tenant.
+ */
+export const sharedCostAllocations = pgTable(
+  'shared_cost_allocations',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    poolId: text('pool_id')
+      .notNull()
+      .references(() => sharedCostPools.id, { onDelete: 'cascade' }),
+    restaurantId: text('restaurant_id')
+      .notNull()
+      .references(() => restaurants.id, { onDelete: 'cascade' }),
+    tenantType: varchar('tenant_type', { length: 20 }).notNull(), // 'restaurant' | 'cinema'
+    metricShareRatio: doublePrecision('metric_share_ratio').notNull(), // e.g. 0.20 for 20%
+    tenantMeasuredUsage: doublePrecision('tenant_measured_usage').notNull(),
+    totalPoolMeasuredUsage: doublePrecision('total_pool_measured_usage').notNull(),
+    allocatedCostPaise: integer('allocated_cost_paise').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('shared_allocation_pool_tenant_idx').on(table.poolId, table.restaurantId),
+    index('shared_allocation_tenant_idx').on(table.restaurantId),
+    index('shared_allocation_tenant_type_idx').on(table.tenantType)
+  ]
+);
+
+/**
+ * 20.4 Unattributed Cost Items
+ * Infrastructure costs that cannot be technically attributed to a single tenant.
+ * Kept isolated and unallocated so no tenant is unfairly billed.
+ */
+export const unattributedCostItems = pgTable(
+  'unattributed_cost_items',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    poolId: text('pool_id').references(() => sharedCostPools.id, { onDelete: 'set null' }),
+    provider: varchar('provider', { length: 50 }).notNull(),
+    description: text('description').notNull(),
+    amountPaise: integer('amount_paise').notNull(),
+    unallocatedReason: text('unallocated_reason').notNull(),
+    status: varchar('status', { length: 30 }).default('unallocated').notNull(), // 'unallocated', 'investigating', 'resolved', 'written_off'
+    resolvedToRestaurantId: text('resolved_to_restaurant_id').references(() => restaurants.id, { onDelete: 'set null' }),
+    resolutionNotes: text('resolution_notes'),
+    resolvedBy: text('resolved_by'),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('unattributed_cost_pool_idx').on(table.poolId),
+    index('unattributed_cost_status_idx').on(table.status),
+    index('unattributed_cost_provider_idx').on(table.provider)
+  ]
+);
+
+/**
+ * 20.5 Tenant Invoices
+ * Strict tenant invoice with 70% minimum gross margin and audit trail.
+ */
+export const tenantInvoices = pgTable(
+  'tenant_invoices',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    invoiceNumber: varchar('invoice_number', { length: 50 }).notNull().unique(),
+    restaurantId: text('restaurant_id')
+      .notNull()
+      .references(() => restaurants.id, { onDelete: 'cascade' }),
+    tenantType: varchar('tenant_type', { length: 20 }).notNull(), // 'restaurant' | 'cinema'
+    periodStart: timestamp('period_start', { withTimezone: true }).notNull(),
+    periodEnd: timestamp('period_end', { withTimezone: true }).notNull(),
+    directTenantCostPaise: integer('direct_tenant_cost_paise').default(0).notNull(),
+    sharedInfrastructureCostPaise: integer('shared_infrastructure_cost_paise').default(0).notNull(),
+    tenantTotalCostPaise: integer('tenant_total_cost_paise').notNull(), // DIRECT + SHARED
+    customerChargePaise: integer('customer_charge_paise').notNull(), // TENANT_TOTAL_COST / 0.30
+    grossMarginPercent: doublePrecision('gross_margin_percent').notNull(), // >= 70.0%
+    costBreakdown: jsonb('cost_breakdown').default({}).notNull(),
+    status: varchar('status', { length: 30 }).default('issued').notNull(), // 'draft', 'issued', 'paid', 'void'
+    reconciliationValidated: boolean('reconciliation_validated').default(true).notNull(),
+    paymentDueDate: timestamp('payment_due_date', { withTimezone: true }),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('tenant_invoice_restaurant_idx').on(table.restaurantId),
+    index('tenant_invoice_tenant_type_idx').on(table.tenantType),
+    index('tenant_invoice_status_idx').on(table.status),
+    index('tenant_invoice_period_idx').on(table.periodStart, table.periodEnd)
+  ]
+);
+
+// Relations for Billing Tables
+export const tenantUsageEventsRelations = relations(tenantUsageEvents, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [tenantUsageEvents.restaurantId],
+    references: [restaurants.id]
+  })
+}));
+
+export const sharedCostPoolsRelations = relations(sharedCostPools, ({ many }) => ({
+  allocations: many(sharedCostAllocations),
+  unattributedItems: many(unattributedCostItems)
+}));
+
+export const sharedCostAllocationsRelations = relations(sharedCostAllocations, ({ one }) => ({
+  pool: one(sharedCostPools, {
+    fields: [sharedCostAllocations.poolId],
+    references: [sharedCostPools.id]
+  }),
+  restaurant: one(restaurants, {
+    fields: [sharedCostAllocations.restaurantId],
+    references: [restaurants.id]
+  })
+}));
+
+export const unattributedCostItemsRelations = relations(unattributedCostItems, ({ one }) => ({
+  pool: one(sharedCostPools, {
+    fields: [unattributedCostItems.poolId],
+    references: [sharedCostPools.id]
+  }),
+  resolvedToRestaurant: one(restaurants, {
+    fields: [unattributedCostItems.resolvedToRestaurantId],
+    references: [restaurants.id]
+  })
+}));
+
+export const tenantInvoicesRelations = relations(tenantInvoices, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [tenantInvoices.restaurantId],
+    references: [restaurants.id]
   })
 }));

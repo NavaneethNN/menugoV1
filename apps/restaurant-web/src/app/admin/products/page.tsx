@@ -520,7 +520,7 @@ export default function AdminProductsPage() {
   if ((sessionLoading || (loading && !selectedRestaurant)) && !initialLoadedRef.current) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-red-600" />
       </div>
     );
   }
@@ -547,7 +547,7 @@ export default function AdminProductsPage() {
                   const match = restaurants.find((r) => r.restaurant.id === e.target.value);
                   if (match) setSelectedMembership(match);
                 }}
-                className="bg-slate-50 border border-slate-200 text-slate-800 text-sm font-semibold rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                className="bg-slate-50 border border-slate-200 text-slate-800 text-sm font-semibold rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-red-500 focus:outline-none"
               >
                 {restaurants.map((m) => (
                   <option key={m.restaurant.id} value={m.restaurant.id}>
@@ -561,7 +561,7 @@ export default function AdminProductsPage() {
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-orange-100 text-orange-800">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-red-100 text-red-800">
               <ShieldCheck className="w-3.5 h-3.5" />
               {currentRole}
             </span>
@@ -588,7 +588,7 @@ export default function AdminProductsPage() {
             <div className="flex items-center gap-2 text-sm text-slate-500">
               <Link
                 href="/admin/dashboard"
-                className="hover:text-orange-600 flex items-center gap-1 font-medium transition"
+                className="hover:text-red-600 flex items-center gap-1 font-medium transition"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Dashboard
@@ -621,7 +621,7 @@ export default function AdminProductsPage() {
                   resetForm();
                   setShowAddModal(true);
                 }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold shadow-md hover:shadow-lg transition"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold shadow-sm hover:shadow-sm transition"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Product</span>
@@ -632,7 +632,7 @@ export default function AdminProductsPage() {
 
         {/* Alerts / Feedback Banners */}
         {serverError && (
-          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-start justify-between gap-3 animate-in fade-in">
+          <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm flex items-start justify-between gap-3 animate-in fade-in">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
               <span>{serverError}</span>
@@ -647,14 +647,14 @@ export default function AdminProductsPage() {
         )}
 
         {successMessage && (
-          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-2 animate-in fade-in">
+          <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-2 animate-in fade-in">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
             <span>{successMessage}</span>
           </div>
         )}
 
         {/* Filter & Search Bar */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
           <div className="flex-1 relative">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -662,7 +662,7 @@ export default function AdminProductsPage() {
               placeholder="Search products by name or description..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none"
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:outline-none"
             />
             {searchQuery && (
               <button
@@ -681,7 +681,7 @@ export default function AdminProductsPage() {
               <select
                 value={selectedCategoryFilter}
                 onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 font-medium focus:ring-2 focus:ring-red-500 focus:outline-none"
               >
                 <option value="ALL">All Categories</option>
                 {categories.map((c) => (
@@ -697,7 +697,7 @@ export default function AdminProductsPage() {
             <select
               value={availabilityFilter}
               onChange={(e) => setAvailabilityFilter(e.target.value as any)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 font-medium focus:ring-2 focus:ring-red-500 focus:outline-none"
             >
               <option value="ALL">All Status</option>
               <option value="AVAILABLE">In Stock</option>
@@ -708,14 +708,14 @@ export default function AdminProductsPage() {
 
         {/* Product List Content */}
         {loading ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm flex flex-col items-center justify-center space-y-3">
-            <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
+          <div className="bg-white rounded-xl p-12 text-center border border-slate-200 shadow-sm flex flex-col items-center justify-center space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-red-600" />
             <p className="text-sm font-semibold text-slate-500">Loading products...</p>
           </div>
         ) : products.length === 0 ? (
           /* Zero State: No products in restaurant */
-          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm flex flex-col items-center justify-center space-y-4 max-w-xl mx-auto">
-            <div className="w-16 h-16 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center">
+          <div className="bg-white rounded-xl p-12 text-center border border-slate-200 shadow-sm flex flex-col items-center justify-center space-y-4 max-w-xl mx-auto">
+            <div className="w-16 h-16 rounded-lg bg-red-100 text-red-600 flex items-center justify-center">
               <UtensilsCrossed className="w-8 h-8" />
             </div>
             <div className="space-y-1">
@@ -730,7 +730,7 @@ export default function AdminProductsPage() {
                   resetForm();
                   setShowAddModal(true);
                 }}
-                className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm shadow-md transition"
+                className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-sm transition"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Your First Product</span>
@@ -739,7 +739,7 @@ export default function AdminProductsPage() {
           </div>
         ) : filteredProducts.length === 0 ? (
           /* Filtered empty state */
-          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm flex flex-col items-center justify-center space-y-3">
+          <div className="bg-white rounded-xl p-12 text-center border border-slate-200 shadow-sm flex flex-col items-center justify-center space-y-3">
             <p className="text-base font-semibold text-slate-700">No products match your filters</p>
             <p className="text-xs text-slate-400">Try adjusting your category or search keywords</p>
             <button
@@ -748,14 +748,14 @@ export default function AdminProductsPage() {
                 setSelectedCategoryFilter('ALL');
                 setAvailabilityFilter('ALL');
               }}
-              className="text-xs text-orange-600 font-bold hover:underline"
+              className="text-xs text-red-600 font-bold hover:underline"
             >
               Reset all filters
             </button>
           </div>
         ) : (
           /* Products Table / Cards */
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -789,7 +789,7 @@ export default function AdminProductsPage() {
                                 disabled={isFirst}
                                 onClick={() => handleMoveProduct(index, 'up')}
                                 title="Move Up"
-                                className="p-1 rounded text-slate-400 hover:text-orange-600 hover:bg-orange-50 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition"
+                                className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition"
                               >
                                 <MoveUp className="w-3.5 h-3.5" />
                               </button>
@@ -797,7 +797,7 @@ export default function AdminProductsPage() {
                                 disabled={isLast}
                                 onClick={() => handleMoveProduct(index, 'down')}
                                 title="Move Down"
-                                className="p-1 rounded text-slate-400 hover:text-orange-600 hover:bg-orange-50 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition"
+                                className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition"
                               >
                                 <MoveDown className="w-3.5 h-3.5" />
                               </button>
@@ -928,7 +928,7 @@ export default function AdminProductsPage() {
         )}
 
         {/* Safe Deletion & Availability Note */}
-        <div className="bg-amber-50/60 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 flex items-start gap-3">
+        <div className="bg-amber-50/60 border border-amber-200 rounded-lg p-4 text-xs text-amber-900 flex items-start gap-3">
           <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <div className="space-y-1">
             <p className="font-bold">Safe Menu Data Policy</p>
@@ -942,10 +942,10 @@ export default function AdminProductsPage() {
       {/* Add / Edit Product Modal */}
       {(showAddModal || editingProduct) && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 my-8">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 sm:p-8 shadow-sm border border-slate-200 my-8">
             <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-bold">
                   <UtensilsCrossed className="w-5 h-5" />
                 </div>
                 <div>
@@ -982,7 +982,7 @@ export default function AdminProductsPage() {
                   placeholder="e.g. Masala Dosa, Cold Brew Coffee, Paneer Tikka"
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
-                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none ${
+                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:outline-none ${
                     fieldErrors.name ? 'border-red-500 bg-red-50/30' : 'border-slate-200'
                   }`}
                   required
@@ -1002,7 +1002,7 @@ export default function AdminProductsPage() {
                   <select
                     value={formCategoryId}
                     onChange={(e) => setFormCategoryId(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:outline-none"
                   >
                     <option value="">No Category / General</option>
                     {categories.map((c) => (
@@ -1029,7 +1029,7 @@ export default function AdminProductsPage() {
                       placeholder="180.00"
                       value={formPriceRupees}
                       onChange={(e) => setFormPriceRupees(e.target.value)}
-                      className={`w-full pl-8 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-mono focus:ring-2 focus:ring-orange-500 focus:outline-none ${
+                      className={`w-full pl-8 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-mono focus:ring-2 focus:ring-red-500 focus:outline-none ${
                         fieldErrors.price ? 'border-red-500 bg-red-50/30' : 'border-slate-200'
                       }`}
                       required
@@ -1060,7 +1060,7 @@ export default function AdminProductsPage() {
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   rows={2}
-                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none ${
+                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:outline-none ${
                     fieldErrors.description ? 'border-red-500 bg-red-50/30' : 'border-slate-200'
                   }`}
                 />
@@ -1075,9 +1075,9 @@ export default function AdminProductsPage() {
                   Product Image (Cloudflare R2)
                 </label>
                 <div className="flex gap-4 items-start">
-                  <div className="w-20 h-20 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden relative shadow-inner">
+                  <div className="w-20 h-20 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden relative shadow-inner">
                     {uploadingImage ? (
-                      <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
+                      <Loader2 className="w-6 h-6 animate-spin text-red-600" />
                     ) : formImageUrl && formImageUrl.trim() ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -1108,7 +1108,7 @@ export default function AdminProductsPage() {
                         type="button"
                         disabled={uploadingImage}
                         onClick={() => fileInputRef.current?.click()}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-bold border border-orange-200 transition disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold border border-red-200 transition disabled:opacity-50"
                       >
                         {uploadingImage ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1145,7 +1145,7 @@ export default function AdminProductsPage() {
                         setFormImageUrl(e.target.value);
                         setFormImageKey(null); // External URL doesn't use R2 key
                       }}
-                      className={`w-full px-3 py-1.5 bg-slate-50 border rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none ${
+                      className={`w-full px-3 py-1.5 bg-slate-50 border rounded-xl text-xs focus:ring-2 focus:ring-red-500 focus:outline-none ${
                         fieldErrors.imageUrl ? 'border-red-500 bg-red-50/30' : 'border-slate-200'
                       }`}
                     />
@@ -1179,7 +1179,7 @@ export default function AdminProductsPage() {
                     type="checkbox"
                     checked={formIsAvailable}
                     onChange={(e) => setFormIsAvailable(e.target.checked)}
-                    className="w-4 h-4 text-orange-600 rounded border-slate-300 focus:ring-orange-500"
+                    className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"
                   />
                   <div>
                     <span className="text-xs font-bold text-slate-800">In Stock</span>
@@ -1205,7 +1205,7 @@ export default function AdminProductsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold shadow-md hover:shadow-lg transition flex items-center gap-2 disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold shadow-sm hover:shadow-sm transition flex items-center gap-2 disabled:opacity-50"
                 >
                   {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{editingProduct ? 'Save Changes' : 'Create Product'}</span>
@@ -1219,8 +1219,8 @@ export default function AdminProductsPage() {
       {/* Delete Product Confirmation Modal */}
       {deletingProduct && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
-            <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 sm:p-8 shadow-sm border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
+            <div className="w-12 h-12 rounded-lg bg-red-100 text-red-600 flex items-center justify-center">
               <Trash2 className="w-6 h-6" />
             </div>
 
@@ -1249,7 +1249,7 @@ export default function AdminProductsPage() {
                 type="button"
                 disabled={submitting}
                 onClick={handleDeleteProduct}
-                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold shadow-md transition flex items-center gap-2 disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold shadow-sm transition flex items-center gap-2 disabled:opacity-50"
               >
                 {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                 <span>Confirm Delete</span>

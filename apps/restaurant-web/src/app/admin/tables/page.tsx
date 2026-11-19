@@ -286,7 +286,7 @@ export default function AdminTablesPage() {
   if (sessionLoading && !initialLoadedRef.current) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-red-600" />
       </div>
     );
   }
@@ -309,7 +309,7 @@ export default function AdminTablesPage() {
               </Link>
 
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-orange-600 flex items-center justify-center text-white font-bold text-lg">
+                <div className="w-9 h-9 rounded-xl bg-red-600 flex items-center justify-center text-white font-bold text-lg">
                   <QrCode className="w-5 h-5" />
                 </div>
                 <div>
@@ -332,7 +332,7 @@ export default function AdminTablesPage() {
                     const match = restaurants.find((r) => r.restaurant.id === e.target.value);
                     if (match) setSelectedMembership(match);
                   }}
-                  className="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   {restaurants.map((r) => (
                     <option key={r.restaurant.id} value={r.restaurant.id}>
@@ -351,7 +351,7 @@ export default function AdminTablesPage() {
                     setFormError(null);
                     setShowAddModal(true);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold text-xs rounded-xl shadow-sm transition"
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-xs rounded-xl shadow-sm transition"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add Table</span>
@@ -383,7 +383,7 @@ export default function AdminTablesPage() {
           </Link>
           <Link
             href="/admin/tables"
-            className="py-3 border-b-2 border-orange-600 text-orange-600 font-bold"
+            className="py-3 border-b-2 border-red-600 text-red-600 font-bold"
           >
             Tables & QR
           </Link>
@@ -394,7 +394,7 @@ export default function AdminTablesPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 print:hidden">
         {/* Success Alert */}
         {successMessage && (
-          <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-2xl flex items-center justify-between text-xs font-semibold animate-in fade-in">
+          <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-lg flex items-center justify-between text-xs font-semibold animate-in fade-in">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>{successMessage}</span>
@@ -406,7 +406,7 @@ export default function AdminTablesPage() {
         )}
 
         {/* Notice Info Banner */}
-        <div className="mb-6 bg-blue-50/70 border border-blue-200/60 rounded-2xl p-4 text-xs text-blue-900 flex items-start gap-3">
+        <div className="mb-6 bg-blue-50/70 border border-blue-200/60 rounded-lg p-4 text-xs text-blue-900 flex items-start gap-3">
           <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
           <div className="leading-relaxed">
             <span className="font-bold">Cryptographically Unguessable QR Tokens: </span>
@@ -420,17 +420,17 @@ export default function AdminTablesPage() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white rounded-3xl p-6 border border-slate-200 space-y-4">
+              <div key={i} className="bg-white rounded-xl p-6 border border-slate-200 space-y-4">
                 <div className="h-6 bg-slate-200 rounded w-1/2" />
-                <div className="h-44 bg-slate-200 rounded-2xl" />
+                <div className="h-44 bg-slate-200 rounded-lg" />
                 <div className="h-8 bg-slate-200 rounded" />
               </div>
             ))}
           </div>
         ) : tables.length === 0 ? (
           /* Empty State */
-          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 max-w-md mx-auto shadow-sm">
-            <div className="w-16 h-16 rounded-3xl bg-orange-50 text-orange-600 flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white rounded-xl p-12 text-center border border-slate-200 max-w-md mx-auto shadow-sm">
+            <div className="w-16 h-16 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-4">
               <QrCode className="w-8 h-8" />
             </div>
             <h3 className="text-lg font-bold text-slate-900">No Tables Configured</h3>
@@ -447,7 +447,7 @@ export default function AdminTablesPage() {
                   setFormError(null);
                   setShowAddModal(true);
                 }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-sm transition"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-sm transition"
               >
                 <Plus className="w-4 h-4" />
                 <span>Create First Table</span>
@@ -460,7 +460,7 @@ export default function AdminTablesPage() {
             {tables.map((table) => (
               <div
                 key={table.id}
-                className={`bg-white rounded-3xl border transition-all duration-200 p-5 flex flex-col justify-between shadow-xs hover:shadow-md ${
+                className={`bg-white rounded-xl border transition-all duration-200 p-5 flex flex-col justify-between shadow-xs hover:shadow-sm ${
                   table.isActive ? 'border-slate-200' : 'border-slate-200 bg-slate-50/50 opacity-80'
                 }`}
               >
@@ -488,7 +488,7 @@ export default function AdminTablesPage() {
                   {/* QR Code Preview Thumbnail */}
                   <div
                     onClick={() => setPreviewQrTable(table)}
-                    className="relative bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer group hover:bg-orange-50/40 hover:border-orange-200 transition"
+                    className="relative bg-slate-50 border border-slate-100 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer group hover:bg-red-50/40 hover:border-red-200 transition"
                     title="Click to view full QR code and print options"
                   >
                     {table.qrCodeData ? (
@@ -503,7 +503,7 @@ export default function AdminTablesPage() {
                         <QrCode className="w-16 h-16" />
                       </div>
                     )}
-                    <span className="text-[11px] font-bold text-orange-600 mt-2 flex items-center gap-1 opacity-90 group-hover:opacity-100">
+                    <span className="text-[11px] font-bold text-red-600 mt-2 flex items-center gap-1 opacity-90 group-hover:opacity-100">
                       <Eye className="w-3.5 h-3.5" />
                       View & Print QR
                     </span>
@@ -566,10 +566,10 @@ export default function AdminTablesPage() {
       ===================================================================== */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-sm border border-slate-100 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-bold">
                   <Plus className="w-4 h-4" />
                 </div>
                 <h2 className="text-base font-bold text-slate-900">Add Dining Table</h2>
@@ -600,7 +600,7 @@ export default function AdminTablesPage() {
                   placeholder="e.g. Table 1, T-12, Rooftop 4, Bar 2"
                   value={tableNumber}
                   onChange={(e) => setTableNumber(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white font-medium"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white font-medium"
                 />
               </div>
 
@@ -615,7 +615,7 @@ export default function AdminTablesPage() {
                   required
                   value={capacity}
                   onChange={(e) => setCapacity(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white font-medium"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white font-medium"
                 />
               </div>
 
@@ -625,7 +625,7 @@ export default function AdminTablesPage() {
                     type="checkbox"
                     checked={isActive}
                     onChange={(e) => setIsActive(e.target.checked)}
-                    className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-slate-300"
+                    className="w-4 h-4 rounded text-red-600 focus:ring-red-500 border-slate-300"
                   />
                   <span className="text-xs font-bold text-slate-700">
                     Active (Customers can scan and access menu)
@@ -644,7 +644,7 @@ export default function AdminTablesPage() {
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="flex-1 py-2.5 px-4 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition shadow-sm flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition shadow-sm flex items-center justify-center gap-2"
                 >
                   {formLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Generate QR Table</span>
@@ -660,10 +660,10 @@ export default function AdminTablesPage() {
       ===================================================================== */}
       {editingTable && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-sm border border-slate-100 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-bold">
                   <Edit2 className="w-4 h-4" />
                 </div>
                 <h2 className="text-base font-bold text-slate-900">Edit Table</h2>
@@ -693,7 +693,7 @@ export default function AdminTablesPage() {
                   required
                   value={tableNumber}
                   onChange={(e) => setTableNumber(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white font-medium"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white font-medium"
                 />
               </div>
 
@@ -708,7 +708,7 @@ export default function AdminTablesPage() {
                   required
                   value={capacity}
                   onChange={(e) => setCapacity(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white font-medium"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white font-medium"
                 />
               </div>
 
@@ -718,7 +718,7 @@ export default function AdminTablesPage() {
                     type="checkbox"
                     checked={isActive}
                     onChange={(e) => setIsActive(e.target.checked)}
-                    className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-slate-300"
+                    className="w-4 h-4 rounded text-red-600 focus:ring-red-500 border-slate-300"
                   />
                   <div>
                     <span className="text-xs font-bold text-slate-700 block">
@@ -742,7 +742,7 @@ export default function AdminTablesPage() {
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="flex-1 py-2.5 px-4 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition shadow-sm flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition shadow-sm flex items-center justify-center gap-2"
                 >
                   {formLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Save Changes</span>
@@ -758,8 +758,8 @@ export default function AdminTablesPage() {
       ===================================================================== */}
       {rotatingTable && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
-            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-sm border border-slate-100 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
+            <div className="w-12 h-12 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
               <RotateCw className="w-6 h-6" />
             </div>
 
@@ -767,7 +767,7 @@ export default function AdminTablesPage() {
               Rotate QR Token for &quot;{rotatingTable.tableNumber}&quot;?
             </h3>
 
-            <div className="mt-3 p-3.5 bg-amber-50/80 border border-amber-200 rounded-2xl text-xs text-amber-900 leading-relaxed space-y-1">
+            <div className="mt-3 p-3.5 bg-amber-50/80 border border-amber-200 rounded-lg text-xs text-amber-900 leading-relaxed space-y-1">
               <p className="font-bold flex items-center gap-1.5 text-amber-950">
                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>Warning: Revokes Previous Printed QR Codes</span>
@@ -805,8 +805,8 @@ export default function AdminTablesPage() {
       ===================================================================== */}
       {deletingTable && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
-            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-sm border border-slate-100 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
+            <div className="w-12 h-12 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-6 h-6" />
             </div>
 
@@ -844,11 +844,11 @@ export default function AdminTablesPage() {
       ===================================================================== */}
       {previewQrTable && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-xs p-3 sm:p-6 flex items-center justify-center print:p-0 print:bg-white print:static print:block print:overflow-visible">
-          <div className="bg-white rounded-3xl max-w-lg w-full my-auto shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 flex flex-col max-h-[92vh] print:max-h-none print:shadow-none print:border-none print:max-w-none print:w-full print:m-0 print:block">
+          <div className="bg-white rounded-xl max-w-lg w-full my-auto shadow-sm border border-slate-100 animate-in fade-in zoom-in-95 flex flex-col max-h-[92vh] print:max-h-none print:shadow-none print:border-none print:max-w-none print:w-full print:m-0 print:block">
             {/* Modal Header (Hidden during print) */}
             <div className="flex justify-between items-center p-4 sm:p-5 border-b border-slate-100 shrink-0 print:hidden bg-slate-50/60 rounded-t-3xl">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-bold">
                   <QrCode className="w-4 h-4" />
                 </div>
                 <div>
@@ -872,20 +872,20 @@ export default function AdminTablesPage() {
             {/* Scrollable Modal Content (Always visible on all viewport heights) */}
             <div className="overflow-y-auto p-4 sm:p-6 space-y-4 print:p-0 print:overflow-visible">
               {/* Printable Table Stand Card (Optimized for display and physical printing) */}
-              <div className="p-6 sm:p-8 bg-white border-2 border-slate-200 rounded-3xl text-center shadow-xs flex flex-col items-center print:border-2 print:border-slate-800 print:rounded-3xl print:p-8 print:max-w-md print:mx-auto print:my-4 print:shadow-none print:break-inside-avoid">
-                <div className="w-12 h-12 rounded-2xl bg-orange-600 text-white flex items-center justify-center font-bold text-xl mb-3 shadow-sm print:bg-orange-600 print:text-white">
+              <div className="p-6 sm:p-8 bg-white border-2 border-slate-200 rounded-xl text-center shadow-xs flex flex-col items-center print:border-2 print:border-slate-800 print:rounded-xl print:p-8 print:max-w-md print:mx-auto print:my-4 print:shadow-none print:break-inside-avoid">
+                <div className="w-12 h-12 rounded-lg bg-red-600 text-white flex items-center justify-center font-bold text-xl mb-3 shadow-sm print:bg-red-600 print:text-white">
                   <UtensilsCrossed className="w-6 h-6" />
                 </div>
 
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   {restaurant?.name || 'The QROS'}
                 </h3>
-                <p className="text-xs font-bold text-orange-600 uppercase tracking-widest mt-1">
+                <p className="text-xs font-bold text-red-600 uppercase tracking-widest mt-1">
                   Contactless Table Ordering
                 </p>
 
                 {/* QR Image */}
-                <div className="my-5 p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs inline-block print:border-2 print:border-slate-300">
+                <div className="my-5 p-3.5 bg-white rounded-lg border border-slate-200 shadow-xs inline-block print:border-2 print:border-slate-300">
                   {previewQrTable.qrCodeData ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
@@ -918,7 +918,7 @@ export default function AdminTablesPage() {
 
               {/* Customer URL & Copy Link (Hidden during print) */}
               {previewQrTable.qrCodeUrl && (
-                <div className="print:hidden space-y-1.5 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                <div className="print:hidden space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200/80">
                   <label className="block text-[11px] font-bold text-slate-600">
                     Target Customer Ordering URL
                   </label>
@@ -948,9 +948,9 @@ export default function AdminTablesPage() {
                 href={`/menu/${restaurant?.slug || 'restaurant'}?table=${previewQrTable.tableToken}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition shadow-xs"
+                className="flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-xl transition shadow-xs"
               >
-                <ExternalLink className="w-4 h-4 text-orange-400" />
+                <ExternalLink className="w-4 h-4 text-red-400" />
                 <span>Test Live Menu</span>
               </Link>
 
@@ -967,7 +967,7 @@ export default function AdminTablesPage() {
 
               <button
                 onClick={handlePrintStand}
-                className="flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white text-xs font-bold rounded-xl transition shadow-md shadow-orange-600/25"
+                className="flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold rounded-xl transition shadow-sm shadow-red-600/25"
               >
                 <Printer className="w-4 h-4" />
                 <span>Print Stand Card</span>

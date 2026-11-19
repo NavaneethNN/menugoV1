@@ -170,8 +170,8 @@ function LoginForm() {
         </div>
 
         <div>
-          <Link href="/" className="inline-flex items-center gap-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/70">
-            <img src="/qros_logo.png" alt="The QROS" className="w-36 h-12 rounded-lg bg-white object-contain shadow-lg" />
+          <Link href="/" className="inline-flex items-center gap-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/70">
+            <img src="/qros_logo.png" alt="The QROS" className="w-36 h-12 rounded-lg bg-white object-contain shadow-sm" />
             <span className="sr-only">The QROS Restaurant Portal</span>
           </Link>
           <div className="mt-8 sm:mt-10 lg:mt-7 xl:mt-9 max-w-xl">
@@ -222,7 +222,7 @@ function LoginForm() {
           <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-red-700 transition-colors mb-5 lg:mb-4">
             <ArrowLeft className="w-4 h-4" /> Back to The QROS
           </Link>
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-7 lg:p-6 xl:p-7 shadow-xl shadow-slate-900/5">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-7 lg:p-6 xl:p-7 shadow-sm shadow-slate-900/5">
             <div className="mb-5">
               <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-red-700">
                 {mode === 'signup' ? 'Create your workspace' : 'Owner & team access'}
@@ -312,7 +312,7 @@ function LoginForm() {
                 </div>
                 {mode === 'signup' && <p className="mt-1.5 text-xs text-slate-500">Use at least 8 characters.</p>}
               </div>
-              <button type="submit" disabled={loading} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-red-600/20 transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:opacity-60">
+              <button type="submit" disabled={loading} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white shadow-sm shadow-red-600/20 transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:opacity-60">
                 {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><span>{mode === 'signup' ? 'Create account & continue' : 'Sign in to The QROS'}</span><ArrowRight className="h-4 w-4" /></>}
               </button>
             </form>

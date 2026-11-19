@@ -411,36 +411,36 @@ export default function StaffServicePassPage() {
 
   if ((sessionLoading || loading) && !initialOrdersLoadedRef.current) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white">
-        <Utensils className="w-10 h-10 text-purple-400 animate-bounce mb-3" />
-        <p className="text-slate-300 font-medium">Loading Floor Service Pass...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white text-slate-900">
+        <Utensils className="w-10 h-10 text-red-400 animate-bounce mb-3" />
+        <p className="text-slate-600 font-medium">Loading Floor Service Pass...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#f8f8f9] text-slate-800 flex flex-col">
       {/* Top Navbar */}
-      <header className="bg-slate-900 border-b border-slate-800 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-30 shadow-md">
+      <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-4">
           <Link
             href="/admin/dashboard"
-            className="flex items-center gap-2 group text-slate-400 hover:text-white transition"
+            className="flex items-center gap-2 group text-slate-500 hover:text-slate-900 transition"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="text-xs font-semibold uppercase tracking-wider hidden sm:inline">Dashboard</span>
           </Link>
 
-          <div className="h-5 w-px bg-slate-800 hidden sm:block" />
+          <div className="h-5 w-px bg-slate-100 hidden sm:block" />
 
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center font-black text-sm shadow-md shadow-purple-900/50">
+            <div className="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center font-black text-sm shadow-sm shadow-red-900/50">
               S
             </div>
             <div>
-              <h1 className="text-base font-extrabold text-white leading-tight flex items-center gap-2">
+              <h1 className="text-base font-extrabold text-slate-900 leading-tight flex items-center gap-2">
                 Floor Service Pass
-                <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-100">
                   Ready Orders
                 </span>
               </h1>
@@ -458,7 +458,7 @@ export default function StaffServicePassPage() {
                   setRole(found.role as RestaurantMemberRole);
                 }
               }}
-              className="bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold rounded-lg px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-purple-500"
+              className="bg-slate-100 border border-slate-700 text-slate-700 text-xs font-semibold rounded-lg px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-red-500"
             >
               {restaurants.map((item) => (
                 <option key={item.restaurant.id} value={item.restaurant.id}>
@@ -500,12 +500,12 @@ export default function StaffServicePassPage() {
             onClick={toggleSound}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border ${
               soundEnabled
-                ? 'bg-purple-950/60 text-purple-300 border-purple-700/80 hover:bg-purple-900/60'
-                : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                ? 'bg-red-950/60 text-red-300 border-red-700/80 hover:bg-red-900/60'
+                : 'bg-slate-100 text-slate-500 border-slate-700 hover:bg-slate-700'
             }`}
             title={soundEnabled ? 'Pass alert chimes enabled' : 'Chimes muted'}
           >
-            {soundEnabled ? <Bell className="w-3.5 h-3.5 text-purple-400" /> : <BellOff className="w-3.5 h-3.5" />}
+            {soundEnabled ? <Bell className="w-3.5 h-3.5 text-red-400" /> : <BellOff className="w-3.5 h-3.5" />}
             <span className="hidden sm:inline">{soundEnabled ? 'Bell On' : 'Muted'}</span>
           </button>
 
@@ -513,16 +513,16 @@ export default function StaffServicePassPage() {
           <button
             onClick={() => loadOrders(false)}
             disabled={refreshing}
-            className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition border border-slate-700 disabled:opacity-50"
+            className="p-1.5 bg-slate-100 hover:bg-slate-700 text-slate-600 rounded-xl transition border border-slate-700 disabled:opacity-50"
             title="Refresh Orders"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-purple-400' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-red-400' : ''}`} />
           </button>
 
           {/* Link to Cashier Desk */}
           <Link
             href="/admin/cashier"
-            className="px-3 py-1.5 bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/80 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+            className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-900/80 text-emerald-700 border border-emerald-700/80 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
             title="Cashier Desk: View all tables & close sessions"
           >
             <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
@@ -532,9 +532,9 @@ export default function StaffServicePassPage() {
           {/* Link to Kitchen */}
           <Link
             href="/kitchen"
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-700 text-slate-700 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
           >
-            <ChefHat className="w-3.5 h-3.5 text-orange-400" />
+            <ChefHat className="w-3.5 h-3.5 text-red-400" />
             <span className="hidden sm:inline">Kitchen</span>
           </Link>
         </div>
@@ -542,7 +542,7 @@ export default function StaffServicePassPage() {
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200 border border-emerald-400/30">
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-lg shadow-sm flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200 border border-emerald-400/30">
           <CheckCircle2 className="w-5 h-5 text-white" />
           <span className="text-sm font-bold">{toastMessage}</span>
         </div>
@@ -552,14 +552,14 @@ export default function StaffServicePassPage() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
         {/* Error Alert */}
         {errorMessage && (
-          <div className="p-4 bg-rose-950/70 border border-rose-800/80 rounded-2xl text-rose-200 text-sm flex items-center justify-between">
+          <div className="p-4 bg-rose-950/70 border border-rose-800/80 rounded-lg text-rose-200 text-sm flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
               <span>{errorMessage}</span>
             </div>
             <button
               onClick={() => setErrorMessage(null)}
-              className="text-xs uppercase font-bold text-rose-400 hover:text-white"
+              className="text-xs uppercase font-bold text-rose-600 hover:text-rose-800"
             >
               Dismiss
             </button>
@@ -568,51 +568,51 @@ export default function StaffServicePassPage() {
 
         {/* Floor Pass Metrics Banner */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-sm">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
+          <div className="bg-white border border-slate-200 p-4 rounded-lg shadow-sm">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">
               Ready on Pass
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-purple-400">{readyOrders.length}</span>
-              <span className="text-xs text-slate-400">awaiting pickup</span>
+              <span className="text-3xl font-black text-red-400">{readyOrders.length}</span>
+              <span className="text-xs text-slate-500">awaiting pickup</span>
             </div>
           </div>
 
           <div
-            className={`p-4 rounded-2xl border transition shadow-sm ${
+            className={`p-4 rounded-lg border transition shadow-sm ${
               urgentCount > 0
                 ? 'bg-rose-950/40 border-rose-800 text-rose-200'
-                : 'bg-slate-900 border-slate-800 text-slate-400'
+                : 'bg-white border-slate-200 text-slate-500'
             }`}
           >
             <span className="text-xs font-bold uppercase tracking-wider block mb-1">
               Urgent (&gt; 5m on Pass)
             </span>
             <div className="flex items-baseline gap-2">
-              <span className={`text-3xl font-black ${urgentCount > 0 ? 'text-rose-400 animate-pulse' : 'text-slate-300'}`}>
+              <span className={`text-3xl font-black ${urgentCount > 0 ? 'text-rose-400 animate-pulse' : 'text-slate-600'}`}>
                 {urgentCount}
               </span>
               <span className="text-xs">{urgentCount > 0 ? 'Needs immediate run!' : 'All fresh'}</span>
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-sm">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
+          <div className="bg-white border border-slate-200 p-4 rounded-lg shadow-sm">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">
               Served Today
             </span>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-black text-emerald-400">{servedOrders.length}</span>
-              <span className="text-xs text-slate-400">completed</span>
+              <span className="text-xs text-slate-500">completed</span>
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
+          <div className="bg-white border border-slate-200 p-4 rounded-lg shadow-sm flex flex-col justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">
               Staff Role
             </span>
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 text-xs font-bold uppercase tracking-wider border border-slate-700 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+              <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider border border-slate-700 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
                 {role}
               </span>
               <span className="text-xs text-emerald-400 font-medium">Authorized to Serve</span>
@@ -621,20 +621,20 @@ export default function StaffServicePassPage() {
         </div>
 
         {/* Tab & Search Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-900/70 p-3 rounded-2xl border border-slate-800">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-3 rounded-lg border border-slate-200">
           {/* Tabs */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab('ready')}
               className={`px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 ${
                 activeTab === 'ready'
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/50'
-                  : 'bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800'
+                  ? 'bg-red-600 text-white shadow-sm shadow-red-900/50'
+                  : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200'
               }`}
             >
               <span>Ready for Service</span>
               <span className={`px-2 py-0.5 rounded-full text-xs font-extrabold ${
-                activeTab === 'ready' ? 'bg-purple-800 text-purple-100' : 'bg-slate-700 text-slate-300'
+                activeTab === 'ready' ? 'bg-red-800 text-red-100' : 'bg-slate-700 text-slate-600'
               }`}>
                 {readyOrders.length}
               </span>
@@ -644,13 +644,13 @@ export default function StaffServicePassPage() {
               onClick={() => setActiveTab('served')}
               className={`px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 ${
                 activeTab === 'served'
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/50'
-                  : 'bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800'
+                  ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-900/50'
+                  : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200'
               }`}
             >
               <span>Served Today</span>
               <span className={`px-2 py-0.5 rounded-full text-xs font-extrabold ${
-                activeTab === 'served' ? 'bg-emerald-800 text-emerald-100' : 'bg-slate-700 text-slate-300'
+                activeTab === 'served' ? 'bg-emerald-800 text-emerald-100' : 'bg-slate-700 text-slate-600'
               }`}>
                 {servedOrders.length}
               </span>
@@ -659,18 +659,18 @@ export default function StaffServicePassPage() {
 
           {/* Search Box */}
           <div className="relative flex-1 sm:max-w-xs">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search table or order #..."
-              className="w-full bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-xl pl-9 pr-3 py-2 outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-slate-500"
+              className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-xl pl-9 pr-3 py-2 outline-none focus:ring-1 focus:ring-red-500 placeholder:text-slate-500"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 text-xs"
               >
                 Clear
               </button>
@@ -682,12 +682,12 @@ export default function StaffServicePassPage() {
         {activeTab === 'ready' && (
           <div>
             {filteredReadyOrders.length === 0 ? (
-              <div className="text-center py-16 bg-slate-900/50 rounded-3xl border border-slate-800/80 max-w-lg mx-auto p-8 space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-purple-950/60 text-purple-400 flex items-center justify-center mx-auto border border-purple-800/50">
+              <div className="text-center py-16 bg-white rounded-xl border border-slate-200 max-w-lg mx-auto p-8 space-y-4">
+                <div className="w-16 h-16 rounded-lg bg-red-50 text-red-700 flex items-center justify-center mx-auto border border-red-100">
                   <Sparkles className="w-8 h-8" />
                 </div>
-                <h3 className="text-xl font-black text-white">The Service Pass is Clear!</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
+                <h3 className="text-xl font-bold text-slate-900">The Service Pass is Clear</h3>
+                <p className="text-slate-500 text-sm leading-relaxed">
                   {searchQuery
                     ? 'No ready orders match your search filter.'
                     : 'All hot dishes have been delivered to tables. When kitchen staff marks an order ready, it will appear here automatically.'}
@@ -695,7 +695,7 @@ export default function StaffServicePassPage() {
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="px-4 py-2 bg-slate-800 text-slate-200 rounded-xl text-xs font-bold hover:bg-slate-700 transition"
+                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-700 transition"
                   >
                     Clear Search Filter
                   </button>
@@ -713,27 +713,27 @@ export default function StaffServicePassPage() {
                   return (
                     <div
                       key={order.id}
-                      className={`bg-slate-900 rounded-3xl border ${urgencyStyles.cardBorder} p-5 flex flex-col justify-between shadow-xl transition hover:shadow-2xl space-y-5`}
+                      className={`bg-white rounded-xl border ${urgencyStyles.cardBorder} p-5 flex flex-col justify-between shadow-sm transition hover:shadow-sm space-y-5`}
                     >
                       {/* Top Header: Giant Table Number & Wait Timer (Mistake-Proof) */}
                       <div>
                         <div className="flex items-start justify-between gap-3 mb-3">
                           {/* Giant Table Badge */}
                           <div className="flex-1">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-0.5">
                               Deliver To
                             </span>
-                            <div className="inline-block px-4 py-2 rounded-2xl bg-purple-600 text-white font-black text-2xl tracking-wide shadow-md shadow-purple-900/60 border border-purple-400/40">
+                            <div className="inline-block px-4 py-2 rounded-lg bg-red-600 text-white font-black text-2xl tracking-wide shadow-sm shadow-red-900/60 border border-red-400/40">
                               {tableDisplay.badgeText}
                             </div>
                           </div>
 
                           {/* Order # and Pass Timer */}
                           <div className="text-right">
-                            <span className="font-mono text-sm font-extrabold text-slate-300 block">
+                            <span className="font-mono text-sm font-extrabold text-slate-600 block">
                               #{order.orderNumber}
                             </span>
-                            <div className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-full text-xs border bg-slate-950/80">
+                            <div className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-full text-xs border bg-slate-100">
                               <Clock className={`w-3.5 h-3.5 ${urgencyStyles.timerText}`} />
                               <span className={urgencyStyles.timerText}>
                                 Ready {formatPassWaitTime(waitMinutes)} ago
@@ -762,14 +762,14 @@ export default function StaffServicePassPage() {
 
                         {/* Customer name (if dine-in guest identified) */}
                         {order.customerName && (
-                          <p className="text-xs text-slate-400 mb-2">
-                            Guest: <strong className="text-slate-200">{order.customerName}</strong>
+                          <p className="text-xs text-slate-500 mb-2">
+                            Guest: <strong className="text-slate-700">{order.customerName}</strong>
                           </p>
                         )}
 
                         {/* Dish Checklist for Waitstaff Tray Verification */}
-                        <div className="mt-3 pt-3 border-t border-slate-800 space-y-2">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                        <div className="mt-3 pt-3 border-t border-slate-200 space-y-2">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
                             Tray Checklist ({order.items.length} dishes):
                           </span>
                           <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
@@ -783,12 +783,12 @@ export default function StaffServicePassPage() {
                                   onClick={() => toggleItemCheck(order.id, item.id)}
                                   className={`flex items-start justify-between gap-2 p-2 rounded-xl text-xs transition cursor-pointer select-none border ${
                                     isChecked
-                                      ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-200'
-                                      : 'bg-slate-950/60 border-slate-800/80 text-slate-200 hover:bg-slate-800/60'
+                                      ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                      : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-100'
                                   }`}
                                 >
                                   <div className="flex items-start gap-2 flex-1">
-                                    <span className="mt-0.5 text-slate-400">
+                                    <span className="mt-0.5 text-slate-500">
                                       {isChecked ? (
                                         <CheckSquare className="w-4 h-4 text-emerald-400" />
                                       ) : (
@@ -796,7 +796,7 @@ export default function StaffServicePassPage() {
                                       )}
                                     </span>
                                     <div>
-                                      <span className={`font-bold ${isChecked ? 'line-through text-emerald-400/80' : 'text-white'}`}>
+                                      <span className={`font-bold ${isChecked ? 'line-through text-emerald-700' : 'text-slate-800'}`}>
                                         {item.quantity}x {item.productName}
                                       </span>
                                       {item.notes && (
@@ -814,11 +814,11 @@ export default function StaffServicePassPage() {
                       </div>
 
                       {/* Bottom Action: Big Mistake-Proof "Mark as Served" Button */}
-                      <div className="pt-3 border-t border-slate-800">
+                      <div className="pt-3 border-t border-slate-200">
                         <button
                           onClick={() => handleMarkServed(order)}
                           disabled={isUpdating}
-                          className="w-full py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-extrabold text-sm transition shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 disabled:opacity-50 border border-emerald-400/30"
+                          className="w-full py-3.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 border border-emerald-200"
                         >
                           {isUpdating ? (
                             <>
@@ -845,50 +845,50 @@ export default function StaffServicePassPage() {
         {activeTab === 'served' && (
           <div className="space-y-4">
             {filteredServedOrders.length === 0 ? (
-              <div className="text-center py-16 bg-slate-900/50 rounded-3xl border border-slate-800/80 max-w-lg mx-auto p-8 space-y-3">
+              <div className="text-center py-16 bg-white rounded-xl border border-slate-200 max-w-lg mx-auto p-8 space-y-3">
                 <ShoppingBag className="w-12 h-12 text-slate-500 mx-auto" />
-                <h3 className="text-lg font-bold text-white">No Served Orders Yet</h3>
-                <p className="text-slate-400 text-xs">
+                <h3 className="text-lg font-bold text-slate-900">No Served Orders Yet</h3>
+                <p className="text-slate-500 text-xs">
                   Orders marked as served today will be logged here for staff review.
                 </p>
               </div>
             ) : (
-              <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-sm">
-                <div className="p-4 border-b border-slate-800 bg-slate-950/50 flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                     Delivered &amp; Completed ({filteredServedOrders.length} orders)
                   </span>
                 </div>
-                <div className="divide-y divide-slate-800/80">
+                <div className="divide-y divide-slate-200">
                   {filteredServedOrders.map((order) => {
                     const tableDisplay = formatTableDisplay(order.table);
 
                     return (
                       <div
                         key={order.id}
-                        className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-800/30 transition"
+                        className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-100/30 transition"
                       >
                         <div className="flex items-center gap-4">
-                          <div className="px-3 py-1.5 rounded-xl bg-emerald-950/70 text-emerald-300 border border-emerald-800/60 font-black text-sm">
+                          <div className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-sm">
                             {tableDisplay.badgeText}
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-mono text-sm font-bold text-white">
+                              <span className="font-mono text-sm font-bold text-slate-800">
                                 #{order.orderNumber}
                               </span>
-                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold uppercase">
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 text-[10px] font-bold uppercase">
                                 Served
                               </span>
                             </div>
-                            <p className="text-xs text-slate-400 mt-0.5">
+                            <p className="text-xs text-slate-500 mt-0.5">
                               {order.items.map((i) => `${i.quantity}x ${i.productName}`).join(', ')}
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4 text-xs text-slate-400">
-                          <span className="font-semibold text-slate-200">
+                        <div className="flex items-center gap-4 text-xs text-slate-500">
+                          <span className="font-semibold text-slate-700">
                             {formatPaise(order.totalAmount)}
                           </span>
                           <span>•</span>

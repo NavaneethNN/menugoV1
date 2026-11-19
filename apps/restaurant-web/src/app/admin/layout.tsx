@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
 import { apiRequest } from '@/lib/api';
 import { Loader2, Film } from 'lucide-react';
+import { RestaurantAdminNavigation } from '@/components/admin/RestaurantAdminNavigation';
 
 export default function AdminLayout({
   children
@@ -83,5 +84,10 @@ export default function AdminLayout({
     );
   }
 
-  return <>{children}</>;
+  return (
+    <div className="min-h-screen bg-[#f8f8f9] lg:pl-[248px]">
+      <RestaurantAdminNavigation />
+      {children}
+    </div>
+  );
 }

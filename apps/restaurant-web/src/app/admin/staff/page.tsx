@@ -467,7 +467,7 @@ export default function AdminStaffPage() {
   if ((sessionLoading || loading) && !initialLoadedRef.current) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <RefreshCw className="w-8 h-8 animate-spin text-orange-600" />
+        <RefreshCw className="w-8 h-8 animate-spin text-red-600" />
       </div>
     );
   }
@@ -475,8 +475,8 @@ export default function AdminStaffPage() {
   if (!isAdminOrOwner) {
     return (
       <div className="min-h-screen bg-slate-100 p-6 flex items-center justify-center">
-        <div className="bg-white max-w-md w-full p-8 rounded-3xl border border-slate-200 shadow-sm text-center space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+        <div className="bg-white max-w-md w-full p-8 rounded-xl border border-slate-200 shadow-sm text-center space-y-4">
+          <div className="w-14 h-14 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
             <Lock className="w-7 h-7" />
           </div>
           <h2 className="text-xl font-black text-slate-900">Access Restricted</h2>
@@ -485,7 +485,7 @@ export default function AdminStaffPage() {
           </p>
           <Link
             href="/admin/dashboard"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-red-700 text-white rounded-xl text-xs font-bold hover:bg-red-800 transition"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Return to Dashboard</span>
@@ -511,10 +511,10 @@ export default function AdminStaffPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                <Users className="w-5 h-5 text-orange-600" />
+                <Users className="w-5 h-5 text-red-600" />
                 <span>Staff &amp; Memberships</span>
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800 font-bold text-xs uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 font-bold text-xs uppercase tracking-wider">
                 {currentRole}
               </span>
             </div>
@@ -531,7 +531,7 @@ export default function AdminStaffPage() {
                 const found = restaurants.find((r) => r.restaurant.id === e.target.value);
                 if (found) setSelectedMembership(found);
               }}
-              className="ml-2 text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-slate-800 outline-none focus:ring-2 focus:ring-orange-500"
+              className="ml-2 text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-slate-800 outline-none focus:ring-2 focus:ring-red-500"
             >
               {restaurants.map((m) => (
                 <option key={m.restaurant.id} value={m.restaurant.id}>
@@ -549,7 +549,7 @@ export default function AdminStaffPage() {
             className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
             title="Refresh List"
           >
-            <RefreshCw className={`w-4 h-4 ${actionLoading ? 'animate-spin text-orange-600' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${actionLoading ? 'animate-spin text-red-600' : ''}`} />
           </button>
 
           <Link
@@ -558,7 +558,7 @@ export default function AdminStaffPage() {
             className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-2xs"
             title="Open Touch PIN Staff Terminal"
           >
-            <KeyRound className="w-3.5 h-3.5 text-orange-600" />
+            <KeyRound className="w-3.5 h-3.5 text-red-600" />
             <span>Staff Terminal</span>
             <ExternalLink className="w-3 h-3 text-slate-400" />
           </Link>
@@ -577,7 +577,7 @@ export default function AdminStaffPage() {
               setPinStaffPin(generateRandomPin());
               setShowAddPinModal(true);
             }}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-sm"
           >
             <KeyRound className="w-4 h-4" />
             <span>+ Add Staff (PIN)</span>
@@ -587,7 +587,7 @@ export default function AdminStaffPage() {
 
       {/* Toast Alert */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-700 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-700 text-white px-5 py-3 rounded-lg shadow-sm flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
           <CheckCircle2 className="w-5 h-5 text-emerald-200" />
           <span className="text-sm font-bold">{toast}</span>
         </div>
@@ -597,7 +597,7 @@ export default function AdminStaffPage() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
         {/* Error Alert */}
         {error && (
-          <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-sm flex items-center justify-between">
+          <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-sm flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
               <span>{error}</span>
@@ -610,23 +610,23 @@ export default function AdminStaffPage() {
 
         {/* Staff Metrics Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
               Active Members
             </span>
             <span className="text-3xl font-black text-slate-900">{members.length}</span>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
               PIN Direct Staff
             </span>
-            <span className="text-3xl font-black text-orange-600">
+            <span className="text-3xl font-black text-red-600">
               {members.filter((m) => m.pin).length}
             </span>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
               Kitchen Team
             </span>
@@ -635,7 +635,7 @@ export default function AdminStaffPage() {
             </span>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
               Floor Service Team
             </span>
@@ -646,7 +646,7 @@ export default function AdminStaffPage() {
         </div>
 
         {/* Section 1: Active Members Table */}
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
           <div className="p-5 border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-slate-600" />
@@ -668,7 +668,7 @@ export default function AdminStaffPage() {
                   className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-50/80 transition"
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-2xl bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-sm border border-slate-200 shadow-2xs">
+                    <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-sm border border-slate-200 shadow-2xs">
                       {(member.staffName || member.user.name || member.user.email || 'U').charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -682,8 +682,8 @@ export default function AdminStaffPage() {
                           </span>
                         )}
                         {member.pin && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-orange-50 border border-orange-200 text-orange-800 text-xs font-mono font-black shadow-2xs">
-                            <KeyRound className="w-3.5 h-3.5 text-orange-600" />
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs font-mono font-black shadow-2xs">
+                            <KeyRound className="w-3.5 h-3.5 text-red-600" />
                             <span>PIN: {member.pin}</span>
                           </span>
                         )}
@@ -762,7 +762,7 @@ export default function AdminStaffPage() {
                             className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold transition shadow-2xs"
                             title="Update 4-digit PIN"
                           >
-                            <KeyRound className="w-3.5 h-3.5 text-orange-600" />
+                            <KeyRound className="w-3.5 h-3.5 text-red-600" />
                             <span>Edit PIN</span>
                           </button>
 
@@ -797,7 +797,7 @@ export default function AdminStaffPage() {
                       {isOwner && member.role !== 'owner' && (
                         <button
                           onClick={() => setTransferTarget(member)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold transition shadow-2xs"
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold transition shadow-2xs"
                           title="Transfer restaurant ownership to this member"
                         >
                           <Crown className="w-3.5 h-3.5" />
@@ -833,13 +833,13 @@ export default function AdminStaffPage() {
 
         {/* Section 2: Pending Invitations */}
         {invitations.length > 0 && (
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-purple-50/50">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-red-50/50">
               <div className="flex items-center gap-2">
-                <Send className="w-5 h-5 text-purple-600" />
+                <Send className="w-5 h-5 text-red-600" />
                 <h2 className="text-base font-extrabold text-slate-900">Pending Staff Invitations</h2>
               </div>
-              <span className="text-xs font-bold text-purple-700">{invitations.length} pending</span>
+              <span className="text-xs font-bold text-red-700">{invitations.length} pending</span>
             </div>
 
             <div className="divide-y divide-slate-100">
@@ -853,7 +853,7 @@ export default function AdminStaffPage() {
                     className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-50 transition"
                   >
                     <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-sm border border-purple-200">
+                      <div className="w-10 h-10 rounded-lg bg-red-100 text-red-700 font-bold flex items-center justify-center text-sm border border-red-200">
                         <Mail className="w-4 h-4" />
                       </div>
                       <div>
@@ -910,10 +910,10 @@ export default function AdminStaffPage() {
       {/* Modal 1: Invite / Add Staff Modal */}
       {showInviteModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-sm border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-orange-600" />
+                <UserPlus className="w-5 h-5 text-red-600" />
                 <h3 className="text-lg font-black text-slate-900">Invite Staff Member</h3>
               </div>
               <button
@@ -935,7 +935,7 @@ export default function AdminStaffPage() {
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="chef@restaurant.com"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-red-500 focus:bg-white"
                 />
                 <p className="text-[11px] text-slate-500 mt-1">
                   If the user already has an account, they are added immediately. Otherwise, an invitation link is generated.
@@ -949,7 +949,7 @@ export default function AdminStaffPage() {
                 <div className="space-y-2">
                   {isOwner && (
                     <label
-                      className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition ${
+                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition ${
                         inviteRole === 'admin'
                           ? 'bg-blue-50/70 border-blue-400 ring-1 ring-blue-300'
                           : 'bg-white border-slate-200 hover:bg-slate-50'
@@ -976,9 +976,9 @@ export default function AdminStaffPage() {
                   )}
 
                   <label
-                    className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition ${
+                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition ${
                       inviteRole === 'kitchen'
-                        ? 'bg-orange-50/70 border-orange-400 ring-1 ring-orange-300'
+                        ? 'bg-red-50/70 border-red-400 ring-1 ring-red-300'
                         : 'bg-white border-slate-200 hover:bg-slate-50'
                     }`}
                   >
@@ -992,7 +992,7 @@ export default function AdminStaffPage() {
                     />
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <ChefHat className="w-4 h-4 text-orange-600" />
+                        <ChefHat className="w-4 h-4 text-red-600" />
                         <span className="font-extrabold text-sm text-slate-900">Kitchen Staff</span>
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">
@@ -1002,7 +1002,7 @@ export default function AdminStaffPage() {
                   </label>
 
                   <label
-                    className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition ${
+                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition ${
                       inviteRole === 'staff'
                         ? 'bg-emerald-50/70 border-emerald-400 ring-1 ring-emerald-300'
                         : 'bg-white border-slate-200 hover:bg-slate-50'
@@ -1040,7 +1040,7 @@ export default function AdminStaffPage() {
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-sm disabled:opacity-50 flex items-center gap-1.5"
                 >
                   {actionLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                   <span>Send Invitation</span>
@@ -1054,7 +1054,7 @@ export default function AdminStaffPage() {
       {/* Modal 2: Change Role Modal */}
       {roleChangeTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-sm w-full p-6 shadow-sm border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto">
             <h3 className="text-lg font-black text-slate-900">
               Change Role for {roleChangeTarget.user.name || roleChangeTarget.user.email}
             </h3>
@@ -1106,7 +1106,7 @@ export default function AdminStaffPage() {
               <button
                 onClick={handleUpdateRole}
                 disabled={actionLoading}
-                className="px-4 py-2 rounded-xl bg-orange-600 text-white text-xs font-bold hover:bg-orange-700 transition"
+                className="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 transition"
               >
                 Update Role
               </button>
@@ -1118,8 +1118,8 @@ export default function AdminStaffPage() {
       {/* Modal 3: Transfer Ownership Modal */}
       {transferTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto">
-            <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mx-auto">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-sm border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto">
+            <div className="w-12 h-12 rounded-lg bg-red-100 text-red-700 flex items-center justify-center mx-auto">
               <Crown className="w-6 h-6" />
             </div>
 
@@ -1132,7 +1132,7 @@ export default function AdminStaffPage() {
               </p>
             </div>
 
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 font-medium space-y-1">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 font-medium space-y-1">
               <div className="flex items-center gap-1.5 font-bold">
                 <AlertTriangle className="w-4 h-4 text-amber-600" />
                 <span>Important:</span>
@@ -1152,7 +1152,7 @@ export default function AdminStaffPage() {
               <button
                 onClick={handleTransferOwnership}
                 disabled={actionLoading}
-                className="px-4 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 transition shadow-sm"
+                className="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 transition shadow-sm"
               >
                 Confirm Ownership Transfer
               </button>
@@ -1164,10 +1164,10 @@ export default function AdminStaffPage() {
       {/* Modal 4: Add Staff with 4-Digit PIN */}
       {showAddPinModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-sm border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center">
                   <KeyRound className="w-4 h-4" />
                 </div>
                 <div>
@@ -1194,7 +1194,7 @@ export default function AdminStaffPage() {
                   value={pinStaffName}
                   onChange={(e) => setPinStaffName(e.target.value)}
                   placeholder="e.g. Ramesh Kumar (Cook)"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-red-500 focus:bg-white"
                 />
               </div>
 
@@ -1204,9 +1204,9 @@ export default function AdminStaffPage() {
                 </label>
                 <div className="space-y-2">
                   <label
-                    className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition ${
+                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition ${
                       pinStaffRole === 'kitchen'
-                        ? 'bg-orange-50/70 border-orange-400 ring-1 ring-orange-300'
+                        ? 'bg-red-50/70 border-red-400 ring-1 ring-red-300'
                         : 'bg-white border-slate-200 hover:bg-slate-50'
                     }`}
                   >
@@ -1220,7 +1220,7 @@ export default function AdminStaffPage() {
                     />
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <ChefHat className="w-4 h-4 text-orange-600" />
+                        <ChefHat className="w-4 h-4 text-red-600" />
                         <span className="font-extrabold text-sm text-slate-900">Kitchen Staff</span>
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">
@@ -1230,7 +1230,7 @@ export default function AdminStaffPage() {
                   </label>
 
                   <label
-                    className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition ${
+                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition ${
                       pinStaffRole === 'staff'
                         ? 'bg-emerald-50/70 border-emerald-400 ring-1 ring-emerald-300'
                         : 'bg-white border-slate-200 hover:bg-slate-50'
@@ -1257,7 +1257,7 @@ export default function AdminStaffPage() {
 
                   {isOwner && (
                     <label
-                      className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition ${
+                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition ${
                         pinStaffRole === 'admin'
                           ? 'bg-blue-50/70 border-blue-400 ring-1 ring-blue-300'
                           : 'bg-white border-slate-200 hover:bg-slate-50'
@@ -1293,7 +1293,7 @@ export default function AdminStaffPage() {
                   <button
                     type="button"
                     onClick={() => setPinStaffPin(generateRandomPin())}
-                    className="text-[11px] font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1"
+                    className="text-[11px] font-bold text-red-600 hover:text-red-700 flex items-center gap-1"
                   >
                     <Sparkles className="w-3 h-3" />
                     <span>Generate Random</span>
@@ -1308,12 +1308,12 @@ export default function AdminStaffPage() {
                   value={pinStaffPin}
                   onChange={(e) => setPinStaffPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                   placeholder="1234"
-                  className="w-full text-center font-mono text-2xl font-black tracking-widest px-3.5 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white"
+                  className="w-full text-center font-mono text-2xl font-black tracking-widest px-3.5 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 outline-none focus:ring-2 focus:ring-red-500 focus:bg-white"
                 />
               </div>
 
               <div>
-                <label className="flex items-start gap-3 p-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 cursor-pointer hover:bg-emerald-50 transition">
+                <label className="flex items-start gap-3 p-3 rounded-lg border border-emerald-200 bg-emerald-50/70 cursor-pointer hover:bg-emerald-50 transition">
                   <input
                     type="checkbox"
                     checked={pinStaffCanCashier}
@@ -1334,7 +1334,7 @@ export default function AdminStaffPage() {
                 </label>
               </div>
 
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 space-y-1">
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900 space-y-1">
                 <span className="font-extrabold flex items-center gap-1.5 text-amber-950">
                   <Info className="w-4 h-4 text-amber-600 shrink-0" />
                   <span>How First Login Works:</span>
@@ -1355,7 +1355,7 @@ export default function AdminStaffPage() {
                 <button
                   type="submit"
                   disabled={actionLoading || pinStaffPin.length !== 4 || !pinStaffName.trim()}
-                  className="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-sm disabled:opacity-50 flex items-center gap-1.5"
                 >
                   {actionLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
                   <span>Create Staff Account</span>
@@ -1369,10 +1369,10 @@ export default function AdminStaffPage() {
       {/* Modal 5: Edit Staff 4-Digit PIN */}
       {pinEditTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-xl max-w-sm w-full p-6 shadow-sm border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-orange-600" />
+                <KeyRound className="w-5 h-5 text-red-600" />
                 <h3 className="text-base font-black text-slate-900">Change 4-Digit PIN</h3>
               </div>
               <button
@@ -1396,7 +1396,7 @@ export default function AdminStaffPage() {
                   <button
                     type="button"
                     onClick={() => setNewEditPin(generateRandomPin())}
-                    className="text-[11px] font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1"
+                    className="text-[11px] font-bold text-red-600 hover:text-red-700 flex items-center gap-1"
                   >
                     <Sparkles className="w-3 h-3" />
                     <span>Random</span>
@@ -1411,7 +1411,7 @@ export default function AdminStaffPage() {
                   value={newEditPin}
                   onChange={(e) => setNewEditPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                   placeholder="1234"
-                  className="w-full text-center font-mono text-2xl font-black tracking-widest px-3.5 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white"
+                  className="w-full text-center font-mono text-2xl font-black tracking-widest px-3.5 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 outline-none focus:ring-2 focus:ring-red-500 focus:bg-white"
                 />
               </div>
 
@@ -1426,7 +1426,7 @@ export default function AdminStaffPage() {
                 <button
                   type="submit"
                   disabled={actionLoading || newEditPin.length !== 4}
-                  className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white text-xs font-bold transition shadow-sm"
+                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold transition shadow-sm"
                 >
                   Save PIN
                 </button>
