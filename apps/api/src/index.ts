@@ -24,6 +24,7 @@ import uploadRoutes from './routes/upload.routes';
 import memberRoutes from './routes/member.routes';
 import cashierRoutes from './routes/cashier.routes';
 import cinemaRoutes from './routes/cinema.routes';
+import { superAdminRouter, getPublicSubscriptionPlans } from './routes/super-admin.routes';
 
 import path from 'path';
 
@@ -59,11 +60,15 @@ const allowedOriginsList = Array.from(
     process.env.APP_URL,
     process.env.CINEMA_APP_URL,
     process.env.NEXT_PUBLIC_CINEMA_URL,
+    process.env.MAIN_APP_URL,
+    process.env.NEXT_PUBLIC_MAIN_URL,
     ...customTrustedOrigins,
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://localhost:3001',
-    'http://127.0.0.1:3001'
+    'http://127.0.0.1:3001',
+    'http://localhost:3002',
+    'http://127.0.0.1:3002'
   ].filter((o): o is string => Boolean(o)))
 );
 
@@ -141,6 +146,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Tenant Extraction Middleware (checks x-restaurant-id header / param)
 app.use(tenantMiddleware);
 
+// Public endpoints
+app.get('/api/public/subscription-plans', getPublicSubscriptionPlans);
+
 // API Routes
 app.use('/api/health', healthRoutes);
 app.use('/api/restaurants', restaurantRoutes);
@@ -153,6 +161,7 @@ app.use('/api/tables', tableRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/cashier', cashierRoutes);
 app.use('/api/cinema', cinemaRoutes);
+app.use('/api/super-admin', superAdminRouter);
 
 // Global Error Handler
 app.use(errorHandler);

@@ -99,6 +99,13 @@ export type InitiateCinemaRefundInput = z.infer<typeof schemas.initiateCinemaRef
 export type CreateCinemaPaymentOrderInput = z.infer<typeof schemas.createCinemaPaymentOrderSchema>;
 export type VerifyCinemaPaymentInput = z.infer<typeof schemas.verifyCinemaPaymentSchema>;
 
+export type SubscriptionPlan = z.infer<typeof schemas.subscriptionPlanSchema>;
+export type CreateSubscriptionPlanInput = z.infer<typeof schemas.createSubscriptionPlanSchema>;
+export type UpdateSubscriptionPlanInput = z.infer<typeof schemas.updateSubscriptionPlanSchema>;
+export type TenantSubscription = z.infer<typeof schemas.tenantSubscriptionSchema>;
+export type AssignTenantSubscriptionInput = z.infer<typeof schemas.assignTenantSubscriptionSchema>;
+export type UpdateTenantStatusInput = z.infer<typeof schemas.updateTenantStatusSchema>;
+
 
 
 

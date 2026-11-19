@@ -1177,6 +1177,74 @@ export const assignCinemaRoleSchema = z.object({
 
 export type AssignCinemaRoleInput = z.infer<typeof assignCinemaRoleSchema>;
 
+// ---------------------------------------------------------------------------
+// 21. Subscription Plans & Platform Super Admin Schemas
+// ---------------------------------------------------------------------------
+export const SUBSCRIPTION_TENANT_TYPES = ['restaurant', 'cinema', 'all'] as const;
+export const SUBSCRIPTION_STATUSES = ['active', 'trialing', 'past_due', 'cancelled'] as const;
+export const BILLING_CYCLES = ['monthly', 'annual'] as const;
+
+export const subscriptionPlanSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1, 'Plan name is required').max(100),
+  slug: z.string().min(1, 'Slug is required').max(100),
+  description: z.string().max(500).nullable().optional(),
+  tenantType: z.enum(SUBSCRIPTION_TENANT_TYPES),
+  priceMonthlyPaise: z.number().int().nonnegative(),
+  priceAnnualPaise: z.number().int().nonnegative(),
+  maxTables: z.number().int().positive().nullable().optional(),
+  maxScreens: z.number().int().positive().nullable().optional(),
+  maxStaff: z.number().int().positive().nullable().optional(),
+  features: z.array(z.string()).default([]),
+  isPopular: z.boolean().default(false),
+  isActive: z.boolean().default(true),
+  sortOrder: z.number().int().default(0),
+  createdAt: z.date().or(z.string()).optional(),
+  updatedAt: z.date().or(z.string()).optional()
+});
+
+export const createSubscriptionPlanSchema = z.object({
+  name: z.string().trim().min(1, 'Plan name is required').max(100),
+  slug: z.string().trim().min(1, 'Slug is required').max(100),
+  description: z.string().trim().max(500).optional(),
+  tenantType: z.enum(SUBSCRIPTION_TENANT_TYPES).default('all'),
+  priceMonthlyPaise: z.number().int().nonnegative('Monthly price cannot be negative'),
+  priceAnnualPaise: z.number().int().nonnegative('Annual price cannot be negative'),
+  maxTables: z.number().int().positive().nullable().optional(),
+  maxScreens: z.number().int().positive().nullable().optional(),
+  maxStaff: z.number().int().positive().nullable().optional(),
+  features: z.array(z.string()).default([]),
+  isPopular: z.boolean().default(false),
+  isActive: z.boolean().default(true),
+  sortOrder: z.number().int().default(0)
+});
+
+export const updateSubscriptionPlanSchema = createSubscriptionPlanSchema.partial();
+
+export const tenantSubscriptionSchema = z.object({
+  id: z.string(),
+  restaurantId: z.string(),
+  planId: z.string(),
+  status: z.enum(SUBSCRIPTION_STATUSES),
+  billingCycle: z.enum(BILLING_CYCLES),
+  currentPeriodStart: z.date().or(z.string()),
+  currentPeriodEnd: z.date().or(z.string()).nullable().optional(),
+  trialEndsAt: z.date().or(z.string()).nullable().optional(),
+  cancelAtPeriodEnd: z.boolean().default(false),
+  createdAt: z.date().or(z.string()).optional(),
+  updatedAt: z.date().or(z.string()).optional()
+});
+
+export const assignTenantSubscriptionSchema = z.object({
+  planId: z.string().min(1, 'Plan ID is required'),
+  billingCycle: z.enum(BILLING_CYCLES).default('monthly'),
+  status: z.enum(SUBSCRIPTION_STATUSES).default('active')
+});
+
+export const updateTenantStatusSchema = z.object({
+  isActive: z.boolean()
+});
+
 
 
 

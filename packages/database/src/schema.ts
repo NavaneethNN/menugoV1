@@ -878,7 +878,8 @@ export const restaurantsRelations = relations(restaurants, ({ one, many }) => ({
   cinemaQrCodes: many(cinemaQrCodes),
   cinemaPaymentAccounts: many(cinemaPaymentAccounts),
   cinemaPaymentTransactions: many(cinemaPaymentTransactions),
-  cinemaRefunds: many(cinemaRefunds)
+  cinemaRefunds: many(cinemaRefunds),
+  subscriptions: many(tenantSubscriptions)
 }));
 
 export const cinemaMoviesRelations = relations(cinemaMovies, ({ one, many }) => ({
@@ -1127,5 +1128,80 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   product: one(products, {
     fields: [orderItems.productId],
     references: [products.id]
+  })
+}));
+
+// ---------------------------------------------------------------------------
+// 19. Subscription Plans & Platform Billing (Super Admin Managed)
+// ---------------------------------------------------------------------------
+export const subscriptionPlans = pgTable(
+  'subscription_plans',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    name: varchar('name', { length: 100 }).notNull(),
+    slug: varchar('slug', { length: 100 }).notNull().unique(),
+    description: text('description'),
+    tenantType: varchar('tenant_type', { length: 50 }).default('all').notNull(), // 'restaurant' | 'cinema' | 'all'
+    priceMonthlyPaise: integer('price_monthly_paise').default(0).notNull(),
+    priceAnnualPaise: integer('price_annual_paise').default(0).notNull(),
+    maxTables: integer('max_tables'), // null = unlimited
+    maxScreens: integer('max_screens'), // null = unlimited
+    maxStaff: integer('max_staff'), // null = unlimited
+    features: jsonb('features').default([]).notNull(),
+    isPopular: boolean('is_popular').default(false).notNull(),
+    isActive: boolean('is_active').default(true).notNull(),
+    sortOrder: integer('sort_order').default(0).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('subscription_plan_slug_idx').on(table.slug),
+    index('subscription_plan_tenant_type_idx').on(table.tenantType),
+    index('subscription_plan_sort_order_idx').on(table.sortOrder)
+  ]
+);
+
+export const tenantSubscriptions = pgTable(
+  'tenant_subscriptions',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    restaurantId: text('restaurant_id')
+      .notNull()
+      .references(() => restaurants.id, { onDelete: 'cascade' }),
+    planId: text('plan_id')
+      .notNull()
+      .references(() => subscriptionPlans.id, { onDelete: 'restrict' }),
+    status: varchar('status', { length: 50 }).default('active').notNull(), // 'active' | 'trialing' | 'past_due' | 'cancelled'
+    billingCycle: varchar('billing_cycle', { length: 20 }).default('monthly').notNull(), // 'monthly' | 'annual'
+    currentPeriodStart: timestamp('current_period_start', { withTimezone: true }).defaultNow().notNull(),
+    currentPeriodEnd: timestamp('current_period_end', { withTimezone: true }),
+    trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
+    cancelAtPeriodEnd: boolean('cancel_at_period_end').default(false).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('tenant_subscription_restaurant_idx').on(table.restaurantId),
+    index('tenant_subscription_plan_idx').on(table.planId),
+    index('tenant_subscription_status_idx').on(table.status)
+  ]
+);
+
+export const subscriptionPlansRelations = relations(subscriptionPlans, ({ many }) => ({
+  subscriptions: many(tenantSubscriptions)
+}));
+
+export const tenantSubscriptionsRelations = relations(tenantSubscriptions, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [tenantSubscriptions.restaurantId],
+    references: [restaurants.id]
+  }),
+  plan: one(subscriptionPlans, {
+    fields: [tenantSubscriptions.planId],
+    references: [subscriptionPlans.id]
   })
 }));
