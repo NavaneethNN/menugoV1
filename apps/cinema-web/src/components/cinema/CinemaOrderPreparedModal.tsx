@@ -82,6 +82,7 @@ interface CinemaOrderPreparedModalProps {
   isOpen: boolean;
   onClose: () => void;
   order: PreparedOrder | null;
+  sessionToken?: string;
   paymentProviders?: string[];
 }
 
@@ -91,6 +92,7 @@ export function CinemaOrderPreparedModal({
   isOpen,
   onClose,
   order,
+  sessionToken,
   paymentProviders = []
 }: CinemaOrderPreparedModalProps) {
   const [phase, setPhase] = useState<CheckoutPhase>('idle');
@@ -403,13 +405,18 @@ export function CinemaOrderPreparedModal({
               {order.statusToken && (
                 <div className="pt-2">
                   <Link
-                    href={`/track/${order.statusToken}`}
-                    className="w-full py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30"
+                    href={`/track/${order.statusToken}${sessionToken ? `?session=${encodeURIComponent(sessionToken)}` : ''}`}
+                    className="w-full py-3 px-4 rounded-xl bg-red-700 hover:bg-red-800 text-white font-semibold text-xs transition flex items-center justify-center gap-2"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     <span>Track Preparation &amp; Delivery Live</span>
                   </Link>
                 </div>
+              )}
+              {sessionToken && (
+                <Link href={`/track/session/${sessionToken}`} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-800 transition hover:bg-red-100">
+                  <Clock className="h-3.5 w-3.5" /> View all orders from this visit
+                </Link>
               )}
             </div>
           )}

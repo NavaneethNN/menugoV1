@@ -1,5 +1,5 @@
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { db, pool } from './client';
+import { db, pool, cinemaDb, cinemaPool } from './client';
 import path from 'path';
 
 /**
@@ -27,15 +27,28 @@ export async function applyMigrations(): Promise<void> {
     console.log('[DB] Connection to Neon PostgreSQL established successfully.');
     client.release();
 
+    const restaurantUrl = process.env.RESTAURANT_DATABASE_URL || process.env.DATABASE_URL;
+    const cinemaUrl = process.env.CINEMA_DATABASE_URL || process.env.DATABASE_URL;
+    const hasSeparateCinemaDatabase = Boolean(cinemaUrl && cinemaUrl !== restaurantUrl);
+    if (hasSeparateCinemaDatabase) {
+      const cinemaClient = await cinemaPool.connect();
+      console.log('[DB] Connection to cinema database established successfully.');
+      cinemaClient.release();
+    }
+
     // 2. Execute pending migrations within transaction
     console.log('[MIGRATE] Applying pending schema migrations...');
     await migrate(db, { migrationsFolder });
+    if (hasSeparateCinemaDatabase) {
+      console.log('[MIGRATE] Applying pending schema migrations to the cinema database...');
+      await migrate(cinemaDb, { migrationsFolder });
+    }
     console.log('[SUCCESS] All migrations applied successfully!');
   } catch (error: any) {
     console.error('[ERROR] Migration failed:', error?.message || error);
     process.exit(1);
   } finally {
-    await pool.end();
+    await Promise.allSettled([pool.end(), cinemaPool.end()]);
   }
 }
 

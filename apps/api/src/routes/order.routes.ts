@@ -793,6 +793,92 @@ router.get(
 // 4. Order Detail View Scoped to Authorized Restaurant
 // ---------------------------------------------------------------------------
 router.get(
+  '/session/:token',
+  orderTrackingRateLimiter,
+  async (req: Request, res: Response, next) => {
+    try {
+      const token = String(req.params.token || '').trim();
+      if (token.length < 32) throw new AppError('Order session not found', 404);
+
+      const [session] = await restaurantDb
+        .select({
+          id: tableSessions.id,
+          restaurantId: tableSessions.restaurantId,
+          tableId: tableSessions.tableId,
+          status: tableSessions.status,
+          openedAt: tableSessions.openedAt,
+          closedAt: tableSessions.closedAt,
+          tableNumber: restaurantTables.tableNumber,
+          restaurantName: restaurants.name,
+          restaurantSlug: restaurants.slug,
+          currency: restaurants.currency
+        })
+        .from(tableSessions)
+        .leftJoin(restaurantTables, eq(tableSessions.tableId, restaurantTables.id))
+        .leftJoin(restaurants, eq(tableSessions.restaurantId, restaurants.id))
+        .where(eq(tableSessions.sessionToken, token))
+        .limit(1);
+
+      if (!session) throw new AppError('Order session not found', 404);
+
+      const sessionOrders = session.status === 'active' ? await restaurantDb
+        .select({
+          id: orders.id,
+          orderNumber: orders.orderNumber,
+          status: orders.status,
+          totalAmount: orders.totalAmount,
+          statusToken: orders.statusToken,
+          createdAt: orders.createdAt,
+          updatedAt: orders.updatedAt
+        })
+        .from(orders)
+        .where(eq(orders.tableSessionId, session.id))
+        .orderBy(orders.createdAt) : [];
+
+      const itemRows = sessionOrders.length
+        ? await restaurantDb
+            .select({
+              orderId: orderItems.orderId,
+              productName: orderItems.productName,
+              quantity: orderItems.quantity,
+              unitPrice: orderItems.unitPrice,
+              subtotal: orderItems.subtotal,
+              notes: orderItems.notes
+            })
+            .from(orderItems)
+            .where(inArray(orderItems.orderId, sessionOrders.map((order) => order.id)))
+        : [];
+      const itemsByOrderId = new Map<string, typeof itemRows>();
+      for (const item of itemRows) {
+        const list = itemsByOrderId.get(item.orderId) || [];
+        list.push(item);
+        itemsByOrderId.set(item.orderId, list);
+      }
+
+      res.json({
+        session: {
+          status: session.status,
+          openedAt: session.openedAt,
+          closedAt: session.closedAt,
+          tableNumber: session.tableNumber,
+          restaurant: {
+            name: session.restaurantName,
+            slug: session.restaurantSlug,
+            currency: session.currency || 'INR'
+          }
+        },
+        orders: sessionOrders.map(({ id, ...order }) => ({
+          ...order,
+          items: (itemsByOrderId.get(id) || []).map(({ orderId: _orderId, ...item }) => item)
+        }))
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get(
   '/:id',
   requireAuth,
   requireTenant(['owner', 'admin', 'kitchen', 'staff']),

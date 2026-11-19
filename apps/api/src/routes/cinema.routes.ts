@@ -11,6 +11,7 @@ import {
   cinemaShows,
   cinemaQrCodes,
   cinemaCarts,
+  cinemaCustomerSessions,
   cinemaPaymentAccounts,
   cinemaPaymentTransactions,
   cinemaRefunds,
@@ -76,6 +77,127 @@ import cinemaStaffRoutes from './cinema-staff.routes';
 import cinemaDeliveryRoutes from './cinema-delivery.routes';
 
 const router = Router();
+
+const CINEMA_CUSTOMER_SESSION_MS = 3 * 60 * 60 * 1000;
+
+// A cinema menu scan opens a three-hour customer visit session. A known token
+// resumes that session across refreshes and order-tracking visits.
+router.post('/public/customer-sessions', tableVerificationRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const theatreToken = String(req.body?.theatreToken || '').trim();
+    const suppliedSessionToken = String(req.body?.sessionToken || '').trim();
+    if (!isValidCinemaQrTokenFormat(theatreToken)) throw new AppError('Invalid cinema QR token format', 400);
+
+    const [qr] = await db.select({ theatreId: cinemaQrCodes.theatreId })
+      .from(cinemaQrCodes)
+      .where(and(eq(cinemaQrCodes.token, theatreToken), eq(cinemaQrCodes.status, 'active')))
+      .limit(1);
+    if (!qr) throw new AppError('Invalid or expired cinema QR code', 404);
+
+    const now = new Date();
+    if (suppliedSessionToken.length >= 32) {
+      const [existing] = await db.select().from(cinemaCustomerSessions)
+        .where(and(eq(cinemaCustomerSessions.sessionToken, suppliedSessionToken), eq(cinemaCustomerSessions.theatreId, qr.theatreId)))
+        .limit(1);
+      if (existing?.status === 'active' && existing.expiresAt > now) {
+        res.json({ sessionToken: existing.sessionToken, status: existing.status, openedAt: existing.openedAt, expiresAt: existing.expiresAt });
+        return;
+      }
+      if (existing?.status === 'active') {
+        await db.update(cinemaCustomerSessions).set({ status: 'closed', closedAt: now })
+          .where(eq(cinemaCustomerSessions.id, existing.id));
+      }
+    }
+
+    const sessionToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(now.getTime() + CINEMA_CUSTOMER_SESSION_MS);
+    const [session] = await db.insert(cinemaCustomerSessions).values({
+      id: crypto.randomUUID(),
+      theatreId: qr.theatreId,
+      sessionToken,
+      status: 'active',
+      openedAt: now,
+      expiresAt
+    }).returning();
+    if (!session) {
+      throw new AppError('Failed to create cinema visit session', 500);
+    }
+    res.status(201).json({ sessionToken: session.sessionToken, status: session.status, openedAt: session.openedAt, expiresAt: session.expiresAt });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/public/customer-sessions/:sessionToken', tableVerificationRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const sessionToken = String(req.params.sessionToken || '').trim();
+    if (sessionToken.length < 32) throw new AppError('Order session not found', 404);
+    let [session] = await db.select({
+      id: cinemaCustomerSessions.id,
+      sessionToken: cinemaCustomerSessions.sessionToken,
+      status: cinemaCustomerSessions.status,
+      openedAt: cinemaCustomerSessions.openedAt,
+      expiresAt: cinemaCustomerSessions.expiresAt,
+      closedAt: cinemaCustomerSessions.closedAt,
+      theatreId: cinemaCustomerSessions.theatreId,
+      theatreName: restaurants.name,
+      theatreSlug: restaurants.slug,
+      currency: restaurants.currency
+    }).from(cinemaCustomerSessions)
+      .leftJoin(restaurants, eq(cinemaCustomerSessions.theatreId, restaurants.id))
+      .where(eq(cinemaCustomerSessions.sessionToken, sessionToken))
+      .limit(1);
+    if (!session) throw new AppError('Order session not found', 404);
+
+    if (session.status === 'active' && session.expiresAt <= new Date()) {
+      const closedAt = new Date();
+      await db.update(cinemaCustomerSessions).set({ status: 'closed', closedAt })
+        .where(and(eq(cinemaCustomerSessions.id, session.id), eq(cinemaCustomerSessions.status, 'active')));
+      session = { ...session, status: 'closed', closedAt };
+    }
+
+    const sessionOrders = session.status === 'active' ? await db.select({
+      id: orders.id,
+      orderNumber: orders.orderNumber,
+      status: orders.status,
+      totalAmount: orders.totalAmount,
+      statusToken: orders.statusToken,
+      createdAt: orders.createdAt,
+      updatedAt: orders.updatedAt,
+      seatRow: orders.seatRow,
+      seatNumber: orders.seatNumber
+    }).from(orders).where(eq(orders.cinemaSessionId, session.id)).orderBy(orders.createdAt) : [];
+    const itemRows = sessionOrders.length ? await db.select({
+      orderId: orderItems.orderId,
+      productName: orderItems.productName,
+      quantity: orderItems.quantity,
+      unitPrice: orderItems.unitPrice,
+      subtotal: orderItems.subtotal,
+      notes: orderItems.notes
+    }).from(orderItems).where(inArray(orderItems.orderId, sessionOrders.map((order) => order.id))) : [];
+    const itemsByOrder = new Map<string, typeof itemRows>();
+    for (const item of itemRows) {
+      const current = itemsByOrder.get(item.orderId) || [];
+      current.push(item);
+      itemsByOrder.set(item.orderId, current);
+    }
+    res.json({
+      session: {
+        status: session.status,
+        openedAt: session.openedAt,
+        expiresAt: session.expiresAt,
+        closedAt: session.closedAt,
+        theatre: { name: session.theatreName, slug: session.theatreSlug, currency: session.currency || 'INR' }
+      },
+      orders: sessionOrders.map(({ id, ...order }) => ({
+        ...order,
+        items: (itemsByOrder.get(id) || []).map(({ orderId: _orderId, ...item }) => item)
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Mount Cinema Payment Gateway Architecture Routes (Task 11)
 router.use('/payments', cinemaPaymentRoutes);
@@ -5242,6 +5364,26 @@ router.post(
         validatedData.items
       );
 
+      let cinemaSessionId: string | null = null;
+      if (validatedData.sessionToken) {
+        const [cinemaSession] = await db.select()
+          .from(cinemaCustomerSessions)
+          .where(and(
+            eq(cinemaCustomerSessions.sessionToken, validatedData.sessionToken),
+            eq(cinemaCustomerSessions.theatreId, context.theatre.id)
+          ))
+          .limit(1);
+        if (!cinemaSession) throw new AppError('Your cinema visit session is invalid. Scan the menu QR again.', 410);
+        if (cinemaSession.status !== 'active' || cinemaSession.expiresAt <= new Date()) {
+          if (cinemaSession.status === 'active') {
+            await db.update(cinemaCustomerSessions).set({ status: 'closed', closedAt: new Date() })
+              .where(and(eq(cinemaCustomerSessions.id, cinemaSession.id), eq(cinemaCustomerSessions.status, 'active')));
+          }
+          throw new AppError('Your cinema visit session has ended. Scan the menu QR again to start a new session.', 410);
+        }
+        cinemaSessionId = cinemaSession.id;
+      }
+
       // Idempotency check: prevent duplicate submissions
       const idempotencyKey =
         (req.headers['idempotency-key'] as string | undefined)?.trim() ||
@@ -5292,6 +5434,7 @@ router.post(
             orderNumber,
             restaurantId: context.theatre.id,
             orderType: 'cinema',
+            cinemaSessionId,
             screenId: context.screen.id,
             showId: context.show?.id || null,
             movieId: context.movie?.id || null,

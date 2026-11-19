@@ -83,19 +83,25 @@ export default function AdminDashboardPage() {
       setRestaurants(restaurantOnly);
 
       if (restaurantOnly.length > 0) {
+        let activeMatch: any = restaurantOnly[0];
         if (selectRestaurantId) {
           const match = restaurantOnly.find((r: any) => r.restaurant.id === selectRestaurantId);
-          setSelectedMembership(match || restaurantOnly[0]);
+          activeMatch = match || restaurantOnly[0];
         } else {
-          setSelectedMembership((prev: any) => {
-            if (!prev) return restaurantOnly[0];
-            const found = restaurantOnly.find((r: any) => r.restaurant.id === prev.restaurant?.id);
-            return found || restaurantOnly[0];
-          });
+          const savedId = typeof window !== 'undefined' ? localStorage.getItem('active_restaurant_id') : null;
+          const found = savedId ? restaurantOnly.find((r: any) => r.restaurant.id === savedId) : null;
+          activeMatch = found || restaurantOnly[0];
+        }
+
+        setSelectedMembership(activeMatch);
+        if (typeof window !== 'undefined' && activeMatch?.restaurant?.id) {
+          try {
+            localStorage.setItem('active_restaurant_id', activeMatch.restaurant.id);
+          } catch {}
         }
 
         // Fetch subscription status for the active restaurant
-        apiRequest('/api/subscriptions/current')
+        apiRequest('/api/subscriptions/current', { restaurantId: activeMatch?.restaurant?.id })
           .then((sub) => setSubscription(sub))
           .catch((err) => console.warn('Could not load restaurant subscription:', err));
       } else {
@@ -140,7 +146,14 @@ export default function AdminDashboardPage() {
                 value={selectedRestaurant?.id || ''}
                 onChange={(e) => {
                   const found = restaurants.find((r) => r.restaurant.id === e.target.value);
-                  if (found) setSelectedMembership(found);
+                  if (found) {
+                    setSelectedMembership(found);
+                    if (typeof window !== 'undefined') {
+                      try {
+                        localStorage.setItem('active_restaurant_id', found.restaurant.id);
+                      } catch {}
+                    }
+                  }
                 }}
                 className="w-full pl-3 pr-8 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-red-500 truncate appearance-none cursor-pointer shadow-xs"
               >

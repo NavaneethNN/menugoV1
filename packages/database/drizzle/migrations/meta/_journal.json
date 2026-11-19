@@ -120,6 +120,13 @@
       "when": 1794684542213,
       "tag": "0016_blushing_ogun",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795050000000,
+      "tag": "0018_cinema_customer_sessions",
+      "breakpoints": true
     }
   ]
 }

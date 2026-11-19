@@ -680,6 +680,27 @@ export const tableSessions = pgTable(
   ]
 );
 
+// Cinema customer sessions start when a guest scans a theatre menu QR and expire
+// three hours after opening. They group a customer's orders across the visit.
+export const cinemaCustomerSessions = pgTable(
+  'cinema_customer_sessions',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    theatreId: text('theatre_id').notNull().references(() => restaurants.id, { onDelete: 'cascade' }),
+    sessionToken: varchar('session_token', { length: 100 }).notNull().unique(),
+    status: varchar('status', { length: 50 }).default('active').notNull(),
+    openedAt: timestamp('opened_at', { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('cinema_customer_sessions_theatre_status_idx').on(table.theatreId, table.status),
+    index('cinema_customer_sessions_expiry_idx').on(table.status, table.expiresAt),
+    uniqueIndex('cinema_customer_sessions_token_idx').on(table.sessionToken)
+  ]
+);
+
 // ---------------------------------------------------------------------------
 // 7. Orders Table (totalAmount in integer paise)
 // ---------------------------------------------------------------------------
@@ -698,6 +719,9 @@ export const orders = pgTable(
       onDelete: 'set null'
     }),
     tableSessionId: text('table_session_id').references(() => tableSessions.id, {
+      onDelete: 'set null'
+    }),
+    cinemaSessionId: text('cinema_session_id').references(() => cinemaCustomerSessions.id, {
       onDelete: 'set null'
     }),
     // Cinema Order Context (Task 10 & 14)
@@ -743,6 +767,7 @@ export const orders = pgTable(
     index('orders_type_idx').on(table.orderType),
     index('orders_table_idx').on(table.tableId),
     index('orders_table_session_idx').on(table.tableSessionId),
+    index('orders_cinema_session_idx').on(table.cinemaSessionId),
     index('orders_screen_idx').on(table.screenId),
     index('orders_show_idx').on(table.showId),
     index('orders_movie_idx').on(table.movieId),

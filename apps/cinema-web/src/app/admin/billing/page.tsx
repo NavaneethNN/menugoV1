@@ -46,11 +46,49 @@ export default function CinemaUsageAndBillingPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [currentSubData, ledgerData, usageData, invoicesData] = await Promise.all([
-        apiRequest('/api/subscriptions/current').catch(() => null),
-        apiRequest('/api/cinema/billing/current-ledger').catch(() => null),
-        apiRequest('/api/cinema/billing/usage').catch(() => []),
-        apiRequest('/api/cinema/billing/invoices').catch(() => [])
+      // 1. Resolve active theatre ID
+      let venueId = typeof window !== 'undefined' ? localStorage.getItem('active_theatre_id') : null;
+      let currentSubData = null;
+
+      try {
+        currentSubData = await apiRequest('/api/subscriptions/current', venueId ? { theatreId: venueId } : {});
+        if (currentSubData?.venue?.id) {
+          const resolvedId: string = currentSubData.venue.id;
+          venueId = resolvedId;
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('active_theatre_id', resolvedId);
+            } catch {}
+          }
+        }
+      } catch (subErr) {
+        console.warn('Could not load cinema subscription context:', subErr);
+      }
+
+      // If still no venueId, fetch user's theatres
+      if (!venueId) {
+        try {
+          const myTheatres = await apiRequest('/api/cinema/theatres/my');
+          const first = myTheatres[0];
+          const foundId = first?.id || first?.theatre?.id;
+          if (foundId) {
+            const resolvedId: string = foundId;
+            venueId = resolvedId;
+            if (typeof window !== 'undefined') {
+              try {
+                localStorage.setItem('active_theatre_id', resolvedId);
+              } catch {}
+            }
+          }
+        } catch {}
+      }
+
+      const reqOpts = venueId ? { theatreId: venueId } : {};
+
+      const [ledgerData, usageData, invoicesData] = await Promise.all([
+        apiRequest('/api/cinema/billing/current-ledger', reqOpts),
+        apiRequest('/api/cinema/billing/usage', reqOpts).catch(() => []),
+        apiRequest('/api/cinema/billing/invoices', reqOpts).catch(() => [])
       ]);
 
       setCurrentData(currentSubData);
@@ -78,8 +116,10 @@ export default function CinemaUsageAndBillingPage() {
     try {
       setPayingUsage(true);
       setNotice(null);
+      const targetTheatreId = currentData?.venue?.id || (typeof window !== 'undefined' ? localStorage.getItem('active_theatre_id') : undefined);
       await apiRequest('/api/cinema/billing/pay-current-usage', {
         method: 'POST',
+        ...(targetTheatreId ? { theatreId: targetTheatreId } : {}),
         body: JSON.stringify({
           paymentMethod: 'monthly_metered_billing',
           billingCycle: 'monthly'
@@ -105,8 +145,10 @@ export default function CinemaUsageAndBillingPage() {
     try {
       setPayingInvoiceId(invoiceId);
       setNotice(null);
+      const targetTheatreId = currentData?.venue?.id || (typeof window !== 'undefined' ? localStorage.getItem('active_theatre_id') : undefined);
       await apiRequest(`/api/cinema/billing/invoices/${invoiceId}/pay`, {
         method: 'POST',
+        ...(targetTheatreId ? { theatreId: targetTheatreId } : {}),
         body: JSON.stringify({
           paymentMethod: 'monthly_metered_billing'
         })
@@ -252,7 +294,7 @@ export default function CinemaUsageAndBillingPage() {
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xs flex flex-col justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Monthly Settlement</p>
-              <p className="text-xs text-slate-300 font-medium mt-1">Pay month's metered usage</p>
+              <p className="text-xs text-slate-300 font-medium mt-1">Pay month&apos;s metered usage</p>
             </div>
             <button
               onClick={handlePayCurrentUsage}
@@ -264,7 +306,7 @@ export default function CinemaUsageAndBillingPage() {
               ) : (
                 <>
                   <CreditCard className="w-3.5 h-3.5" />
-                  <span>Pay Month's Usage</span>
+                  <span>Pay Month&apos;s Usage</span>
                 </>
               )}
             </button>

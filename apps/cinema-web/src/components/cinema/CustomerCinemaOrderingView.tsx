@@ -143,6 +143,8 @@ export function CustomerCinemaOrderingView({
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [cinemaSessionToken, setCinemaSessionToken] = useState<string | null>(null);
+  const [cinemaSessionExpiresAt, setCinemaSessionExpiresAt] = useState<string | null>(null);
 
   // Filter & Search State (Identical to Restaurant Menu)
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -219,6 +221,38 @@ export function CustomerCinemaOrderingView({
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
+
+  useEffect(() => {
+    if (!theatreToken) return;
+    let active = true;
+    const storageKey = `qros_cinema_session_${theatreToken}`;
+    const openSession = async () => {
+      try {
+        const previousToken = localStorage.getItem(storageKey);
+        const session = await apiRequest<{ sessionToken: string; expiresAt: string }>('/api/cinema/public/customer-sessions', {
+          method: 'POST',
+          body: JSON.stringify({ theatreToken, sessionToken: previousToken })
+        });
+        if (!active) return;
+        localStorage.setItem(storageKey, session.sessionToken);
+        setCinemaSessionToken(session.sessionToken);
+        setCinemaSessionExpiresAt(session.expiresAt);
+      } catch (err) {
+        console.warn('Could not start cinema visit session:', err);
+      }
+    };
+    openSession();
+    return () => { active = false; };
+  }, [theatreToken]);
+
+  useEffect(() => {
+    if (!cinemaSessionToken || !cinemaSessionExpiresAt) return;
+    const delay = Math.max(0, new Date(cinemaSessionExpiresAt).getTime() - Date.now());
+    const timeout = window.setTimeout(() => {
+      apiRequest(`/api/cinema/public/customer-sessions/${cinemaSessionToken}`).catch(() => {});
+    }, delay);
+    return () => window.clearTimeout(timeout);
+  }, [cinemaSessionToken, cinemaSessionExpiresAt]);
 
   // Preload Razorpay Checkout SDK in background so checkout opens immediately
   useEffect(() => {
@@ -496,6 +530,10 @@ export function CustomerCinemaOrderingView({
 
   // Place Order Action: Prepares order and triggers payment modal
   const handlePlaceOrder = async () => {
+    if (!cinemaSessionToken) {
+      setOrderError('Starting your visit session. Please try placing your order again in a moment.');
+      return;
+    }
     if (!theatreToken || !selectedScreenId || !selectedSeatKey) {
       setOrderError('Screen and seat details are required to place your order.');
       return;
@@ -520,6 +558,7 @@ export function CustomerCinemaOrderingView({
         method: 'POST',
         body: JSON.stringify({
           theatreToken,
+          sessionToken: cinemaSessionToken,
           screenId: selectedScreenId,
           seatRow,
           seatNumber,
@@ -605,7 +644,7 @@ export function CustomerCinemaOrderingView({
                         } catch {}
                       }
                       setIsCartDrawerOpen(false);
-                      router.push(`/track/${data.statusToken}`);
+                      router.push(`/track/${data.statusToken}?session=${encodeURIComponent(cinemaSessionToken)}`);
                     } else {
                       setOrderError('Payment verification could not be confirmed. Please contact theatre staff.');
                     }
@@ -759,6 +798,11 @@ export function CustomerCinemaOrderingView({
             </div>
 
             <div className="flex items-center gap-2">
+              {cinemaSessionToken && (
+                <Link href={`/track/session/${cinemaSessionToken}`} className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 text-[11px] font-bold text-white transition hover:bg-white/20">
+                  <Clock className="h-3.5 w-3.5" /> Visit orders
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={handleShare}
@@ -1528,6 +1572,7 @@ export function CustomerCinemaOrderingView({
           isOpen={isPreparedModalOpen}
           onClose={() => setIsPreparedModalOpen(false)}
           order={preparedOrder}
+          sessionToken={cinemaSessionToken || undefined}
           paymentProviders={preparedOrder?.theatre?.paymentProviders || resolveData?.theatre?.paymentProviders || []}
         />
       </div>

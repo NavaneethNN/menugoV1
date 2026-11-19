@@ -164,7 +164,7 @@ function CustomerMenuContent() {
         if (prev === null || prev <= 1) {
           clearInterval(interval);
           if (placedOrder?.statusToken) {
-            router.push(`/track/${placedOrder.statusToken}`);
+            router.push(`/track/${placedOrder.statusToken}${tableSession?.sessionToken ? `?session=${encodeURIComponent(tableSession.sessionToken)}` : ''}`);
           }
           return 0;
         }
@@ -173,7 +173,7 @@ function CustomerMenuContent() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [placedOrder, router]);
+  }, [placedOrder, router, tableSession?.sessionToken]);
 
   const handlePlaceOrder = async () => {
     if (!verifiedTable || !restaurantSlug || cart.length === 0) return;
@@ -907,13 +907,18 @@ function CustomerMenuContent() {
               </div>
             </div>
             {placedOrder.statusToken && (
-              <Link
-                href={`/track/${placedOrder.statusToken}`}
-                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-black text-xs rounded-xl shadow-xs transition shrink-0 flex items-center gap-1"
-              >
-                <span>Track</span>
-                <ArrowRight className="w-3 h-3" />
-              </Link>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <Link
+                  href={`/track/${placedOrder.statusToken}${tableSession?.sessionToken ? `?session=${encodeURIComponent(tableSession.sessionToken)}` : ''}`}
+                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1"
+                >
+                  <span>Track</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+                {tableSession?.sessionToken && (
+                  <Link href={`/track/session/${tableSession.sessionToken}`} className="rounded-xl border border-red-200 bg-white px-2.5 py-1.5 text-xs font-bold text-red-800 transition hover:bg-red-50">Visit history</Link>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -938,6 +943,11 @@ function CustomerMenuContent() {
             </div>
 
             <div className="flex items-center gap-1.5">
+              {tableSession?.sessionToken && (
+                <Link href={`/track/session/${tableSession.sessionToken}`} className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-[11px] font-semibold text-red-800 transition hover:bg-red-100">
+                  <Clock className="h-3.5 w-3.5" /> Orders this visit
+                </Link>
+              )}
               <button
                 onClick={() => setIsServiceModalOpen(true)}
                 className="text-[11px] font-bold text-slate-700 hover:text-slate-900 flex items-center gap-1 px-2 py-0.5 rounded-lg hover:bg-slate-200/60 transition"
@@ -1455,6 +1465,7 @@ function CustomerMenuContent() {
         <OrderSuccessModal
           order={placedOrder}
           currency={restaurant.currency}
+          sessionToken={tableSession?.sessionToken}
           tableNumber={verifiedTable?.tableNumber}
           autoRedirectSeconds={autoRedirectSeconds}
           onOrderMore={() => {

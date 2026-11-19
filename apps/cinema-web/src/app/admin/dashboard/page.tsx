@@ -85,6 +85,11 @@ export default function CinemaAdminDashboardPage() {
       }
 
       const activeTheatreId = activeTheatre.restaurant.id;
+      if (typeof window !== 'undefined' && activeTheatreId) {
+        try {
+          localStorage.setItem('active_theatre_id', activeTheatreId);
+        } catch {}
+      }
       const todayStr = new Date().toISOString().split('T')[0]!;
 
       // Parallel fetch summary, onboarding status & recent orders

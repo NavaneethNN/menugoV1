@@ -1011,7 +1011,8 @@ export const calculateCinemaCheckoutSchema = cinemaCartContextSchema.extend({
   items: z
     .array(cinemaCartItemSchema)
     .min(1, 'Order must contain at least one concessions item')
-    .max(50, 'Order cannot exceed 50 distinct items')
+    .max(50, 'Order cannot exceed 50 distinct items'),
+  sessionToken: z.string().trim().min(32).max(100).optional().nullable()
 });
 
 export const prepareCinemaOrderSchema = calculateCinemaCheckoutSchema.extend({

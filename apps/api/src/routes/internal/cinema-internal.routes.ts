@@ -522,11 +522,10 @@ cinemaInternalRouter.get('/orders/track/:statusToken', async (req: Request, res:
       cinemaDb
         .select({
           id: orderItems.id,
-          productId: orderItems.productId,
           productName: orderItems.productName,
           quantity: orderItems.quantity,
-          itemPrice: orderItems.unitPrice,
-          totalPrice: orderItems.subtotal,
+          unitPrice: orderItems.unitPrice,
+          subtotal: orderItems.subtotal,
           notes: sql<string | null>`null`
         })
         .from(orderItems)
@@ -538,19 +537,35 @@ cinemaInternalRouter.get('/orders/track/:statusToken', async (req: Request, res:
         .orderBy(orderStatusHistory.createdAt)
     ]);
 
+    const [qr] = await cinemaDb
+      .select({ theatreToken: cinemaQrCodes.theatreToken, token: cinemaQrCodes.token })
+      .from(cinemaQrCodes)
+      .where(and(
+        eq(cinemaQrCodes.theatreId, orderRecord.order.restaurantId),
+        eq(cinemaQrCodes.qrType, 'theatre'),
+        eq(cinemaQrCodes.status, 'active')
+      ))
+      .limit(1);
+
     res.json({
       success: true,
       order: {
-        id: orderRecord.order.id,
         orderNumber: orderRecord.order.orderNumber,
         status: orderRecord.order.status,
         totalAmount: orderRecord.order.totalAmount,
-        currency: orderRecord.restaurant?.currency || 'INR',
-        restaurantName: orderRecord.restaurant?.name,
-        restaurantSlug: orderRecord.restaurant?.slug,
-        isCinema: true,
+        statusToken: orderRecord.order.statusToken || '',
+        customerName: orderRecord.order.customerName || null,
+        specialInstructions: orderRecord.order.specialInstructions || null,
+        restaurant: orderRecord.restaurant || null,
+        table: null,
+        cinema: {
+          seatRow: orderRecord.order.seatRow || null,
+          seatNumber: orderRecord.order.seatNumber || null,
+          showDate: orderRecord.order.showDate || null,
+          showtime: orderRecord.order.showtime || null,
+          theatreToken: qr?.theatreToken || qr?.token || null
+        },
         items,
-        timeline,
         createdAt: orderRecord.order.createdAt,
         updatedAt: orderRecord.order.updatedAt
       }

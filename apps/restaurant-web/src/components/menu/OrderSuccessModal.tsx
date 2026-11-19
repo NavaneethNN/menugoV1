@@ -8,6 +8,7 @@ import { formatPaise } from '@/lib/utils';
 interface OrderSuccessModalProps {
   order: any;
   currency: string;
+  sessionToken?: string;
   tableNumber?: string | null;
   autoRedirectSeconds: number | null;
   onOrderMore: () => void;
@@ -16,6 +17,7 @@ interface OrderSuccessModalProps {
 export function OrderSuccessModal({
   order,
   currency,
+  sessionToken,
   tableNumber,
   autoRedirectSeconds,
   onOrderMore
@@ -103,6 +105,15 @@ export function OrderSuccessModal({
               <Clock className="w-4 h-4" />
               <span>Track Live Preparation</span>
               <ArrowRight className="w-3.5 h-3.5 stroke-[3]" />
+            </Link>
+          )}
+          {sessionToken && (
+            <Link
+              href={`/track/session/${sessionToken}`}
+              className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-800 transition hover:bg-red-100 flex items-center justify-center gap-2"
+            >
+              <UtensilsCrossed className="h-4 w-4" />
+              <span>View all orders from this visit</span>
             </Link>
           )}
 

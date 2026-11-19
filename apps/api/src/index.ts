@@ -8,7 +8,8 @@ import { toNodeHandler } from 'better-auth/node';
 
 import { auth, restaurantAuth, cinemaAuth } from './lib/auth';
 import { initializeSocket, getIO } from './lib/socket';
-import { pool, closePools } from '@menugo/database';
+import { pool, closePools, cinemaDb, cinemaCustomerSessions } from '@menugo/database';
+import { and, eq, lte } from 'drizzle-orm';
 import { errorHandler } from './middleware/error-handler';
 import { tenantMiddleware } from './middleware/tenant';
 import { authRateLimiter } from './middleware/rate-limiter';
@@ -42,6 +43,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express();
 const server = http.createServer(app);
+let cinemaSessionSweepTimer: NodeJS.Timeout | undefined;
 
 // In long-running Node.js processes, initialize Socket.io.
 // In serverless environments (e.g. Vercel), Socket.io is omitted to preserve statelessness.
@@ -246,6 +248,8 @@ function setupGracefulShutdown() {
         console.log('[WEBSOCKET] WebSocket server connections closed.');
       }
 
+      if (cinemaSessionSweepTimer) clearInterval(cinemaSessionSweepTimer);
+
       await closePools();
       console.log('[DATABASE] All database connection pools ended.');
 
@@ -280,6 +284,25 @@ if (!isTestEnv && !process.env.VERCEL) {
     syncQrosDatabase().catch((err) => {
       console.warn('[QROS DB] Tri-database sync notice:', err.message || err);
     });
+
+    const closeExpiredCinemaSessions = async () => {
+      const now = new Date();
+      await cinemaDb.update(cinemaCustomerSessions)
+        .set({ status: 'closed', closedAt: now })
+        .where(and(
+          eq(cinemaCustomerSessions.status, 'active'),
+          lte(cinemaCustomerSessions.expiresAt, now)
+        ));
+    };
+    closeExpiredCinemaSessions().catch((err) => {
+      console.warn('[CINEMA SESSIONS] Expiration sweep notice:', err.message || err);
+    });
+    cinemaSessionSweepTimer = setInterval(() => {
+      closeExpiredCinemaSessions().catch((err) => {
+        console.warn('[CINEMA SESSIONS] Expiration sweep notice:', err.message || err);
+      });
+    }, 60 * 1000);
+    cinemaSessionSweepTimer.unref();
 
     // Initial check of subscription expirations across tenants
     syncSubscriptionExpirations().catch((err) => {

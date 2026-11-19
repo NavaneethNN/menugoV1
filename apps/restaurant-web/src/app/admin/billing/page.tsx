@@ -44,11 +44,48 @@ export default function RestaurantUsageAndBillingPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [currentSubData, ledgerData, usageData, invoicesData] = await Promise.all([
-        apiRequest('/api/subscriptions/current').catch(() => null),
-        apiRequest('/api/billing/current-ledger').catch(() => null),
-        apiRequest('/api/billing/usage').catch(() => []),
-        apiRequest('/api/billing/invoices').catch(() => [])
+      // 1. Resolve active restaurant ID
+      let venueId = typeof window !== 'undefined' ? localStorage.getItem('active_restaurant_id') : null;
+      let currentSubData = null;
+
+      try {
+        currentSubData = await apiRequest('/api/subscriptions/current', venueId ? { restaurantId: venueId } : {});
+        if (currentSubData?.venue?.id) {
+          const resolvedId: string = currentSubData.venue.id;
+          venueId = resolvedId;
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('active_restaurant_id', resolvedId);
+            } catch {}
+          }
+        }
+      } catch (subErr) {
+        console.warn('Could not load current subscription context:', subErr);
+      }
+
+      // If still no venueId, fetch user's restaurants
+      if (!venueId) {
+        try {
+          const myRests = await apiRequest('/api/restaurants/my');
+          const first = myRests.find((r: any) => (r.restaurant?.tenantType || 'restaurant') === 'restaurant');
+          if (first?.restaurant?.id) {
+            const resolvedId: string = first.restaurant.id;
+            venueId = resolvedId;
+            if (typeof window !== 'undefined') {
+              try {
+                localStorage.setItem('active_restaurant_id', resolvedId);
+              } catch {}
+            }
+          }
+        } catch {}
+      }
+
+      const reqOpts = venueId ? { restaurantId: venueId } : {};
+
+      const [ledgerData, usageData, invoicesData] = await Promise.all([
+        apiRequest('/api/billing/current-ledger', reqOpts),
+        apiRequest('/api/billing/usage', reqOpts).catch(() => []),
+        apiRequest('/api/billing/invoices', reqOpts).catch(() => [])
       ]);
 
       setCurrentData(currentSubData);
@@ -76,8 +113,10 @@ export default function RestaurantUsageAndBillingPage() {
     try {
       setPayingUsage(true);
       setNotice(null);
+      const targetRestaurantId = venue?.id || (typeof window !== 'undefined' ? localStorage.getItem('active_restaurant_id') : undefined);
       await apiRequest('/api/billing/pay-current-usage', {
         method: 'POST',
+        ...(targetRestaurantId ? { restaurantId: targetRestaurantId } : {}),
         body: JSON.stringify({
           paymentMethod: 'monthly_metered_billing',
           billingCycle: 'monthly'
@@ -103,8 +142,10 @@ export default function RestaurantUsageAndBillingPage() {
     try {
       setPayingInvoiceId(invoiceId);
       setNotice(null);
+      const targetRestaurantId = venue?.id || (typeof window !== 'undefined' ? localStorage.getItem('active_restaurant_id') : undefined);
       await apiRequest(`/api/billing/invoices/${invoiceId}/pay`, {
         method: 'POST',
+        ...(targetRestaurantId ? { restaurantId: targetRestaurantId } : {}),
         body: JSON.stringify({
           paymentMethod: 'monthly_metered_billing'
         })
@@ -252,7 +293,7 @@ export default function RestaurantUsageAndBillingPage() {
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col justify-between">
             <div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Monthly Settlement</p>
-              <p className="text-xs text-slate-600 font-medium mt-1">Pay month's metered usage</p>
+              <p className="text-xs text-slate-600 font-medium mt-1">Pay month&apos;s metered usage</p>
             </div>
             <button
               onClick={handlePayCurrentUsage}
@@ -264,7 +305,7 @@ export default function RestaurantUsageAndBillingPage() {
               ) : (
                 <>
                   <CreditCard className="w-3.5 h-3.5" />
-                  <span>Pay Month's Usage</span>
+                  <span>Pay Month&apos;s Usage</span>
                 </>
               )}
             </button>
@@ -413,7 +454,7 @@ export default function RestaurantUsageAndBillingPage() {
             <div>
               <p className="font-bold text-white mb-1">2. Zero Cross-Tenant Costs</p>
               <p className="text-[11px] text-slate-400 leading-relaxed">
-                Your restaurant is strictly isolated. You will never pay for any other restaurant or cinema tenant's resource consumption.
+                Your restaurant is strictly isolated. You will never pay for any other restaurant or cinema tenant&apos;s resource consumption.
               </p>
             </div>
             <div>

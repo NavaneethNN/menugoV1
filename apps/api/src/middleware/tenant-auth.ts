@@ -139,7 +139,7 @@ export function requireTenant(
 
     try {
       // 2. Resolve target restaurant/cinema identifier from explicit context
-      const targetRestaurantId =
+      let targetRestaurantId =
         (req.headers['x-theatre-id'] as string) ||
         (req.headers['x-tenant-id'] as string) ||
         (req.headers['x-restaurant-id'] as string) ||
@@ -150,6 +150,40 @@ export function requireTenant(
         (req.query.theatreId as string) ||
         (req.query.tenantId as string);
 
+      const isCinemaTarget =
+        allowedTenantTypes === 'cinema' ||
+        (Array.isArray(allowedTenantTypes) && allowedTenantTypes.includes('cinema') && !allowedTenantTypes.includes('restaurant')) ||
+        Boolean(req.headers['x-theatre-id']) ||
+        Boolean(req.params.theatreId);
+
+      const targetDb = isCinemaTarget ? cinemaDb : restaurantDb;
+      const fallbackDb = isCinemaTarget ? restaurantDb : cinemaDb;
+
+      // If tenant ID is not explicitly provided in headers/query/params, automatically resolve
+      // the user's primary active membership from their account
+      if (!targetRestaurantId || typeof targetRestaurantId !== 'string') {
+        const [primaryMembership] = await targetDb
+          .select({ restaurantId: restaurantMembers.restaurantId })
+          .from(restaurantMembers)
+          .where(eq(restaurantMembers.userId, req.user!.id))
+          .limit(1)
+          .catch(() => []);
+
+        if (primaryMembership?.restaurantId) {
+          targetRestaurantId = primaryMembership.restaurantId;
+        } else {
+          const [fallbackMem] = await fallbackDb
+            .select({ restaurantId: restaurantMembers.restaurantId })
+            .from(restaurantMembers)
+            .where(eq(restaurantMembers.userId, req.user!.id))
+            .limit(1)
+            .catch(() => []);
+          if (fallbackMem?.restaurantId) {
+            targetRestaurantId = fallbackMem.restaurantId;
+          }
+        }
+      }
+
       if (!targetRestaurantId || typeof targetRestaurantId !== 'string') {
         res.status(400).json({
           error: 'Bad Request',
@@ -159,14 +193,6 @@ export function requireTenant(
       }
 
       // 3. Query database to verify that the user is an authorized member of THIS tenant
-      const isCinemaTarget =
-        allowedTenantTypes === 'cinema' ||
-        (Array.isArray(allowedTenantTypes) && allowedTenantTypes.includes('cinema') && !allowedTenantTypes.includes('restaurant')) ||
-        Boolean(req.headers['x-theatre-id']) ||
-        Boolean(req.params.theatreId);
-
-      const targetDb = isCinemaTarget ? cinemaDb : restaurantDb;
-      const fallbackDb = isCinemaTarget ? restaurantDb : cinemaDb;
 
       let [membership] = await targetDb
         .select({
