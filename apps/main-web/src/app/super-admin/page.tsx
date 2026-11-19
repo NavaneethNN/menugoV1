@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   UtensilsCrossed,
   Film,
-  Coins,
+  Activity,
   TrendingUp,
   ShoppingBag,
   Users,
@@ -17,7 +17,8 @@ import {
   Loader2,
   ShieldCheck,
   Plus,
-  RefreshCw
+  RefreshCw,
+  Zap
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 
@@ -29,7 +30,6 @@ export default function SuperAdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
-  const [seedingPlans, setSeedingPlans] = useState(false);
 
   const loadMetrics = async () => {
     try {
@@ -49,21 +49,7 @@ export default function SuperAdminDashboardPage() {
     loadMetrics();
   }, []);
 
-  const handleSeedPlans = async () => {
-    try {
-      setSeedingPlans(true);
-      setActionNotice(null);
-      const res = await apiRequest('/api/super-admin/seed-plans', {
-        method: 'POST'
-      });
-      setActionNotice(res.message || 'Subscription plans verified and seeded');
-      loadMetrics();
-    } catch (err: any) {
-      setActionNotice(`Failed: ${err.message}`);
-    } finally {
-      setSeedingPlans(false);
-    }
-  };
+
 
   if (loading) {
     return (
@@ -108,14 +94,13 @@ export default function SuperAdminDashboardPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleSeedPlans}
-            disabled={seedingPlans}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition disabled:opacity-50"
+          <Link
+            href="/super-admin/billing"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition"
           >
-            {seedingPlans ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Coins className="w-3.5 h-3.5 text-amber-600" />}
-            <span>Sync Default Plans</span>
-          </button>
+            <Activity className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Usage &amp; Cost Ledgers</span>
+          </Link>
 
           <button
             onClick={loadMetrics}
@@ -217,8 +202,8 @@ export default function SuperAdminDashboardPage() {
         <div className="rounded-2xl bg-white p-5 border border-slate-200 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Platform GMV</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-              <Coins className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <Zap className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-4">
@@ -231,10 +216,10 @@ export default function SuperAdminDashboardPage() {
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100">
             <Link
-              href="/super-admin/subscriptions"
-              className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center justify-between"
+              href="/super-admin/billing"
+              className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center justify-between"
             >
-              <span>{subs.activeSubscriptions || 0} Active Subscriptions</span>
+              <span>Metered Infrastructure Ledgers</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>

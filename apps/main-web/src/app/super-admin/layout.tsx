@@ -7,7 +7,7 @@ import {
   LayoutDashboard,
   UtensilsCrossed,
   Film,
-  Coins,
+  Activity,
   Settings,
   ShieldCheck,
   LogOut,
@@ -86,7 +86,7 @@ export default function SuperAdminLayout({
     { label: 'Overview', href: '/super-admin', icon: LayoutDashboard },
     { label: 'Restaurants', href: '/super-admin/restaurants', icon: UtensilsCrossed },
     { label: 'Theatres & Cinemas', href: '/super-admin/theatres', icon: Film },
-    { label: 'Subscription Plans', href: '/super-admin/subscriptions', icon: Coins },
+    { label: 'Metered Billing & Ledgers', href: '/super-admin/billing', icon: Activity },
     { label: 'Platform Settings', href: '/super-admin/settings', icon: Settings },
   ];
 
