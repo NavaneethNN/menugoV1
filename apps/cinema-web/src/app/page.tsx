@@ -6,7 +6,6 @@ import {
   Film,
   Tv,
   Armchair,
-  UtensilsCrossed,
   ChefHat,
   Truck,
   QrCode,
@@ -31,13 +30,12 @@ import {
 import { HowItWorksSlider } from '@/components/home/HowItWorksSlider';
 
 export default function CinemaHomePage() {
-  const restaurantUrl = process.env.NEXT_PUBLIC_RESTAURANT_URL || 'http://localhost:3000';
   const mainPlatformUrl = process.env.NEXT_PUBLIC_MAIN_URL || 'http://localhost:3002';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900 selection:bg-red-600 selection:text-white">
-      {/* Platform Announcement Banner */}
+      {/* Top Announcement Bar */}
       <div className="bg-slate-950 text-slate-300 text-xs py-2 px-4 border-b border-slate-800">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -47,23 +45,13 @@ export default function CinemaHomePage() {
               In-seat armrest QR ordering, concession kitchen KDS, and stealth runner delivery for movie multiplexes.
             </span>
           </div>
-          <div className="flex items-center gap-4 text-[11px] font-semibold">
-            <a
-              href={mainPlatformUrl}
-              className="text-slate-400 hover:text-white transition flex items-center gap-1"
-            >
-              <span>Platform Home</span>
-              <ExternalLink className="w-3 h-3 text-slate-500" />
-            </a>
-            <a
-              href={restaurantUrl}
-              className="text-red-400 hover:text-red-300 transition flex items-center gap-1"
-            >
-              <UtensilsCrossed className="w-3 h-3" />
-              <span>For Restaurants</span>
-              <ExternalLink className="w-3 h-3 text-red-500" />
-            </a>
-          </div>
+          <a
+            href={mainPlatformUrl}
+            className="text-slate-400 hover:text-white transition flex items-center gap-1 text-[11px] font-semibold"
+          >
+            <span>Back to MenuGo Platform</span>
+            <ExternalLink className="w-3 h-3 text-slate-500" />
+          </a>
         </div>
       </div>
 
@@ -94,16 +82,13 @@ export default function CinemaHomePage() {
             <a href="#roadmap" className="hover:text-red-600 transition">Setup Steps</a>
           </nav>
 
-          {/* App Switcher & Auth Actions */}
+          {/* Actions & Logins */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Direct Switch to Restaurants on Port 3000 */}
             <a
-              href={restaurantUrl}
-              className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold text-slate-800 hover:text-red-600 bg-slate-100 hover:bg-slate-200 px-3.5 py-2.5 rounded-xl transition"
-              title="Go to MenuGo for Restaurants (Port 3000)"
+              href={mainPlatformUrl}
+              className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 px-3 py-2.5 rounded-xl transition"
             >
-              <UtensilsCrossed className="w-3.5 h-3.5 text-red-600" />
-              <span>MenuGo for Restaurants</span>
+              <span>Platform Home</span>
               <ExternalLink className="w-3 h-3 text-slate-400" />
             </a>
 
@@ -173,11 +158,10 @@ export default function CinemaHomePage() {
 
             <div className="pt-3 border-t border-slate-200 space-y-2">
               <a
-                href={restaurantUrl}
+                href={mainPlatformUrl}
                 className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-100 text-xs font-bold text-slate-800"
               >
-                <UtensilsCrossed className="w-3.5 h-3.5 text-red-600" />
-                <span>Switch to MenuGo for Restaurants (Port 3000)</span>
+                <span>Back to MenuGo Platform</span>
                 <ExternalLink className="w-3 h-3 text-slate-400" />
               </a>
 
@@ -622,41 +606,6 @@ export default function CinemaHomePage() {
             </div>
           </div>
         </section>
-
-        {/* Cross-Product Switcher to Restaurants (Port 3000) */}
-        <section className="py-16 bg-slate-100 border-t border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="rounded-3xl bg-white border border-slate-200 p-8 sm:p-10 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-start sm:items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center shrink-0">
-                  <UtensilsCrossed className="w-7 h-7" />
-                </div>
-                <div>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 text-[10px] font-bold uppercase tracking-wider mb-1">
-                    <span>Dining Venues &amp; Cafes</span>
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-black text-slate-900">
-                    Operating a Restaurant or Cafe?
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-xl">
-                    MenuGo for Restaurants powers smart table QR dining, waiter calling chimes, and cashier table sessions on Port 3000.
-                  </p>
-                </div>
-              </div>
-
-              <div className="shrink-0 w-full md:w-auto">
-                <a
-                  href={restaurantUrl}
-                  className="inline-flex items-center justify-center gap-2 w-full md:w-auto px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold shadow-md transition hover:-translate-y-0.5"
-                >
-                  <UtensilsCrossed className="w-4 h-4 text-red-400" />
-                  <span>Launch MenuGo for Restaurants (Port 3000)</span>
-                  <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
 
       {/* Footer */}
@@ -667,12 +616,11 @@ export default function CinemaHomePage() {
               <Film className="w-3.5 h-3.5 text-red-500" />
             </div>
             <span className="font-extrabold text-slate-900">MenuGo for Theatres</span>
-            <span>&bull; Port 3001</span>
+            <span>&bull; Multiplex In-Seat Ordering &amp; Concessions</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-6 font-semibold">
-            <a href={mainPlatformUrl} className="hover:text-red-600 transition">MenuGo Platform Home (3002)</a>
-            <a href={restaurantUrl} className="hover:text-red-600 transition">MenuGo for Restaurants (3000)</a>
+            <a href={mainPlatformUrl} className="hover:text-red-600 transition">MenuGo Platform Home</a>
             <Link href="/login" className="hover:text-red-600 transition">Console Login</Link>
             <Link href="/kitchen" className="hover:text-red-600 transition">Kitchen KDS</Link>
             <Link href="/delivery" className="hover:text-red-600 transition">Runner Dispatch</Link>
