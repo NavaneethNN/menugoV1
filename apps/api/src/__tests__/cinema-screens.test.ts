@@ -2,10 +2,11 @@ import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
 import { app } from '../index';
-import { auth } from '../lib/auth';
+import { cinemaAuth as auth, restaurantAuth } from '../lib/auth';
 import {
-  db,
-  pool,
+  cinemaDb as db,
+  restaurantDb,
+  cinemaPool as pool,
   user,
   restaurants,
   restaurantMembers,
@@ -69,7 +70,7 @@ describe('Task 03: Cinema Screen Management', () => {
     createdUsersToClean.push(userCinemaBId);
 
     // 3. Restaurant Owner (for cross-module tests)
-    const resRest = await auth.api.signUpEmail({
+    const resRest = await restaurantAuth.api.signUpEmail({
       body: {
         name: 'Restaurant Owner',
         email: `rest-user-${timestamp}@test.com`,
@@ -143,7 +144,7 @@ describe('Task 03: Cinema Screen Management', () => {
     });
 
     // Insert Restaurant
-    await db.insert(restaurants).values({
+    await restaurantDb.insert(restaurants).values({
       id: restaurantId,
       name: 'Spice Garden Bistro',
       slug: `spice-bistro-${timestamp}`,
@@ -151,7 +152,7 @@ describe('Task 03: Cinema Screen Management', () => {
       tenantType: 'restaurant',
       isActive: true
     });
-    await db.insert(restaurantMembers).values({
+    await restaurantDb.insert(restaurantMembers).values({
       id: crypto.randomUUID(),
       restaurantId,
       userId: userRestaurantOwnerId,

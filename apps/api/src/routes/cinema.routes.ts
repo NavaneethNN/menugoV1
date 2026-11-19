@@ -122,7 +122,7 @@ async function generateUniqueSlug(baseName: string): Promise<string> {
  * Registers a new Cinema Theatre and its 1:1 cinema_profiles record transactionally.
  * Binds the creating user as owner in restaurant_members.
  */
-router.post('/theatres', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+router.post(['/theatres', '/theatre'], requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validatedData = createCinemaProfileSchema.parse(req.body);
 
@@ -4414,7 +4414,11 @@ async function validateAndResolveCinemaContext(params: {
         eq(cinemaSeats.theatreId, qr.theatreId),
         eq(cinemaSeats.screenId, screenId),
         eq(cinemaSeats.rowIdentifier, seatRow),
-        eq(cinemaSeats.seatIdentifier, seatNumber),
+        or(
+          eq(cinemaSeats.seatIdentifier, seatNumber),
+          eq(cinemaSeats.seatIdentifier, `${seatRow}${seatNumber}`),
+          sql`${cinemaSeats.seatNumber}::text = ${seatNumber}`
+        ),
         eq(cinemaSeats.status, 'active')
       )
     )

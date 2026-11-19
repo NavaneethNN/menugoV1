@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { db, orders, orderItems, products, restaurantTables, restaurants, orderStatusHistory, tableSessions, cinemaQrCodes } from '@menugo/database';
+import { db, restaurantDb, cinemaDb, getDb, orders, orderItems, products, restaurantTables, restaurants, orderStatusHistory, tableSessions, cinemaQrCodes } from '@menugo/database';
 import { eq, and, or, desc, inArray, gte, lte, count, ilike } from 'drizzle-orm';
 import { createOrderSchema, updateOrderStatusSchema, OrderStatus, validateStatusTransition } from '@menugo/shared';
 import { requireAuth } from '../middleware/auth';
@@ -462,7 +462,7 @@ router.post('/', orderCreationRateLimiter, async (req: Request, res: Response, n
 // ---------------------------------------------------------------------------
 // 2. Customer Order Tracking by Status Token (Public endpoint - no auth required)
 // ---------------------------------------------------------------------------
-router.get('/status/:token', orderTrackingRateLimiter, async (req: Request, res: Response, next) => {
+router.get(['/status/:token', '/track/:token'], orderTrackingRateLimiter, async (req: Request, res: Response, next) => {
   try {
     const rawToken = req.params.token as string;
     const token = typeof rawToken === 'string' ? rawToken.trim() : '';
@@ -472,7 +472,9 @@ router.get('/status/:token', orderTrackingRateLimiter, async (req: Request, res:
       throw new AppError('Order not found or tracking token is invalid', 404);
     }
 
-    const [orderRecord] = await db
+    // Dual Database Resolution: Check restaurantDb first, fall back to cinemaDb
+    let targetDb = restaurantDb;
+    let [orderRecord] = await restaurantDb
       .select({
         order: orders,
         table: {
@@ -491,10 +493,35 @@ router.get('/status/:token', orderTrackingRateLimiter, async (req: Request, res:
       .limit(1);
 
     if (!orderRecord) {
+      const [cinemaOrderRecord] = await cinemaDb
+        .select({
+          order: orders,
+          table: {
+            tableNumber: restaurantTables.tableNumber
+          },
+          restaurant: {
+            name: restaurants.name,
+            slug: restaurants.slug,
+            currency: restaurants.currency
+          }
+        })
+        .from(orders)
+        .leftJoin(restaurantTables, eq(orders.tableId, restaurantTables.id))
+        .leftJoin(restaurants, eq(orders.restaurantId, restaurants.id))
+        .where(eq(orders.statusToken, token))
+        .limit(1);
+
+      if (cinemaOrderRecord) {
+        orderRecord = cinemaOrderRecord;
+        targetDb = cinemaDb;
+      }
+    }
+
+    if (!orderRecord) {
       throw new AppError('Order not found or tracking token is invalid', 404);
     }
 
-    const items = await db
+    const items = await targetDb
       .select({
         productName: orderItems.productName,
         quantity: orderItems.quantity,
@@ -508,7 +535,7 @@ router.get('/status/:token', orderTrackingRateLimiter, async (req: Request, res:
     // For cinema orders, fetch active theatre QR token so client can navigate directly back to cinema menu
     let cinemaTheatreToken: string | null = null;
     if (orderRecord.order.orderType === 'cinema' || Boolean(orderRecord.order.seatNumber)) {
-      const [qr] = await db
+      const [qr] = await targetDb
         .select({
           token: cinemaQrCodes.token,
           theatreToken: cinemaQrCodes.theatreToken
@@ -570,6 +597,7 @@ router.get(
   async (req: Request, res: Response, next) => {
     try {
       const restaurantId = req.tenant!.restaurantId;
+      const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
       const statusFilter = req.query.status as OrderStatus | undefined;
       const viewFilter = req.query.view as 'open' | 'completed' | 'cancelled' | 'all' | undefined;
       const tableIdFilter = req.query.tableId as string | undefined;
@@ -666,7 +694,7 @@ router.get(
       }
 
       // 5. Total Count for Pagination (Requirement 1 & 4)
-      const [countResult] = await db
+      const [countResult] = await targetDb
         .select({ value: count() })
         .from(orders)
         .leftJoin(restaurantTables, eq(orders.tableId, restaurantTables.id))
@@ -682,7 +710,7 @@ router.get(
       const offset = (page - 1) * limit;
 
       // 6. Query with Stable Sort (desc(createdAt), desc(id) tiebreaker)
-      let ordersQuery = db
+      let ordersQuery = targetDb
         .select({
           order: orders,
           table: {
@@ -708,8 +736,8 @@ router.get(
 
       if (orderIds.length > 0) {
         const [allItems, allHistory] = await Promise.all([
-          db.select().from(orderItems).where(inArray(orderItems.orderId, orderIds)),
-          db
+          targetDb.select().from(orderItems).where(inArray(orderItems.orderId, orderIds)),
+          targetDb
             .select()
             .from(orderStatusHistory)
             .where(inArray(orderStatusHistory.orderId, orderIds))
@@ -778,8 +806,9 @@ router.get(
     try {
       const orderId = req.params.id as string;
       const restaurantId = req.tenant!.restaurantId;
+      const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
 
-      const [orderRecord] = await db
+      const [orderRecord] = await targetDb
         .select({
           order: orders,
           table: {
@@ -803,8 +832,8 @@ router.get(
       }
 
       const [items, statusHistory] = await Promise.all([
-        db.select().from(orderItems).where(eq(orderItems.orderId, orderId)),
-        db
+        targetDb.select().from(orderItems).where(eq(orderItems.orderId, orderId)),
+        targetDb
           .select()
           .from(orderStatusHistory)
           .where(eq(orderStatusHistory.orderId, orderId))
@@ -841,12 +870,13 @@ router.patch(
       const restaurantId = req.tenant!.restaurantId;
       const userRole = req.tenant!.role;
       const userId = req.user?.id || null;
+      const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
 
       const { status: targetStatus, expectedCurrentStatus, reason } =
         updateOrderStatusSchema.parse(req.body);
 
       // Perform update atomically with row locking & state-machine validation
-      const result = await db.transaction(async (tx) => {
+      const result = await targetDb.transaction(async (tx) => {
         // 1. Fetch current order with row locking FOR UPDATE
         const [order] = await tx
           .select()

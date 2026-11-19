@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { db, products, categories } from '@menugo/database';
+import { getDb, products, categories } from '@menugo/database';
 import { eq, and, asc, sql } from 'drizzle-orm';
 import { createProductSchema, updateProductSchema, reorderProductsSchema } from '@menugo/shared';
 import { requireAuth } from '../middleware/auth';
@@ -31,8 +31,9 @@ router.get('/', async (req: Request, res: Response, next) => {
   try {
     const restaurantId = req.tenant!.restaurantId;
     const categoryId = req.query.categoryId as string | undefined;
+    const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
 
-    const items = await db
+    const items = await targetDb
       .select({
         id: products.id,
         restaurantId: products.restaurantId,
@@ -73,8 +74,9 @@ router.put('/reorder', async (req: Request, res: Response, next) => {
 
     const { items } = reorderProductsSchema.parse(req.body);
     const restaurantId = req.tenant!.restaurantId;
+    const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
 
-    await db.transaction(async (tx) => {
+    await targetDb.transaction(async (tx) => {
       for (const item of items) {
         await tx
           .update(products)
@@ -101,7 +103,9 @@ router.put('/reorder', async (req: Request, res: Response, next) => {
 router.get('/:id', async (req: Request, res: Response, next) => {
   try {
     const productId = req.params.id as string;
-    const [product] = await db
+    const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
+
+    const [product] = await targetDb
       .select({
         id: products.id,
         restaurantId: products.restaurantId,
@@ -150,11 +154,12 @@ router.post('/', async (req: Request, res: Response, next) => {
       restaurantId: req.tenant!.restaurantId
     });
 
+    const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
     const targetCategoryId = validatedData.categoryId?.trim() || null;
 
     // Verify category exists and belongs to the same restaurant
     if (targetCategoryId) {
-      const [category] = await db
+      const [category] = await targetDb
         .select({ id: categories.id })
         .from(categories)
         .where(
@@ -178,7 +183,7 @@ router.post('/', async (req: Request, res: Response, next) => {
     // Auto-compute next sortOrder if not explicitly specified
     let sortOrder = validatedData.sortOrder;
     if (req.body.sortOrder === undefined) {
-      const [maxOrder] = await db
+      const [maxOrder] = await targetDb
         .select({ max: sql<number>`coalesce(max(${products.sortOrder}), -1)` })
         .from(products)
         .where(eq(products.restaurantId, req.tenant!.restaurantId));
@@ -187,7 +192,7 @@ router.post('/', async (req: Request, res: Response, next) => {
 
     const productId = crypto.randomUUID();
 
-    const [product] = await db
+    const [product] = await targetDb
       .insert(products)
       .values({
         id: productId,
@@ -219,9 +224,10 @@ router.patch('/:id', async (req: Request, res: Response, next) => {
 
     const productId = req.params.id as string;
     const validatedData = updateProductSchema.parse(req.body);
+    const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
 
     // Fetch existing product imageKey to support safe replacement cleanup
-    const [existingProduct] = await db
+    const [existingProduct] = await targetDb
       .select({ imageKey: products.imageKey })
       .from(products)
       .where(
@@ -239,7 +245,7 @@ router.patch('/:id', async (req: Request, res: Response, next) => {
     if (validatedData.categoryId !== undefined) {
       const targetCategoryId = validatedData.categoryId?.trim() || null;
       if (targetCategoryId) {
-        const [category] = await db
+        const [category] = await targetDb
           .select({ id: categories.id })
           .from(categories)
           .where(
@@ -270,7 +276,7 @@ router.patch('/:id', async (req: Request, res: Response, next) => {
       updatePayload.categoryId = null;
     }
 
-    const [product] = await db
+    const [product] = await targetDb
       .update(products)
       .set(updatePayload)
       .where(
@@ -307,12 +313,13 @@ router.patch('/:id/availability', async (req: Request, res: Response, next) => {
   try {
     const productId = req.params.id as string;
     const { isAvailable } = req.body;
+    const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
 
     if (typeof isAvailable !== 'boolean') {
       throw new AppError('isAvailable boolean is required', 400);
     }
 
-    const [product] = await db
+    const [product] = await targetDb
       .update(products)
       .set({
         isAvailable,
@@ -344,8 +351,9 @@ router.delete('/:id', async (req: Request, res: Response, next) => {
     }
 
     const productId = req.params.id as string;
+    const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
 
-    const [deleted] = await db
+    const [deleted] = await targetDb
       .delete(products)
       .where(
         and(

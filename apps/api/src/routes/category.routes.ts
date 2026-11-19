@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { db, categories, products } from '@menugo/database';
+import { getDb, categories, products } from '@menugo/database';
 import { eq, and, asc, ne, sql, count } from 'drizzle-orm';
 import { createCategorySchema, updateCategorySchema, reorderCategoriesSchema } from '@menugo/shared';
 import { requireAuth } from '../middleware/auth';
@@ -17,8 +17,9 @@ router.use(requireTenant(['owner', 'admin', 'staff', 'kitchen']));
 router.get('/', async (req: Request, res: Response, next) => {
   try {
     const restaurantId = req.tenant!.restaurantId;
+    const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
 
-    const items = await db
+    const items = await targetDb
       .select()
       .from(categories)
       .where(eq(categories.restaurantId, restaurantId))
@@ -39,8 +40,9 @@ router.put('/reorder', async (req: Request, res: Response, next) => {
 
     const { items } = reorderCategoriesSchema.parse(req.body);
     const restaurantId = req.tenant!.restaurantId;
+    const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
 
-    await db.transaction(async (tx) => {
+    await targetDb.transaction(async (tx) => {
       for (const item of items) {
         await tx
           .update(categories)
@@ -67,7 +69,9 @@ router.put('/reorder', async (req: Request, res: Response, next) => {
 router.get('/:id', async (req: Request, res: Response, next) => {
   try {
     const categoryId = req.params.id as string;
-    const [category] = await db
+    const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
+
+    const [category] = await targetDb
       .select()
       .from(categories)
       .where(
@@ -100,8 +104,10 @@ router.post('/', async (req: Request, res: Response, next) => {
       restaurantId: req.tenant!.restaurantId
     });
 
+    const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
+
     // Check duplicate name within this restaurant (case-insensitive)
-    const [existing] = await db
+    const [existing] = await targetDb
       .select({ id: categories.id })
       .from(categories)
       .where(
@@ -118,7 +124,7 @@ router.post('/', async (req: Request, res: Response, next) => {
 
     const categoryId = crypto.randomUUID();
 
-    const [category] = await db
+    const [category] = await targetDb
       .insert(categories)
       .values({
         id: categoryId,
@@ -149,10 +155,11 @@ router.patch('/:id', async (req: Request, res: Response, next) => {
 
     const categoryId = req.params.id as string;
     const validatedData = updateCategorySchema.parse(req.body);
+    const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
 
     // If name is updated, check for duplicate within restaurant
     if (validatedData.name) {
-      const [existing] = await db
+      const [existing] = await targetDb
         .select({ id: categories.id })
         .from(categories)
         .where(
@@ -169,7 +176,7 @@ router.patch('/:id', async (req: Request, res: Response, next) => {
       }
     }
 
-    const [category] = await db
+    const [category] = await targetDb
       .update(categories)
       .set({
         ...validatedData,
@@ -205,9 +212,10 @@ router.delete('/:id', async (req: Request, res: Response, next) => {
     }
 
     const categoryId = req.params.id as string;
+    const targetDb = getDb(req.tenant?.restaurant?.tenantType || 'restaurant');
 
     // Verify category exists and belongs to this restaurant
-    const [category] = await db
+    const [category] = await targetDb
       .select({ id: categories.id, name: categories.name })
       .from(categories)
       .where(
@@ -223,7 +231,7 @@ router.delete('/:id', async (req: Request, res: Response, next) => {
     }
 
     // Safety rule: Count products assigned to this category
-    const [productCountResult] = await db
+    const [productCountResult] = await targetDb
       .select({ count: count() })
       .from(products)
       .where(
@@ -242,7 +250,7 @@ router.delete('/:id', async (req: Request, res: Response, next) => {
     }
 
     // Proceed to delete if 0 products attached
-    const [deleted] = await db
+    const [deleted] = await targetDb
       .delete(categories)
       .where(
         and(

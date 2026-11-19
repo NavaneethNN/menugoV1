@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { db, restaurants, restaurantMembers, categories, products, restaurantTables, cinemaQrCodes, user } from '@menugo/database';
+import { db, restaurantDb, cinemaDb, getDb, restaurants, restaurantMembers, categories, products, restaurantTables, cinemaQrCodes, user } from '@menugo/database';
 import { eq, and, asc, ne } from 'drizzle-orm';
 import { createRestaurantSchema, updateRestaurantSchema } from '@menugo/shared';
 import { requireAuth } from '../middleware/auth';
@@ -123,8 +123,9 @@ router.get('/my', requireAuth, async (req: Request, res: Response, next) => {
     }
 
     const effectiveType = requestedType || (userTenantType === 'cinema' ? 'cinema' : 'restaurant');
+    const targetDb = getDb(effectiveType);
 
-    const query = db
+    const query = targetDb
       .select({
         membershipId: restaurantMembers.id,
         role: restaurantMembers.role,
@@ -151,7 +152,7 @@ router.get('/by-slug/:slug', async (req: Request, res: Response, next) => {
   try {
     const slug = req.params.slug as string;
 
-    const [restaurant] = await db
+    let [restaurant] = await restaurantDb
       .select({
         id: restaurants.id,
         name: restaurants.name,
@@ -170,12 +171,32 @@ router.get('/by-slug/:slug', async (req: Request, res: Response, next) => {
       .limit(1);
 
     if (!restaurant) {
+      [restaurant] = await cinemaDb
+        .select({
+          id: restaurants.id,
+          name: restaurants.name,
+          slug: restaurants.slug,
+          phone: restaurants.phone,
+          email: restaurants.email,
+          address: restaurants.address,
+          logoUrl: restaurants.logoUrl,
+          coverImageUrl: restaurants.coverImageUrl,
+          currency: restaurants.currency,
+          tenantType: restaurants.tenantType,
+          settings: restaurants.settings
+        })
+        .from(restaurants)
+        .where(and(eq(restaurants.slug, slug), eq(restaurants.isActive, true)))
+        .limit(1);
+    }
+
+    if (!restaurant) {
       throw new AppError('Restaurant not found or inactive', 404);
     }
 
     // Segregation: If tenant is a cinema theatre, do not serve dine-in restaurant menu
     if (restaurant.tenantType === 'cinema') {
-      const [qr] = await db
+      const [qr] = await cinemaDb
         .select({
           token: cinemaQrCodes.token,
           theatreToken: cinemaQrCodes.theatreToken

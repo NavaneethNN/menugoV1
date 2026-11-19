@@ -67,11 +67,8 @@ function CinemaLoginContent() {
   const loadAvailableTheatres = useCallback(async () => {
     try {
       setTheatresLoading(true);
-      const res = await fetch('/api/auth/staff-theatres');
-      if (res.ok) {
-        const data = await res.json();
-        setAvailableTheatres(Array.isArray(data) ? data : []);
-      }
+      const data = await apiRequest<BoundTheatre[]>('/api/auth/staff-theatres');
+      setAvailableTheatres(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load theatres:', err);
     } finally {
@@ -86,15 +83,12 @@ function CinemaLoginContent() {
         // 1. If URL has ?theatre=slugOrId, fetch and bind that theatre
         if (theatreParam) {
           try {
-            const res = await fetch(`/api/auth/theatre-info/${encodeURIComponent(theatreParam)}`);
-            if (res.ok) {
-              const theatreData: BoundTheatre = await res.json();
-              if (theatreData && theatreData.id) {
-                setBoundTheatre(theatreData);
-                localStorage.setItem(TERMINAL_THEATRE_STORAGE_KEY, JSON.stringify(theatreData));
-                setInitialChecking(false);
-                return;
-              }
+            const theatreData = await apiRequest<BoundTheatre>(`/api/auth/theatre-info/${encodeURIComponent(theatreParam)}`);
+            if (theatreData && theatreData.id) {
+              setBoundTheatre(theatreData);
+              localStorage.setItem(TERMINAL_THEATRE_STORAGE_KEY, JSON.stringify(theatreData));
+              setInitialChecking(false);
+              return;
             }
           } catch (e) {
             console.warn('Could not resolve theatre from query param:', e);
