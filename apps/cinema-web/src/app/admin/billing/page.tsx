@@ -208,8 +208,21 @@ export default function CinemaUsageAndBillingPage() {
 
   const directCost = ledger?.directTenantCostPaise || 0;
   const sharedCost = ledger?.sharedInfrastructureCostPaise || 0;
+  const totalCost = ledger?.tenantTotalCostPaise || (directCost + sharedCost);
   const customerCharge = ledger?.customerChargePaise || 0;
   const grossMargin = ledger?.grossMarginPercent ?? 70.0;
+  const grossContribution = ledger?.grossContributionPaise || Math.max(0, customerCharge - totalCost);
+  const categories = ledger?.categories || [];
+
+  const defaultCategories = [
+    { label: 'Application processing', unitLabel: 'compute', infrastructureCostPaise: 0, unitQuantity: 0 },
+    { label: 'Database consumption', unitLabel: 'queries', infrastructureCostPaise: 0, unitQuantity: 0 },
+    { label: 'Storage', unitLabel: 'media storage', infrastructureCostPaise: 0, unitQuantity: 0 },
+    { label: 'Network usage', unitLabel: 'data transfer', infrastructureCostPaise: 0, unitQuantity: 0 },
+    { label: 'Realtime processing', unitLabel: 'realtime sessions', infrastructureCostPaise: 0, unitQuantity: 0 },
+    { label: 'Background & worker tasks', unitLabel: 'tasks & updates', infrastructureCostPaise: 0, unitQuantity: 0 }
+  ];
+  const statementCategories = categories.length > 0 ? categories : defaultCategories;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
@@ -229,7 +242,7 @@ export default function CinemaUsageAndBillingPage() {
                 100% Pay-As-You-Go
               </span>
             </h1>
-            <p className="text-xs text-slate-400">Cinema Theatre Administration • Pure Metered Billing</p>
+            <p className="text-xs text-slate-400">Cinema Theatre Administration • Pure Metered Infrastructure Billing</p>
           </div>
         </div>
 
@@ -271,23 +284,23 @@ export default function CinemaUsageAndBillingPage() {
         {/* Top Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xs">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Direct Consumption</p>
-            <p className="text-2xl font-black text-white mt-1">{formatPaise(directCost)}</p>
-            <p className="text-[11px] text-slate-400 mt-1">Auditorium &amp; seat isolated resources</p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Allocated Infra Cost</p>
+            <p className="text-2xl font-black text-white mt-1">{formatPaise(totalCost)}</p>
+            <p className="text-[11px] text-slate-400 mt-1">Direct ({formatPaise(directCost)}) + Shared ({formatPaise(sharedCost)})</p>
           </div>
 
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xs">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Shared Infra Share</p>
-            <p className="text-2xl font-black text-white mt-1">{formatPaise(sharedCost)}</p>
-            <p className="text-[11px] text-slate-400 mt-1">Proportional cluster allocation</p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Gross Contribution</p>
+            <p className="text-2xl font-black text-emerald-400 mt-1">{formatPaise(grossContribution)}</p>
+            <p className="text-[11px] text-slate-400 mt-1">{grossMargin}% platform margin enforced</p>
           </div>
 
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xs">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Month-to-Date Total</p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Estimated Amount Due</p>
             <p className="text-2xl font-black text-indigo-400 mt-1">{formatPaise(customerCharge)}</p>
             <div className="flex items-center gap-1.5 mt-1 text-[11px] text-emerald-400 font-semibold">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>{grossMargin}% margin enforced</span>
+              <span>Independent 70% gross margin</span>
             </div>
           </div>
 
@@ -312,6 +325,105 @@ export default function CinemaUsageAndBillingPage() {
             </button>
           </div>
         </div>
+
+        {/* SECTION 6: Understandable Monthly Usage Statement */}
+        <section className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-black text-white">{currentData?.venue?.name || 'Cinema Workspace'}</h2>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Live estimate
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Monthly usage statement • Real-time metered infrastructure allocation
+              </p>
+            </div>
+            <div className="text-left sm:text-right">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Billing Cycle</span>
+              <p className="text-xs font-semibold text-slate-300">
+                {new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-800 text-slate-400 uppercase text-[10px] font-bold">
+                  <th className="pb-3">Usage category</th>
+                  <th className="pb-3 text-right">Measured Share</th>
+                  <th className="pb-3 text-right">Allocated Cost</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/80 font-medium">
+                {statementCategories.map((cat: any, idx: number) => (
+                  <tr key={idx} className="hover:bg-slate-800/40 transition">
+                    <td className="py-3 font-semibold text-slate-200 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-indigo-500/60"></span>
+                      {cat.label}
+                    </td>
+                    <td className="py-3 text-right text-slate-400 text-[11px] font-mono">
+                      {cat.unitQuantity > 0
+                        ? `${Number(cat.unitQuantity).toLocaleString()} ${cat.unitLabel}`
+                        : 'Active / Metered'}
+                    </td>
+                    <td className="py-3 text-right font-semibold text-white font-mono">
+                      {formatPaise(cat.infrastructureCostPaise)}
+                    </td>
+                  </tr>
+                ))}
+
+                {/* Allocated infrastructure cost */}
+                <tr className="border-t-2 border-slate-700 bg-slate-800/60 font-bold">
+                  <td className="py-3 text-white">Allocated infrastructure cost</td>
+                  <td className="py-3 text-right text-[10px] uppercase text-slate-400">C_t = D_t + Σ A_(t,s)</td>
+                  <td className="py-3 text-right font-mono text-sm text-white">
+                    {formatPaise(totalCost)}
+                  </td>
+                </tr>
+
+                {/* Gross contribution */}
+                <tr className="bg-emerald-950/40 text-emerald-200 font-bold border-t border-slate-800">
+                  <td className="py-3">
+                    <div className="flex items-center gap-2">
+                      <span>Gross contribution</span>
+                      <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-emerald-900/80 text-emerald-300 border border-emerald-700">
+                        70% Platform Margin
+                      </span>
+                    </div>
+                  </td>
+                  <td className="py-3 text-right text-[11px] text-emerald-400 font-semibold">Independent per-theatre margin</td>
+                  <td className="py-3 text-right font-mono text-sm text-emerald-300">
+                    {formatPaise(grossContribution)}
+                  </td>
+                </tr>
+
+                {/* Estimated amount payable before tax */}
+                <tr className="border-t-2 border-indigo-500 bg-slate-900 text-white font-black">
+                  <td className="py-4 pl-3 rounded-l-xl text-sm">
+                    <div>
+                      <span>Estimated amount payable before tax</span>
+                      <p className="text-[10px] font-normal text-slate-400 mt-0.5">
+                        Pricing formula: P_t = C_t / 0.30 (rounded upward to nearest paisa)
+                      </p>
+                    </div>
+                  </td>
+                  <td className="py-4 text-right text-xs text-slate-300 font-medium">Month-to-date total</td>
+                  <td className="py-4 pr-3 text-right text-lg text-indigo-400 font-mono rounded-r-xl">
+                    {formatPaise(customerCharge)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p className="text-[11px] text-slate-400 italic mt-3">
+            Final amount subject to provider-cost reconciliation.
+          </p>
+        </section>
 
         {/* Metered Resource Breakdown */}
         <section className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xs">

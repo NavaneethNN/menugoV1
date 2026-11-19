@@ -33,6 +33,18 @@ export interface SharedCostPoolInput {
   periodEnd: Date;
 }
 
+export interface TenantUsageCategoryBreakdown {
+  category: string;
+  label: string;
+  directCostPaise: number;
+  sharedCostPaise: number;
+  infrastructureCostPaise: number;
+  customerChargePaise: number;
+  grossContributionPaise: number;
+  unitQuantity: number;
+  unitLabel: string;
+}
+
 export interface TenantCostSummary {
   restaurantId: string;
   tenantType: 'restaurant' | 'cinema';
@@ -41,6 +53,8 @@ export interface TenantCostSummary {
   tenantTotalCostPaise: number;
   customerChargePaise: number;
   grossMarginPercent: number;
+  grossContributionPaise: number;
+  categories: TenantUsageCategoryBreakdown[];
   breakdown: {
     directEventsCount: number;
     sharedAllocationsCount: number;
@@ -376,7 +390,8 @@ export async function calculateTenantCost(
       poolId: sharedCostAllocations.poolId,
       restaurantId: sharedCostAllocations.restaurantId,
       allocatedCostPaise: sharedCostAllocations.allocatedCostPaise,
-      poolName: sharedCostPools.poolName
+      poolName: sharedCostPools.poolName,
+      metricType: sharedCostPools.metricType
     })
     .from(sharedCostAllocations)
     .innerJoin(sharedCostPools, eq(sharedCostAllocations.poolId, sharedCostPools.id))
@@ -400,7 +415,107 @@ export async function calculateTenantCost(
     0
   );
 
-  // 3. Billing Engine Formulas
+  // 3. Section 6: Understandable Monthly Usage Statement Categories
+  type UsageCategoryKey =
+    | 'application_processing'
+    | 'database_consumption'
+    | 'storage'
+    | 'network_usage'
+    | 'realtime_processing'
+    | 'background_tasks';
+
+  const categoryKeys: UsageCategoryKey[] = [
+    'application_processing',
+    'database_consumption',
+    'storage',
+    'network_usage',
+    'realtime_processing',
+    'background_tasks'
+  ];
+
+  const categoryLabels: Record<UsageCategoryKey, { label: string; unitLabel: string }> = {
+    application_processing: { label: 'Application processing', unitLabel: 'compute' },
+    database_consumption: { label: 'Database consumption', unitLabel: 'queries' },
+    storage: { label: 'Storage', unitLabel: 'media storage' },
+    network_usage: { label: 'Network usage', unitLabel: 'data transfer' },
+    realtime_processing: { label: 'Realtime processing', unitLabel: 'realtime sessions' },
+    background_tasks: { label: 'Background & worker tasks', unitLabel: 'tasks & updates' }
+  };
+
+  const categoryData: Record<UsageCategoryKey, { directPaise: number; sharedPaise: number; quantity: number }> = {
+    application_processing: { directPaise: 0, sharedPaise: 0, quantity: 0 },
+    database_consumption: { directPaise: 0, sharedPaise: 0, quantity: 0 },
+    storage: { directPaise: 0, sharedPaise: 0, quantity: 0 },
+    network_usage: { directPaise: 0, sharedPaise: 0, quantity: 0 },
+    realtime_processing: { directPaise: 0, sharedPaise: 0, quantity: 0 },
+    background_tasks: { directPaise: 0, sharedPaise: 0, quantity: 0 }
+  };
+
+  const mapToCategory = (unitOrType: string): UsageCategoryKey => {
+    switch (unitOrType) {
+      case 'cpu_ms':
+      case 'compute_cpu':
+      case 'api_compute':
+        return 'application_processing';
+      case 'db_queries':
+      case 'database_query':
+      case 'db_query_ms':
+      case 'database':
+        return 'database_consumption';
+      case 'storage_gb_hours':
+      case 'storage_media':
+      case 'storage':
+        return 'storage';
+      case 'egress_bytes':
+      case 'network_egress':
+      case 'bandwidth':
+      case 'network_bandwidth':
+        return 'network_usage';
+      case 'ws_connection_seconds':
+      case 'websocket_connection':
+      case 'realtime':
+      case 'realtime_websocket':
+        return 'realtime_processing';
+      case 'worker_execution_ms':
+      case 'worker_task':
+      case 'worker_tasks':
+      case 'background_jobs':
+      default:
+        return 'background_tasks';
+    }
+  };
+
+  for (const ev of directEvents) {
+    const cat = mapToCategory(ev.unit || (ev as any).eventType || '');
+    categoryData[cat].directPaise += (ev.directCostPaise || 0);
+    categoryData[cat].quantity += (ev.quantity || 0);
+  }
+
+  for (const sa of sharedAllocs) {
+    const cat = mapToCategory(sa.metricType || sa.poolName || '');
+    categoryData[cat].sharedPaise += (sa.allocatedCostPaise || 0);
+  }
+
+  const categories: TenantUsageCategoryBreakdown[] = categoryKeys.map((catKey) => {
+    const data = categoryData[catKey];
+    const infraCost = data.directPaise + data.sharedPaise;
+    const custCharge = infraCost > 0 ? Math.ceil(infraCost / 0.30) : 0;
+    const grossContrib = Math.max(0, custCharge - infraCost);
+
+    return {
+      category: catKey,
+      label: categoryLabels[catKey].label,
+      directCostPaise: data.directPaise,
+      sharedCostPaise: data.sharedPaise,
+      infrastructureCostPaise: infraCost,
+      customerChargePaise: custCharge,
+      grossContributionPaise: grossContrib,
+      unitQuantity: data.quantity,
+      unitLabel: categoryLabels[catKey].unitLabel
+    };
+  });
+
+  // 4. Billing Engine Formulas
   // TENANT_TOTAL_COST = DIRECT_TENANT_COST + TENANT_SHARE_OF_SHARED_INFRASTRUCTURE
   const tenantTotalCostPaise = directTenantCostPaise + sharedInfrastructureCostPaise;
 
@@ -416,6 +531,7 @@ export async function calculateTenantCost(
     : 0.70;
 
   const grossMarginPercent = Math.round(grossMargin * 10000) / 100; // e.g. 70.0%
+  const grossContributionPaise = Math.max(0, customerChargePaise - tenantTotalCostPaise);
 
   return {
     restaurantId,
@@ -425,6 +541,8 @@ export async function calculateTenantCost(
     tenantTotalCostPaise,
     customerChargePaise,
     grossMarginPercent,
+    grossContributionPaise,
+    categories,
     breakdown: {
       directEventsCount: directEvents.length,
       sharedAllocationsCount: sharedAllocs.length,
@@ -497,7 +615,11 @@ export async function generateTenantInvoice(params: {
       tenantTotalCostPaise: summary.tenantTotalCostPaise,
       customerChargePaise: summary.customerChargePaise,
       grossMarginPercent: summary.grossMarginPercent,
-      costBreakdown: summary.breakdown,
+      costBreakdown: {
+        ...summary.breakdown,
+        categories: summary.categories,
+        grossContributionPaise: summary.grossContributionPaise
+      },
       status: 'issued',
       reconciliationValidated: true,
       paymentDueDate: dueDate
