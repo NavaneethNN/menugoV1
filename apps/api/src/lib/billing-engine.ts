@@ -6,7 +6,9 @@ import {
   sharedCostPools,
   sharedCostAllocations,
   unattributedCostItems,
-  tenantInvoices
+  tenantInvoices,
+  usagePricingCatalogue,
+  platformBillingConfig
 } from '@menugo/database';
 import { eq, and, sql, gte, lte, inArray, sum } from 'drizzle-orm';
 import { restaurantApiClient, cinemaApiClient } from './internal-api-client';
@@ -496,10 +498,15 @@ export async function calculateTenantCost(
     categoryData[cat].sharedPaise += (sa.allocatedCostPaise || 0);
   }
 
+  // Fetch dynamic platform billing configuration (minimum gross margin decided by Super Admin)
+  const platformConfig = await getPlatformBillingConfig();
+  const targetMarginPercent = platformConfig.minimumGrossMarginPercent || 70.0;
+  const divisor = Math.max(0.01, 1 - (targetMarginPercent / 100));
+
   const categories: TenantUsageCategoryBreakdown[] = categoryKeys.map((catKey) => {
     const data = categoryData[catKey];
     const infraCost = data.directPaise + data.sharedPaise;
-    const custCharge = infraCost > 0 ? Math.ceil(infraCost / 0.30) : 0;
+    const custCharge = infraCost > 0 ? Math.ceil(infraCost / divisor) : 0;
     const grossContrib = Math.max(0, custCharge - infraCost);
 
     return {
@@ -519,16 +526,16 @@ export async function calculateTenantCost(
   // TENANT_TOTAL_COST = DIRECT_TENANT_COST + TENANT_SHARE_OF_SHARED_INFRASTRUCTURE
   const tenantTotalCostPaise = directTenantCostPaise + sharedInfrastructureCostPaise;
 
-  // CUSTOMER_CHARGE = TENANT_TOTAL_COST / 0.30
-  // (In paise, use Math.ceil to guarantee >= 70% gross margin)
+  // CUSTOMER_CHARGE = TENANT_TOTAL_COST / (1 - margin)
+  // (In paise, use Math.ceil to guarantee >= target gross margin)
   const customerChargePaise = tenantTotalCostPaise > 0
-    ? Math.ceil(tenantTotalCostPaise / 0.30)
+    ? Math.ceil(tenantTotalCostPaise / divisor)
     : 0;
 
   // GROSS_MARGIN = (CUSTOMER_CHARGE - TENANT_TOTAL_COST) / CUSTOMER_CHARGE
   const grossMargin = customerChargePaise > 0
     ? (customerChargePaise - tenantTotalCostPaise) / customerChargePaise
-    : 0.70;
+    : (targetMarginPercent / 100);
 
   const grossMarginPercent = Math.round(grossMargin * 10000) / 100; // e.g. 70.0%
   const grossContributionPaise = Math.max(0, customerChargePaise - tenantTotalCostPaise);
@@ -588,11 +595,13 @@ export async function generateTenantInvoice(params: {
     }
   }
 
-  // Validation 4: Confirm gross margin is at least 70%
+  // Validation 4: Confirm gross margin meets or exceeds configured minimum threshold
+  const platformConfig = await getPlatformBillingConfig();
+  const targetThreshold = (platformConfig.minimumGrossMarginPercent - 0.1) / 100;
   if (summary.customerChargePaise > 0) {
     const margin = (summary.customerChargePaise - summary.tenantTotalCostPaise) / summary.customerChargePaise;
-    if (margin < 0.6999) {
-      throw new Error(`Billing validation failed: Tenant margin (${summary.grossMarginPercent}%) is below the mandatory 70% threshold!`);
+    if (margin < targetThreshold) {
+      throw new Error(`Billing validation failed: Tenant margin (${summary.grossMarginPercent}%) is below the configured ${platformConfig.minimumGrossMarginPercent}% threshold!`);
     }
   }
 
@@ -757,4 +766,237 @@ export async function payTenantInvoice(
     .returning();
 
   return updated;
+}
+
+// ===========================================================================
+// 9. Super Admin Usage Pricing Catalogue & Configuration Engine
+// ===========================================================================
+
+/**
+ * Retrieves the platform billing configuration (including minimum gross margin %).
+ */
+export async function getPlatformBillingConfig() {
+  const [cfg] = await qrosDb
+    .select()
+    .from(platformBillingConfig)
+    .where(eq(platformBillingConfig.id, 'default'))
+    .limit(1);
+
+  if (!cfg) {
+    return {
+      id: 'default',
+      minimumGrossMarginPercent: 70.0,
+      currency: 'INR',
+      taxRatePercent: 18.0,
+      reconciliationNotes: null,
+      updatedBy: null,
+      updatedAt: new Date()
+    };
+  }
+  return cfg;
+}
+
+/**
+ * Updates the platform billing configuration (minimum gross margin %, tax, etc.).
+ */
+export async function updatePlatformBillingConfig(input: {
+  minimumGrossMarginPercent?: number;
+  taxRatePercent?: number;
+  reconciliationNotes?: string;
+  updatedBy?: string;
+}) {
+  const values: any = {
+    updatedAt: new Date()
+  };
+  if (input.minimumGrossMarginPercent !== undefined) {
+    const val = Number(input.minimumGrossMarginPercent);
+    if (isNaN(val) || val < 1 || val >= 100) {
+      throw new Error('Minimum gross margin percentage must be a valid number between 1% and 99%.');
+    }
+    values.minimumGrossMarginPercent = val;
+  }
+  if (input.taxRatePercent !== undefined) {
+    values.taxRatePercent = Number(input.taxRatePercent);
+  }
+  if (input.reconciliationNotes !== undefined) {
+    values.reconciliationNotes = input.reconciliationNotes;
+  }
+  if (input.updatedBy !== undefined) {
+    values.updatedBy = input.updatedBy;
+  }
+
+  const [updated] = await qrosDb
+    .insert(platformBillingConfig)
+    .values({ id: 'default', ...values })
+    .onConflictDoUpdate({
+      target: platformBillingConfig.id,
+      set: values
+    })
+    .returning();
+
+  return updated;
+}
+
+/**
+ * Retrieves the full Usage Pricing Catalogue with base rates and calculated customer pricing.
+ * Customer pricing is computed dynamically using:
+ * Pt = ceil(BaseCost / (1 - (margin / 100)))
+ */
+export async function getUsagePricingCatalogue() {
+  const config = await getPlatformBillingConfig();
+  const marginPercent = config.minimumGrossMarginPercent || 70.0;
+  const divisor = Math.max(0.01, 1 - (marginPercent / 100));
+
+  const items = await qrosDb
+    .select()
+    .from(usagePricingCatalogue)
+    .orderBy(usagePricingCatalogue.sortOrder);
+
+  return items.map((item) => {
+    const rateRupees = Number((item.ratePaise / 100).toFixed(2));
+    const customerPricePaise = item.ratePaise > 0 ? Math.ceil(item.ratePaise / divisor) : 0;
+    const customerPriceRupees = Number((customerPricePaise / 100).toFixed(2));
+    const grossContributionPaise = Math.max(0, customerPricePaise - item.ratePaise);
+    const grossContributionRupees = Number((grossContributionPaise / 100).toFixed(2));
+    const grossMarginPercent = customerPricePaise > 0
+      ? Number((((customerPricePaise - item.ratePaise) / customerPricePaise) * 100).toFixed(2))
+      : marginPercent;
+
+    return {
+      ...item,
+      rateRupees,
+      customerPricePaise,
+      customerPriceRupees,
+      grossContributionPaise,
+      grossContributionRupees,
+      effectiveGrossMarginPercent: grossMarginPercent,
+      targetMarginPercent: marginPercent,
+      divisor
+    };
+  });
+}
+
+/**
+ * Updates a specific usage catalogue item (rate, active status, unit, multiplier).
+ */
+export async function updateUsagePricingCatalogueItem(
+  idOrMetricKey: string,
+  input: {
+    ratePaise?: number;
+    isActive?: boolean;
+    displayName?: string;
+    unit?: string;
+    unitMultiplier?: number;
+    description?: string;
+  }
+) {
+  const updateData: any = { updatedAt: new Date() };
+  if (input.ratePaise !== undefined) updateData.ratePaise = Math.round(Number(input.ratePaise));
+  if (input.isActive !== undefined) updateData.isActive = Boolean(input.isActive);
+  if (input.displayName !== undefined) updateData.displayName = input.displayName;
+  if (input.unit !== undefined) updateData.unit = input.unit;
+  if (input.unitMultiplier !== undefined) updateData.unitMultiplier = Number(input.unitMultiplier);
+  if (input.description !== undefined) updateData.description = input.description;
+
+  const [updated] = await qrosDb
+    .update(usagePricingCatalogue)
+    .set(updateData)
+    .where(
+      sql`${usagePricingCatalogue.id} = ${idOrMetricKey} OR ${usagePricingCatalogue.metricKey} = ${idOrMetricKey}`
+    )
+    .returning();
+
+  if (!updated) {
+    throw new Error(`Usage pricing catalogue item "${idOrMetricKey}" not found.`);
+  }
+
+  return updated;
+}
+
+/**
+ * Simulates customer billing calculation for arbitrary consumption figures.
+ */
+export async function simulateUsagePrice(consumption: {
+  apiRequests?: number;
+  dbOperations?: number;
+  storageGb?: number;
+  bandwidthGb?: number;
+  realtimeMessages?: number;
+  backgroundTasks?: number;
+}) {
+  const catalogue = await getUsagePricingCatalogue();
+  const config = await getPlatformBillingConfig();
+  const targetMargin = config.minimumGrossMarginPercent || 70.0;
+  const divisor = Math.max(0.01, 1 - (targetMargin / 100));
+
+  const metricsMap = new Map(catalogue.map((c) => [c.metricKey, c]));
+
+  const lines = [
+    {
+      metricKey: 'api_requests',
+      quantity: consumption.apiRequests || 0
+    },
+    {
+      metricKey: 'database_operations',
+      quantity: consumption.dbOperations || 0
+    },
+    {
+      metricKey: 'storage',
+      quantity: consumption.storageGb || 0
+    },
+    {
+      metricKey: 'bandwidth',
+      quantity: consumption.bandwidthGb || 0
+    },
+    {
+      metricKey: 'realtime_messages',
+      quantity: consumption.realtimeMessages || 0
+    },
+    {
+      metricKey: 'background_tasks',
+      quantity: consumption.backgroundTasks || 0
+    }
+  ];
+
+  let totalInfraCostPaise = 0;
+  const itemsBreakdown = lines.map((line) => {
+    const item = metricsMap.get(line.metricKey);
+    const unitMultiplier = item?.unitMultiplier || 1000;
+    const ratePaise = item?.ratePaise || 0;
+    const isActive = item ? item.isActive : true;
+
+    const unitsConsumed = line.quantity / unitMultiplier;
+    const infraCostPaise = isActive ? Math.round(unitsConsumed * ratePaise) : 0;
+    const customerChargePaise = infraCostPaise > 0 ? Math.ceil(infraCostPaise / divisor) : 0;
+    const grossProfitPaise = Math.max(0, customerChargePaise - infraCostPaise);
+
+    totalInfraCostPaise += infraCostPaise;
+
+    return {
+      metricKey: line.metricKey,
+      displayName: item?.displayName || line.metricKey,
+      unit: item?.unit || 'unit',
+      quantity: line.quantity,
+      rateRupees: (ratePaise / 100),
+      infraCostRupees: Number((infraCostPaise / 100).toFixed(2)),
+      customerChargeRupees: Number((customerChargePaise / 100).toFixed(2)),
+      grossProfitRupees: Number((grossProfitPaise / 100).toFixed(2)),
+      isActive
+    };
+  });
+
+  const totalCustomerChargePaise = totalInfraCostPaise > 0 ? Math.ceil(totalInfraCostPaise / divisor) : 0;
+  const totalGrossProfitPaise = Math.max(0, totalCustomerChargePaise - totalInfraCostPaise);
+  const actualMarginPercent = totalCustomerChargePaise > 0
+    ? Number((((totalCustomerChargePaise - totalInfraCostPaise) / totalCustomerChargePaise) * 100).toFixed(2))
+    : targetMargin;
+
+  return {
+    targetGrossMarginPercent: targetMargin,
+    totalInfraCostRupees: Number((totalInfraCostPaise / 100).toFixed(2)),
+    totalCustomerChargeRupees: Number((totalCustomerChargePaise / 100).toFixed(2)),
+    totalGrossProfitRupees: Number((totalGrossProfitPaise / 100).toFixed(2)),
+    actualMarginPercent,
+    items: itemsBreakdown
+  };
 }

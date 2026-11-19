@@ -1490,3 +1490,50 @@ export const tenantInvoicesRelations = relations(tenantInvoices, ({ one }) => ({
     references: [restaurants.id]
   })
 }));
+
+/**
+ * 20.6 Usage Pricing Catalogue
+ * Defines billing metric rates, units, and active status decided by Super Admin.
+ */
+export const usagePricingCatalogue = pgTable(
+  'usage_pricing_catalogue',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    metricKey: varchar('metric_key', { length: 50 }).notNull().unique(), // 'api_requests', 'database_operations', 'storage', 'bandwidth', 'realtime_messages', 'background_tasks'
+    displayName: varchar('display_name', { length: 100 }).notNull(),
+    category: varchar('category', { length: 50 }).notNull(), // 'application_processing', 'database_consumption', 'storage', 'network_usage', 'realtime_processing', 'background_tasks'
+    unit: varchar('unit', { length: 50 }).notNull(), // '1,000 requests', '1,000 ops', 'GB-month', 'GB', '1,000 messages', '1,000 tasks'
+    unitMultiplier: doublePrecision('unit_multiplier').default(1000).notNull(), // 1000 for per-thousand, 1 for per-GB
+    ratePaise: integer('rate_paise').notNull(), // Base infrastructure rate in paise (e.g. 100 paise = ₹1.00)
+    isActive: boolean('is_active').default(true).notNull(),
+    description: text('description'),
+    sortOrder: integer('sort_order').default(0).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('usage_catalogue_metric_key_idx').on(table.metricKey),
+    index('usage_catalogue_active_idx').on(table.isActive),
+    index('usage_catalogue_sort_idx').on(table.sortOrder)
+  ]
+);
+
+/**
+ * 20.7 Platform Billing Configuration
+ * Global billing settings including minimum gross margin percentage (e.g. 70%).
+ */
+export const platformBillingConfig = pgTable(
+  'platform_billing_config',
+  {
+    id: text('id').primaryKey().default('default'),
+    minimumGrossMarginPercent: doublePrecision('minimum_gross_margin_percent').default(70.0).notNull(),
+    currency: varchar('currency', { length: 10 }).default('INR').notNull(),
+    taxRatePercent: doublePrecision('tax_rate_percent').default(18.0).notNull(),
+    reconciliationNotes: text('reconciliation_notes'),
+    updatedBy: text('updated_by'),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  }
+);
+

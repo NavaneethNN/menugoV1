@@ -298,7 +298,7 @@ export default function RestaurantUsageAndBillingPage() {
             <p className="text-2xl font-black text-red-600 mt-1">{formatPaise(customerCharge)}</p>
             <div className="flex items-center gap-1.5 mt-1 text-[11px] text-emerald-700 font-semibold">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Independent 70% gross margin</span>
+              <span>Independent {ledger?.grossMarginPercent || 70}% gross margin</span>
             </div>
           </div>
 
@@ -389,7 +389,7 @@ export default function RestaurantUsageAndBillingPage() {
                     <div className="flex items-center gap-2">
                       <span>Gross contribution</span>
                       <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-emerald-100 text-emerald-800">
-                        70% Platform Margin
+                        {ledger?.grossMarginPercent || 70}% Platform Margin
                       </span>
                     </div>
                   </td>

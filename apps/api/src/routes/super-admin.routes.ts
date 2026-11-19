@@ -27,7 +27,12 @@ import {
   getUnattributedCosts,
   resolveUnattributedCost,
   generateTenantInvoice,
-  recordTenantUsageEvent
+  recordTenantUsageEvent,
+  getUsagePricingCatalogue,
+  updateUsagePricingCatalogueItem,
+  getPlatformBillingConfig,
+  updatePlatformBillingConfig,
+  simulateUsagePrice
 } from '../lib/billing-engine';
 import {
   createSubscriptionPlanSchema,
@@ -1298,3 +1303,85 @@ superAdminRouter.post('/billing/record-usage', async (req: Request, res: Respons
     res.status(400).json({ error: error.message || 'Failed to record usage event' });
   }
 });
+
+/**
+ * GET /api/super-admin/billing/catalogue
+ * Retrieves the Super Admin usage pricing catalogue and platform billing configuration.
+ */
+superAdminRouter.get('/billing/catalogue', async (req: Request, res: Response) => {
+  try {
+    const [catalogue, config] = await Promise.all([
+      getUsagePricingCatalogue(),
+      getPlatformBillingConfig()
+    ]);
+    res.json({
+      catalogue,
+      config
+    });
+  } catch (error: any) {
+    console.error('[Get Usage Catalogue Error]:', error);
+    res.status(500).json({ error: 'Failed to retrieve usage pricing catalogue' });
+  }
+});
+
+/**
+ * PATCH /api/super-admin/billing/catalogue/:id
+ * Updates an item in the Usage Pricing Catalogue (e.g. rate, active status, unit, multiplier).
+ */
+superAdminRouter.patch('/billing/catalogue/:id', async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { ratePaise, isActive, displayName, unit, unitMultiplier, description } = req.body;
+
+    const updated = await updateUsagePricingCatalogueItem(id, {
+      ratePaise: ratePaise !== undefined ? Number(ratePaise) : undefined,
+      isActive: isActive !== undefined ? Boolean(isActive) : undefined,
+      displayName,
+      unit,
+      unitMultiplier: unitMultiplier !== undefined ? Number(unitMultiplier) : undefined,
+      description
+    });
+
+    res.json({ success: true, item: updated });
+  } catch (error: any) {
+    console.error('[Update Usage Catalogue Item Error]:', error);
+    res.status(400).json({ error: error.message || 'Failed to update catalogue item' });
+  }
+});
+
+/**
+ * PATCH /api/super-admin/billing/config
+ * Updates global billing configuration including the Minimum Gross Margin percentage.
+ */
+superAdminRouter.patch('/billing/config', async (req: Request, res: Response) => {
+  try {
+    const { minimumGrossMarginPercent, taxRatePercent, reconciliationNotes } = req.body;
+
+    const updated = await updatePlatformBillingConfig({
+      minimumGrossMarginPercent: minimumGrossMarginPercent !== undefined ? Number(minimumGrossMarginPercent) : undefined,
+      taxRatePercent: taxRatePercent !== undefined ? Number(taxRatePercent) : undefined,
+      reconciliationNotes,
+      updatedBy: (req.user as any)?.email || 'super_admin'
+    });
+
+    res.json({ success: true, config: updated });
+  } catch (error: any) {
+    console.error('[Update Billing Config Error]:', error);
+    res.status(400).json({ error: error.message || 'Failed to update billing config' });
+  }
+});
+
+/**
+ * POST /api/super-admin/billing/simulate
+ * Simulates pricing calculations based on the configured pricing catalogue and margin.
+ */
+superAdminRouter.post('/billing/simulate', async (req: Request, res: Response) => {
+  try {
+    const result = await simulateUsagePrice(req.body || {});
+    res.json(result);
+  } catch (error: any) {
+    console.error('[Simulate Usage Price Error]:', error);
+    res.status(400).json({ error: error.message || 'Failed to simulate pricing' });
+  }
+});
+

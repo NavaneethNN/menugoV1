@@ -300,7 +300,7 @@ export default function CinemaUsageAndBillingPage() {
             <p className="text-2xl font-black text-indigo-400 mt-1">{formatPaise(customerCharge)}</p>
             <div className="flex items-center gap-1.5 mt-1 text-[11px] text-emerald-400 font-semibold">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Independent 70% gross margin</span>
+              <span>Independent {ledger?.grossMarginPercent || 70}% gross margin</span>
             </div>
           </div>
 
@@ -391,7 +391,7 @@ export default function CinemaUsageAndBillingPage() {
                     <div className="flex items-center gap-2">
                       <span>Gross contribution</span>
                       <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-emerald-900/80 text-emerald-300 border border-emerald-700">
-                        70% Platform Margin
+                        {ledger?.grossMarginPercent || 70}% Platform Margin
                       </span>
                     </div>
                   </td>
