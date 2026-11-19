@@ -311,7 +311,7 @@ export default function AdminDashboardPage() {
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition shadow-sm"
                 >
                   <Coins className="w-4 h-4" />
-                  <span>Billing &amp; Plans</span>
+                  <span>Usage &amp; Billing</span>
                 </Link>
 
                 <button

@@ -323,7 +323,7 @@ export default function CinemaAdminDashboardPage() {
               className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition"
             >
               <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>Plan &amp; Billing</span>
+              <span>Usage &amp; Billing</span>
             </Link>
           </div>
         </div>

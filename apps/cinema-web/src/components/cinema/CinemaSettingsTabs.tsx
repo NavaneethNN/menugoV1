@@ -36,7 +36,7 @@ export function CinemaSettingsTabs() {
         }`}
       >
         <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-        <span>Plan &amp; Billing</span>
+        <span>Usage &amp; Billing</span>
       </Link>
 
       <Link

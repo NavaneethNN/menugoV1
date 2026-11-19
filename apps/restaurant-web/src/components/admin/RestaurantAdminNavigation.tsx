@@ -24,7 +24,7 @@ const navigation = [
   { label: 'Service', href: '/admin/service', icon: ConciergeBell },
   { label: 'Cashier', href: '/admin/cashier', icon: WalletCards },
   { label: 'Staff', href: '/admin/staff', icon: Users },
-  { label: 'Billing', href: '/admin/billing', icon: CreditCard }
+  { label: 'Usage & Billing', href: '/admin/billing', icon: CreditCard }
 ];
 
 function isActive(pathname: string, href: string) {

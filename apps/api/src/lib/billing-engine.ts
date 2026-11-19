@@ -9,6 +9,7 @@ import {
   tenantInvoices
 } from '@menugo/database';
 import { eq, and, sql, gte, lte, inArray, sum } from 'drizzle-orm';
+import { restaurantApiClient, cinemaApiClient } from './internal-api-client';
 
 export interface TenantUsageInput {
   restaurantId: string;
@@ -276,7 +277,7 @@ export async function calculateTenantCost(
   periodEnd: Date
 ): Promise<TenantCostSummary> {
   // Verify tenant exists
-  const [venue] = await qrosDb
+  let [venue] = await qrosDb
     .select({
       id: restaurants.id,
       name: restaurants.name,
@@ -285,6 +286,46 @@ export async function calculateTenantCost(
     .from(restaurants)
     .where(eq(restaurants.id, restaurantId))
     .limit(1);
+
+  if (!venue) {
+    try {
+      const restExport = await restaurantApiClient.getTenantDetails(restaurantId).catch(() => null);
+      if (restExport?.restaurant) {
+        const r = restExport.restaurant;
+        await qrosDb
+          .insert(restaurants)
+          .values({
+            id: r.id,
+            name: r.name,
+            slug: r.slug,
+            currency: r.currency || 'INR',
+            tenantType: 'restaurant',
+            isActive: r.isActive ?? true
+          })
+          .onConflictDoNothing();
+        venue = { id: r.id, name: r.name, tenantType: 'restaurant' };
+      } else {
+        const cinExport = await cinemaApiClient.getTenantDetails(restaurantId).catch(() => null);
+        if (cinExport?.theatre) {
+          const t = cinExport.theatre;
+          await qrosDb
+            .insert(restaurants)
+            .values({
+              id: t.id,
+              name: t.name,
+              slug: t.slug,
+              currency: t.currency || 'INR',
+              tenantType: 'cinema',
+              isActive: t.isActive ?? true
+            })
+            .onConflictDoNothing();
+          venue = { id: t.id, name: t.name, tenantType: 'cinema' };
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   if (!venue) {
     throw new Error(`Tenant not found: ${restaurantId}`);
@@ -555,4 +596,43 @@ export async function getTenantUsageSummary(
     .groupBy(tenantUsageEvents.eventType, tenantUsageEvents.unit);
 
   return events;
+}
+
+/**
+ * 8. Pay Tenant Invoice
+ * Settles a tenant's metered usage invoice.
+ */
+export async function payTenantInvoice(
+  authenticatedRestaurantId: string,
+  invoiceId: string,
+  paymentDetails?: {
+    paymentMethod?: string;
+    transactionRef?: string;
+  }
+) {
+  const invoice = await getTenantInvoiceById(authenticatedRestaurantId, invoiceId);
+  if (!invoice) {
+    throw new Error('Invoice not found or access denied');
+  }
+
+  if (invoice.status === 'paid') {
+    return invoice;
+  }
+
+  const [updated] = await qrosDb
+    .update(tenantInvoices)
+    .set({
+      status: 'paid',
+      paidAt: new Date(),
+      updatedAt: new Date()
+    })
+    .where(
+      and(
+        eq(tenantInvoices.id, invoiceId),
+        eq(tenantInvoices.restaurantId, authenticatedRestaurantId)
+      )
+    )
+    .returning();
+
+  return updated;
 }

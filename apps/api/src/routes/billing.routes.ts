@@ -6,7 +6,9 @@ import {
   getTenantInvoices,
   getTenantInvoiceById,
   getTenantUsageSummary,
-  calculateTenantCost
+  calculateTenantCost,
+  payTenantInvoice,
+  generateTenantInvoice
 } from '../lib/billing-engine';
 
 export const billingRouter = Router();
@@ -44,6 +46,59 @@ billingRouter.get('/invoices/:id', async (req: Request, res: Response, next) => 
     }
 
     res.json(invoice);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/billing/invoices/:id/pay
+ * Pays/settles a tenant usage invoice.
+ */
+billingRouter.post('/invoices/:id/pay', async (req: Request, res: Response, next) => {
+  try {
+    const tenantId = req.tenant!.restaurantId;
+    const invoiceId = req.params.id as string;
+
+    const invoice = await payTenantInvoice(tenantId, invoiceId, req.body);
+    res.json({
+      success: true,
+      message: 'Invoice paid successfully',
+      invoice
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/billing/pay-current-usage
+ * Generates month-to-date invoice and settles payment for current metered usage.
+ */
+billingRouter.post('/pay-current-usage', async (req: Request, res: Response, next) => {
+  try {
+    const tenantId = req.tenant!.restaurantId;
+    const now = new Date();
+    const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const periodEnd = now;
+
+    // Issue invoice for month-to-date consumption
+    const invoice = await generateTenantInvoice({
+      restaurantId: tenantId,
+      periodStart,
+      periodEnd
+    });
+
+    if (!invoice) {
+      throw new AppError('Failed to generate tenant invoice for current period', 500);
+    }
+
+    const paidInvoice = await payTenantInvoice(tenantId, invoice.id, req.body);
+    res.json({
+      success: true,
+      message: 'Monthly metered usage settled successfully',
+      invoice: paidInvoice
+    });
   } catch (error) {
     next(error);
   }

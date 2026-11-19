@@ -173,6 +173,30 @@ restaurantInternalRouter.get('/tenants', async (req: Request, res: Response) => 
 });
 
 /**
+ * GET /api/internal/restaurant/tenants/:id
+ * Retrieves a single restaurant tenant details
+ */
+restaurantInternalRouter.get('/tenants/:id', async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const [rest] = await restaurantDb
+      .select()
+      .from(restaurants)
+      .where(eq(restaurants.id, id))
+      .limit(1);
+
+    if (!rest) {
+      res.status(404).json({ error: 'Restaurant tenant not found' });
+      return;
+    }
+
+    res.json({ success: true, restaurant: rest });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to retrieve restaurant tenant' });
+  }
+});
+
+/**
  * PATCH /api/internal/restaurant/tenants/:id/status
  * Updates isActive status of a restaurant in restaurantDb
  */

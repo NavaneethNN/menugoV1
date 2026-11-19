@@ -122,6 +122,10 @@ export const restaurantApiClient = {
     return callInternalApi(restaurantInternalRouter, 'restaurant', '/tenants', { method: 'GET' });
   },
 
+  async getTenantDetails(restaurantId: string) {
+    return callInternalApi(restaurantInternalRouter, 'restaurant', `/tenants/${restaurantId}`, { method: 'GET' });
+  },
+
   async updateTenantStatus(restaurantId: string, isActive: boolean) {
     return callInternalApi(restaurantInternalRouter, 'restaurant', `/tenants/${restaurantId}/status`, {
       method: 'PATCH',
@@ -164,6 +168,10 @@ export const cinemaApiClient = {
 
   async getTenants() {
     return callInternalApi(cinemaInternalRouter, 'cinema', '/tenants', { method: 'GET' });
+  },
+
+  async getTenantDetails(theatreId: string) {
+    return callInternalApi(cinemaInternalRouter, 'cinema', `/tenants/${theatreId}`, { method: 'GET' });
   },
 
   async updateTenantStatus(theatreId: string, isActive: boolean) {

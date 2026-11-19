@@ -110,7 +110,7 @@ export function CinemaSidebar({
       title: 'SETUP',
       items: [
         {
-          label: 'Plan & Billing',
+          label: 'Usage & Billing',
           href: '/admin/billing',
           icon: CreditCard,
           match: (path: string) => path.startsWith('/admin/billing') || path.startsWith('/cinema/admin/billing')

@@ -197,6 +197,30 @@ cinemaInternalRouter.get('/tenants', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/internal/cinema/tenants/:id
+ * Retrieves a single cinema theatre tenant details
+ */
+cinemaInternalRouter.get('/tenants/:id', async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const [theatre] = await cinemaDb
+      .select()
+      .from(restaurants)
+      .where(eq(restaurants.id, id))
+      .limit(1);
+
+    if (!theatre) {
+      res.status(404).json({ error: 'Cinema theatre not found' });
+      return;
+    }
+
+    res.json({ success: true, theatre });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to retrieve cinema theatre' });
+  }
+});
+
+/**
  * PATCH /api/internal/cinema/tenants/:id/status
  * Updates isActive status of a cinema theatre in cinemaDb
  */
