@@ -39,6 +39,15 @@ export default function CinemaAdminLayout({
 
   const initialLoadedRef = useRef(false);
 
+  // Exclude unauthenticated auth routes from the dashboard layout guard
+  const isExcludedRoute =
+    pathname === '/cinema/login' ||
+    pathname.startsWith('/cinema/login') ||
+    pathname === '/cinema/admin/login' ||
+    pathname.startsWith('/cinema/admin/login') ||
+    pathname === '/admin/login' ||
+    pathname.startsWith('/admin/login');
+
   // Close mobile drawer when route changes
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -54,6 +63,7 @@ export default function CinemaAdminLayout({
   }, [selectedMembership]);
 
   useEffect(() => {
+    if (isExcludedRoute) return;
     if (sessionLoading) return;
     if (!session) {
       router.push('/admin/login?business=cinema&redirect=/cinema/admin/dashboard');
@@ -64,7 +74,11 @@ export default function CinemaAdminLayout({
       loadCinemaTheatres();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, sessionLoading, router]);
+  }, [userId, sessionLoading, router, isExcludedRoute]);
+
+  if (isExcludedRoute) {
+    return <>{children}</>;
+  }
 
   const loadCinemaTheatres = async () => {
     try {
