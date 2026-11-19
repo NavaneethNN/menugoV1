@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { db, restaurants, restaurantMembers } from '@menugo/database';
+import { db, restaurantDb, cinemaDb, restaurants, restaurantMembers } from '@menugo/database';
 import { eq, and } from 'drizzle-orm';
 import { RestaurantMemberRole, TenantType } from '@menugo/shared';
 import { requireAuth, AuthenticatedUser } from './auth';
@@ -158,7 +158,16 @@ export function requireTenant(
       }
 
       // 3. Query database to verify that the user is an authorized member of THIS tenant
-      const [membership] = await db
+      const isCinemaTarget =
+        allowedTenantTypes === 'cinema' ||
+        (Array.isArray(allowedTenantTypes) && allowedTenantTypes.includes('cinema') && !allowedTenantTypes.includes('restaurant')) ||
+        Boolean(req.headers['x-theatre-id']) ||
+        Boolean(req.params.theatreId);
+
+      const targetDb = isCinemaTarget ? cinemaDb : restaurantDb;
+      const fallbackDb = isCinemaTarget ? restaurantDb : cinemaDb;
+
+      let [membership] = await targetDb
         .select({
           membershipId: restaurantMembers.id,
           role: restaurantMembers.role,
@@ -182,6 +191,34 @@ export function requireTenant(
           )
         )
         .limit(1);
+
+      if (!membership) {
+        const [fallbackMembership] = await fallbackDb
+          .select({
+            membershipId: restaurantMembers.id,
+            role: restaurantMembers.role,
+            status: restaurantMembers.status,
+            canCashier: restaurantMembers.canCashier,
+            restaurant: {
+              id: restaurants.id,
+              name: restaurants.name,
+              slug: restaurants.slug,
+              currency: restaurants.currency,
+              isActive: restaurants.isActive,
+              tenantType: restaurants.tenantType
+            }
+          })
+          .from(restaurantMembers)
+          .innerJoin(restaurants, eq(restaurantMembers.restaurantId, restaurants.id))
+          .where(
+            and(
+              eq(restaurantMembers.restaurantId, targetRestaurantId),
+              eq(restaurantMembers.userId, req.user!.id)
+            )
+          )
+          .limit(1);
+        membership = fallbackMembership;
+      }
 
       if (!membership) {
         // IDOR protection: User has NO membership in the requested tenant

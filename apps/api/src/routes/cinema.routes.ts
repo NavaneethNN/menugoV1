@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import {
-  db,
+  cinemaDb as db,
   restaurants,
   restaurantMembers,
   cinemaProfiles,

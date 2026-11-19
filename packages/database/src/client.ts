@@ -8,31 +8,29 @@ dotenv.config();
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const rawConnectionString = process.env.DATABASE_URL;
-
-if (!rawConnectionString && process.env.NODE_ENV === 'production') {
-  console.warn('DATABASE_URL environment variable is not set.');
+function normalizeConnectionString(rawUrl?: string, fallback = 'postgresql://postgres:postgres@localhost:5432/menugo'): string {
+  if (!rawUrl) return fallback;
+  return rawUrl.replace(/([?&])sslmode=(require|prefer|verify-ca)(&|$)/, '$1sslmode=verify-full$3');
 }
 
-// Normalize SSL mode parameter to suppress pg-connection-string v3 compatibility warning
-const connectionString = rawConnectionString
-  ? rawConnectionString.replace(/([?&])sslmode=(require|prefer|verify-ca)(&|$)/, '$1sslmode=verify-full$3')
-  : 'postgresql://postgres:postgres@localhost:5432/menugo';
+const rawRestaurantUrl = process.env.RESTAURANT_DATABASE_URL || process.env.DATABASE_URL;
+const rawCinemaUrl = process.env.CINEMA_DATABASE_URL || process.env.DATABASE_URL;
 
-// Preserve pool instance on globalThis across hot reloads and warm serverless lambdas
-const globalForDb = globalThis as unknown as {
-  pool?: Pool;
-  db?: NodePgDatabase<typeof schema>;
-};
+const restaurantConnectionString = normalizeConnectionString(rawRestaurantUrl);
+const cinemaConnectionString = normalizeConnectionString(rawCinemaUrl);
 
-const isSslRequired =
-  Boolean(rawConnectionString?.includes('sslmode=')) ||
-  Boolean(rawConnectionString?.includes('neon.tech')) ||
+const isRestaurantSsl =
+  Boolean(rawRestaurantUrl?.includes('sslmode=')) ||
+  Boolean(rawRestaurantUrl?.includes('neon.tech')) ||
   process.env.NODE_ENV === 'production';
 
-export const pool =
-  globalForDb.pool ||
-  new Pool({
+const isCinemaSsl =
+  Boolean(rawCinemaUrl?.includes('sslmode=')) ||
+  Boolean(rawCinemaUrl?.includes('neon.tech')) ||
+  process.env.NODE_ENV === 'production';
+
+function createPool(connectionString: string, sslRequired: boolean, label: string): Pool {
+  const p = new Pool({
     connectionString,
     max: process.env.DB_POOL_MAX
       ? parseInt(process.env.DB_POOL_MAX, 10)
@@ -43,23 +41,72 @@ export const pool =
     connectionTimeoutMillis: process.env.DB_CONNECTION_TIMEOUT
       ? parseInt(process.env.DB_CONNECTION_TIMEOUT, 10)
       : 15000,
-    ssl: isSslRequired ? { rejectUnauthorized: false } : undefined
+    ssl: sslRequired ? { rejectUnauthorized: false } : undefined
   });
 
-pool.on('error', (err) => {
-  // Prevent unhandled rejection crashes from background pool disconnects
-  console.error('[Neon Database Pool Error]:', err?.message || err);
-});
+  p.on('error', (err) => {
+    console.error(`[Neon ${label} Database Pool Error]:`, err?.message || err);
+  });
 
-if (process.env.NODE_ENV !== 'production' || process.env.VERCEL) {
-  globalForDb.pool = pool;
+  return p;
 }
 
-export const db = globalForDb.db || drizzle(pool, { schema });
+// Preserve pool and db instances on globalThis across hot reloads and warm serverless lambdas
+const globalForDb = globalThis as unknown as {
+  restaurantPool?: Pool;
+  cinemaPool?: Pool;
+  restaurantDb?: NodePgDatabase<typeof schema>;
+  cinemaDb?: NodePgDatabase<typeof schema>;
+};
+
+export const restaurantPool =
+  globalForDb.restaurantPool ||
+  createPool(restaurantConnectionString, isRestaurantSsl, 'Restaurant');
+
+export const cinemaPool =
+  globalForDb.cinemaPool ||
+  createPool(cinemaConnectionString, isCinemaSsl, 'Cinema');
+
+export const restaurantDb = globalForDb.restaurantDb || drizzle(restaurantPool, { schema });
+export const cinemaDb = globalForDb.cinemaDb || drizzle(cinemaPool, { schema });
 
 if (process.env.NODE_ENV !== 'production' || process.env.VERCEL) {
-  globalForDb.db = db;
+  globalForDb.restaurantPool = restaurantPool;
+  globalForDb.cinemaPool = cinemaPool;
+  globalForDb.restaurantDb = restaurantDb;
+  globalForDb.cinemaDb = cinemaDb;
 }
 
-export type Database = typeof db;
+// Backward-compatible primary defaults (defaulting to Restaurant DB)
+export const pool = restaurantPool;
+export const db = restaurantDb;
+
+/**
+ * Access database instance dynamically based on tenant type.
+ */
+export function getDb(type?: 'restaurant' | 'cinema' | string): NodePgDatabase<typeof schema> {
+  if (type === 'cinema') {
+    return cinemaDb;
+  }
+  return restaurantDb;
+}
+
+/**
+ * Access connection pool dynamically based on tenant type.
+ */
+export function getPool(type?: 'restaurant' | 'cinema' | string): Pool {
+  if (type === 'cinema') {
+    return cinemaPool;
+  }
+  return restaurantPool;
+}
+
+/**
+ * Graceful pool shutdown for both databases.
+ */
+export async function closePools(): Promise<void> {
+  await Promise.allSettled([restaurantPool.end(), cinemaPool.end()]);
+}
+
+export type Database = typeof restaurantDb;
 export * from './schema';

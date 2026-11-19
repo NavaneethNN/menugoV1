@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { db, orders, restaurantMembers } from '@menugo/database';
+import { db, restaurantDb, cinemaDb, orders, restaurantMembers } from '@menugo/database';
 import { eq, and } from 'drizzle-orm';
 import {
   REALTIME_CHANNELS,
@@ -53,7 +53,7 @@ export async function authorizeRestaurantSubscription(
     };
   }
 
-  const [membership] = await db
+  let [membership] = await restaurantDb
     .select({
       id: restaurantMembers.id,
       role: restaurantMembers.role
@@ -66,6 +66,22 @@ export async function authorizeRestaurantSubscription(
       )
     )
     .limit(1);
+
+  if (!membership) {
+    [membership] = await cinemaDb
+      .select({
+        id: restaurantMembers.id,
+        role: restaurantMembers.role
+      })
+      .from(restaurantMembers)
+      .where(
+        and(
+          eq(restaurantMembers.restaurantId, restaurantId),
+          eq(restaurantMembers.userId, userId)
+        )
+      )
+      .limit(1);
+  }
 
   if (!membership) {
     return {
@@ -96,13 +112,23 @@ export async function authorizeOrderSubscription(
     };
   }
 
-  const [order] = await db
+  let [order] = await restaurantDb
     .select({
       id: orders.id
     })
     .from(orders)
     .where(eq(orders.statusToken, statusToken.trim()))
     .limit(1);
+
+  if (!order) {
+    [order] = await cinemaDb
+      .select({
+        id: orders.id
+      })
+      .from(orders)
+      .where(eq(orders.statusToken, statusToken.trim()))
+      .limit(1);
+  }
 
   if (!order) {
     return {

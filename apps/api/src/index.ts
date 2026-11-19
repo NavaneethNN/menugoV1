@@ -6,9 +6,9 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { toNodeHandler } from 'better-auth/node';
 
-import { auth } from './lib/auth';
+import { auth, restaurantAuth, cinemaAuth } from './lib/auth';
 import { initializeSocket, getIO } from './lib/socket';
-import { pool } from '@menugo/database';
+import { pool, closePools } from '@menugo/database';
 import { errorHandler } from './middleware/error-handler';
 import { tenantMiddleware } from './middleware/tenant';
 import { authRateLimiter } from './middleware/rate-limiter';
@@ -135,9 +135,28 @@ app.use('/api/auth', authRateLimiter);
 // Custom Auth extension routes (e.g. /api/auth/me, /api/auth/staff-login)
 app.use('/api/auth', authRoutes);
 
-// Better Auth endpoint (Express 5 wildcard routing)
-app.all('/api/auth', toNodeHandler(auth));
-app.all('/api/auth/*splat', toNodeHandler(auth));
+// Dual Better Auth handlers for Restaurant and Cinema databases
+const restaurantAuthHandler = toNodeHandler(restaurantAuth);
+const cinemaAuthHandler = toNodeHandler(cinemaAuth);
+
+function resolveAuthHandler(req: express.Request) {
+  const isCinema =
+    Boolean(req.headers['x-theatre-id']) ||
+    req.headers['x-tenant-type'] === 'cinema' ||
+    req.headers['origin']?.includes('3001') ||
+    req.headers['referer']?.includes('3001') ||
+    req.url.startsWith('/api/cinema/auth');
+
+  return isCinema ? cinemaAuthHandler : restaurantAuthHandler;
+}
+
+// Dedicated Cinema Auth endpoint
+app.all('/api/cinema/auth', (req, res) => cinemaAuthHandler(req, res));
+app.all('/api/cinema/auth/*splat', (req, res) => cinemaAuthHandler(req, res));
+
+// Dynamic Better Auth endpoint (Express 5 wildcard routing with tenant origin routing)
+app.all('/api/auth', (req, res) => resolveAuthHandler(req)(req, res));
+app.all('/api/auth/*splat', (req, res) => resolveAuthHandler(req)(req, res));
 
 // Request Body Parsers: Enforce safe serverless payload limits (10MB maximum)
 app.use(express.json({ limit: '10mb' }));
@@ -196,8 +215,8 @@ function setupGracefulShutdown() {
         console.log('[WEBSOCKET] WebSocket server connections closed.');
       }
 
-      await pool.end();
-      console.log('[DATABASE] Database connection pool ended.');
+      await closePools();
+      console.log('[DATABASE] All database connection pools ended.');
 
       process.exit(0);
     } catch (err) {

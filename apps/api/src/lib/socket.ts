@@ -1,6 +1,6 @@
 import { Server as HttpServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
-import { db, session as sessionTable } from '@menugo/database';
+import { db, restaurantDb, cinemaDb, session as sessionTable } from '@menugo/database';
 import { eq, and, gte } from 'drizzle-orm';
 import {
   SOCKET_EVENTS,
@@ -9,7 +9,7 @@ import {
   RealtimeRestaurantOrderPayload,
   RealtimeCustomerOrderPayload
 } from '@menugo/shared';
-import { auth } from './auth';
+import { auth, restaurantAuth, cinemaAuth } from './auth';
 import {
   RealtimeProvider,
   setRealtimeProvider,
@@ -96,22 +96,39 @@ export function initializeSocket(server: HttpServer): SocketIOServer {
             return;
           }
 
-          // 1. Try session extraction from handshake headers
-          let session = await auth.api
+          // 1. Try session extraction from handshake headers across both auth instances
+          let session = await restaurantAuth.api
             .getSession({
               headers: socket.handshake.headers as any
             })
             .catch(() => null);
 
-          // 2. If handshake cookie was missing (e.g. connected before login or cross-origin), verify via session token
+          if (!session?.user) {
+            session = await cinemaAuth.api
+              .getSession({
+                headers: socket.handshake.headers as any
+              })
+              .catch(() => null);
+          }
+
+          // 2. If handshake cookie was missing, verify via session token across both databases
           let resolvedUserId = session?.user?.id;
           const token = clientToken || (socket.handshake.auth as any)?.token;
           if (!resolvedUserId && token) {
-            const [dbSession] = await db
+            let [dbSession] = await restaurantDb
               .select({ userId: sessionTable.userId, expiresAt: sessionTable.expiresAt })
               .from(sessionTable)
               .where(and(eq(sessionTable.token, token), gte(sessionTable.expiresAt, new Date())))
               .limit(1);
+
+            if (!dbSession) {
+              [dbSession] = await cinemaDb
+                .select({ userId: sessionTable.userId, expiresAt: sessionTable.expiresAt })
+                .from(sessionTable)
+                .where(and(eq(sessionTable.token, token), gte(sessionTable.expiresAt, new Date())))
+                .limit(1);
+            }
+
             if (dbSession) {
               resolvedUserId = dbSession.userId;
             }

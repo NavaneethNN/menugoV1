@@ -1,6 +1,13 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { db, user, session, account, verification } from '@menugo/database';
+import {
+  restaurantDb,
+  cinemaDb,
+  user,
+  session,
+  account,
+  verification
+} from '@menugo/database';
 import * as dotenv from 'dotenv';
 import path from 'path';
 
@@ -54,60 +61,75 @@ const cookieSameSite = (process.env.AUTH_COOKIE_SAME_SITE as 'lax' | 'strict' | 
   (isProduction && !process.env.AUTH_COOKIE_DOMAIN ? 'none' : 'lax');
 const useSecureCookies = isProduction || cookieSameSite === 'none';
 
-export const auth = betterAuth({
-  secret,
-  baseURL: apiUrl,
-  basePath: '/api/auth',
-  user: {
-    additionalFields: {
-      tenantType: {
-        type: 'string',
-        defaultValue: 'restaurant',
-        input: true
+function createBetterAuthConfig(targetDb: typeof restaurantDb, defaultTenantType: 'restaurant' | 'cinema') {
+  return {
+    secret,
+    baseURL: apiUrl,
+    basePath: '/api/auth',
+    user: {
+      additionalFields: {
+        tenantType: {
+          type: 'string' as const,
+          defaultValue: defaultTenantType,
+          input: true
+        }
+      }
+    },
+    database: drizzleAdapter(targetDb, {
+      provider: 'pg',
+      schema: {
+        user,
+        session,
+        account,
+        verification
+      }
+    }),
+    emailAndPassword: {
+      enabled: true,
+      requireEmailVerification: false,
+      minPasswordLength: 4,
+      maxPasswordLength: 128
+    },
+    socialProviders: {
+      google: {
+        clientId: process.env.GOOGLE_CLIENT_ID || process.env.OAUTH_CLIENT_ID || '',
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.OAUTH_CLIENT_SECRET || '',
+        enabled: Boolean(
+          (process.env.GOOGLE_CLIENT_ID || process.env.OAUTH_CLIENT_ID) &&
+          (process.env.GOOGLE_CLIENT_SECRET || process.env.OAUTH_CLIENT_SECRET)
+        )
+      }
+    },
+    session: {
+      expiresIn: 60 * 60 * 24 * 7, // 7 days
+      updateAge: 60 * 60 * 24 // 1 day
+    },
+    rateLimit: {
+      enabled: false // Handled cleanly & consistently at the Express API gateway by authRateLimiter
+    },
+    trustedOrigins,
+    advanced: {
+      useSecureCookies,
+      defaultCookieAttributes: {
+        sameSite: cookieSameSite,
+        secure: useSecureCookies,
+        httpOnly: true,
+        domain: process.env.AUTH_COOKIE_DOMAIN || undefined,
+        path: '/'
       }
     }
-  },
-  database: drizzleAdapter(db, {
-    provider: 'pg',
-    schema: {
-      user,
-      session,
-      account,
-      verification
-    }
-  }),
-  emailAndPassword: {
-    enabled: true,
-    requireEmailVerification: false,
-    minPasswordLength: 4,
-    maxPasswordLength: 128
-  },
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID || process.env.OAUTH_CLIENT_ID || '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.OAUTH_CLIENT_SECRET || '',
-      enabled: Boolean(
-        (process.env.GOOGLE_CLIENT_ID || process.env.OAUTH_CLIENT_ID) &&
-        (process.env.GOOGLE_CLIENT_SECRET || process.env.OAUTH_CLIENT_SECRET)
-      )
-    }
-  },
-  session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 days
-    updateAge: 60 * 60 * 24 // 1 day
-  },
-  rateLimit: {
-    enabled: false // Handled cleanly & consistently at the Express API gateway by authRateLimiter
-  },
-  trustedOrigins,
-  advanced: {
-    useSecureCookies,
-    defaultCookieAttributes: {
-      sameSite: cookieSameSite,
-      secure: useSecureCookies,
-      httpOnly: true,
-      domain: process.env.AUTH_COOKIE_DOMAIN || undefined,
-      path: '/'
-    }
+  };
+}
+
+export const restaurantAuth = betterAuth(createBetterAuthConfig(restaurantDb, 'restaurant'));
+export const cinemaAuth = betterAuth(createBetterAuthConfig(cinemaDb, 'cinema'));
+
+// Default backward-compatible export (points to restaurantAuth)
+export const auth = restaurantAuth;
+
+export function getAuth(tenantType?: 'restaurant' | 'cinema' | string) {
+  if (tenantType === 'cinema') {
+    return cinemaAuth;
   }
-});
+  return restaurantAuth;
+}

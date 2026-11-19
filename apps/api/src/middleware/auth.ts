@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { auth } from '../lib/auth';
+import { auth, cinemaAuth, restaurantAuth } from '../lib/auth';
 import { db, restaurantMembers } from '@menugo/database';
 import { and, eq } from 'drizzle-orm';
 import { RestaurantMemberRole } from '@menugo/shared';
@@ -38,9 +38,25 @@ export async function requireAuth(
   next: NextFunction
 ): Promise<void> {
   try {
-    const sessionData = await auth.api.getSession({
+    const isCinema =
+      Boolean(req.headers['x-theatre-id']) ||
+      req.headers['x-tenant-type'] === 'cinema' ||
+      req.headers['origin']?.includes('3001') ||
+      req.headers['referer']?.includes('3001') ||
+      (req.originalUrl && req.originalUrl.includes('/api/cinema'));
+
+    const primaryAuth = isCinema ? cinemaAuth : restaurantAuth;
+    const fallbackAuth = isCinema ? restaurantAuth : cinemaAuth;
+
+    let sessionData = await primaryAuth.api.getSession({
       headers: req.headers as any
     });
+
+    if (!sessionData || !sessionData.user) {
+      sessionData = await fallbackAuth.api.getSession({
+        headers: req.headers as any
+      });
+    }
 
     if (!sessionData || !sessionData.user) {
       res.status(401).json({

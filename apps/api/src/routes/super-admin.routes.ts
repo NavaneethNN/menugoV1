@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import {
   db,
+  restaurantDb,
+  cinemaDb,
   restaurants,
   restaurantMembers,
   user,
@@ -209,55 +211,87 @@ superAdminRouter.get('/me', (req: Request, res: Response) => {
  */
 superAdminRouter.get('/metrics', async (req: Request, res: Response) => {
   try {
-    // 1. Venue counts
-    const allVenues = await db
-      .select({
-        id: restaurants.id,
-        tenantType: restaurants.tenantType,
-        isActive: restaurants.isActive
-      })
-      .from(restaurants);
+    // 1. Venue counts across restaurantDb and cinemaDb
+    const [restaurantVenues, cinemaVenues] = await Promise.all([
+      restaurantDb
+        .select({
+          id: restaurants.id,
+          name: restaurants.name,
+          slug: restaurants.slug,
+          tenantType: restaurants.tenantType,
+          isActive: restaurants.isActive,
+          createdAt: restaurants.createdAt
+        })
+        .from(restaurants)
+        .catch(() => []),
+      cinemaDb
+        .select({
+          id: restaurants.id,
+          name: restaurants.name,
+          slug: restaurants.slug,
+          tenantType: restaurants.tenantType,
+          isActive: restaurants.isActive,
+          createdAt: restaurants.createdAt
+        })
+        .from(restaurants)
+        .catch(() => [])
+    ]);
 
-    const totalRestaurants = allVenues.filter((v) => v.tenantType === 'restaurant').length;
-    const activeRestaurants = allVenues.filter((v) => v.tenantType === 'restaurant' && v.isActive).length;
-    const totalTheatres = allVenues.filter((v) => v.tenantType === 'cinema').length;
-    const activeTheatres = allVenues.filter((v) => v.tenantType === 'cinema' && v.isActive).length;
+    const allVenues = [...restaurantVenues, ...cinemaVenues];
+
+    const totalRestaurants = restaurantVenues.length;
+    const activeRestaurants = restaurantVenues.filter((v) => v.isActive).length;
+    const totalTheatres = cinemaVenues.length;
+    const activeTheatres = cinemaVenues.filter((v) => v.isActive).length;
     const totalSuspended = allVenues.filter((v) => !v.isActive).length;
 
-    // 2. Order counts and GMV
-    const orderStats = await db
-      .select({
-        totalOrders: count(orders.id),
-        totalGmvPaise: sql<number>`coalesce(sum(${orders.totalAmount}), 0)`
-      })
-      .from(orders);
+    // 2. Order counts and GMV across both databases
+    const [restaurantOrderStats, cinemaOrderStats] = await Promise.all([
+      restaurantDb
+        .select({
+          totalOrders: count(orders.id),
+          totalGmvPaise: sql<number>`coalesce(sum(${orders.totalAmount}), 0)`
+        })
+        .from(orders)
+        .catch(() => [{ totalOrders: 0, totalGmvPaise: 0 }]),
+      cinemaDb
+        .select({
+          totalOrders: count(orders.id),
+          totalGmvPaise: sql<number>`coalesce(sum(${orders.totalAmount}), 0)`
+        })
+        .from(orders)
+        .catch(() => [{ totalOrders: 0, totalGmvPaise: 0 }])
+    ]);
 
-    const totalOrders = Number(orderStats[0]?.totalOrders || 0);
-    const totalGmvPaise = Number(orderStats[0]?.totalGmvPaise || 0);
+    const totalOrders =
+      Number(restaurantOrderStats[0]?.totalOrders || 0) +
+      Number(cinemaOrderStats[0]?.totalOrders || 0);
+    const totalGmvPaise =
+      Number(restaurantOrderStats[0]?.totalGmvPaise || 0) +
+      Number(cinemaOrderStats[0]?.totalGmvPaise || 0);
 
-    // 3. Subscriptions summary
-    const subStats = await db
-      .select({
-        totalSubscriptions: count(tenantSubscriptions.id)
-      })
-      .from(tenantSubscriptions)
-      .where(eq(tenantSubscriptions.status, 'active'));
+    // 3. Subscriptions summary across both databases
+    const [restaurantSubStats, cinemaSubStats] = await Promise.all([
+      restaurantDb
+        .select({ totalSubscriptions: count(tenantSubscriptions.id) })
+        .from(tenantSubscriptions)
+        .where(eq(tenantSubscriptions.status, 'active'))
+        .catch(() => [{ totalSubscriptions: 0 }]),
+      cinemaDb
+        .select({ totalSubscriptions: count(tenantSubscriptions.id) })
+        .from(tenantSubscriptions)
+        .where(eq(tenantSubscriptions.status, 'active'))
+        .catch(() => [{ totalSubscriptions: 0 }])
+    ]);
 
-    const activeSubscriptions = Number(subStats[0]?.totalSubscriptions || 0);
+    const activeSubscriptions =
+      Number(restaurantSubStats[0]?.totalSubscriptions || 0) +
+      Number(cinemaSubStats[0]?.totalSubscriptions || 0);
 
-    // 4. Recent venues
-    const recentVenues = await db
-      .select({
-        id: restaurants.id,
-        name: restaurants.name,
-        slug: restaurants.slug,
-        tenantType: restaurants.tenantType,
-        isActive: restaurants.isActive,
-        createdAt: restaurants.createdAt
-      })
-      .from(restaurants)
-      .orderBy(desc(restaurants.createdAt))
-      .limit(5);
+    // 4. Recent venues across both databases
+    const recentVenues = allVenues
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
 
     res.json({
       venues: {
@@ -292,37 +326,74 @@ superAdminRouter.get('/tenants', async (req: Request, res: Response) => {
   try {
     const { tenantType, status, search } = req.query;
 
-    const allVenues = await db
-      .select({
-        id: restaurants.id,
-        name: restaurants.name,
-        slug: restaurants.slug,
-        phone: restaurants.phone,
-        email: restaurants.email,
-        address: restaurants.address,
-        currency: restaurants.currency,
-        tenantType: restaurants.tenantType,
-        isActive: restaurants.isActive,
-        createdAt: restaurants.createdAt,
-        updatedAt: restaurants.updatedAt
-      })
-      .from(restaurants)
-      .orderBy(desc(restaurants.createdAt));
+    // 1. Fetch venues from restaurantDb and cinemaDb in parallel
+    const [restaurantVenues, cinemaVenues] = await Promise.all([
+      restaurantDb
+        .select({
+          id: restaurants.id,
+          name: restaurants.name,
+          slug: restaurants.slug,
+          phone: restaurants.phone,
+          email: restaurants.email,
+          address: restaurants.address,
+          currency: restaurants.currency,
+          tenantType: restaurants.tenantType,
+          isActive: restaurants.isActive,
+          createdAt: restaurants.createdAt,
+          updatedAt: restaurants.updatedAt
+        })
+        .from(restaurants)
+        .catch(() => []),
+      cinemaDb
+        .select({
+          id: restaurants.id,
+          name: restaurants.name,
+          slug: restaurants.slug,
+          phone: restaurants.phone,
+          email: restaurants.email,
+          address: restaurants.address,
+          currency: restaurants.currency,
+          tenantType: restaurants.tenantType,
+          isActive: restaurants.isActive,
+          createdAt: restaurants.createdAt,
+          updatedAt: restaurants.updatedAt
+        })
+        .from(restaurants)
+        .catch(() => [])
+    ]);
 
-    // Retrieve owner info for each restaurant
-    const allMembers = await db
-      .select({
-        restaurantId: restaurantMembers.restaurantId,
-        role: restaurantMembers.role,
-        userName: user.name,
-        userEmail: user.email
-      })
-      .from(restaurantMembers)
-      .leftJoin(user, eq(restaurantMembers.userId, user.id))
-      .where(eq(restaurantMembers.role, 'owner'));
+    const allVenues = [...restaurantVenues, ...cinemaVenues].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    // 2. Retrieve owner info across both databases
+    const [restaurantMembersList, cinemaMembersList] = await Promise.all([
+      restaurantDb
+        .select({
+          restaurantId: restaurantMembers.restaurantId,
+          role: restaurantMembers.role,
+          userName: user.name,
+          userEmail: user.email
+        })
+        .from(restaurantMembers)
+        .leftJoin(user, eq(restaurantMembers.userId, user.id))
+        .where(eq(restaurantMembers.role, 'owner'))
+        .catch(() => []),
+      cinemaDb
+        .select({
+          restaurantId: restaurantMembers.restaurantId,
+          role: restaurantMembers.role,
+          userName: user.name,
+          userEmail: user.email
+        })
+        .from(restaurantMembers)
+        .leftJoin(user, eq(restaurantMembers.userId, user.id))
+        .where(eq(restaurantMembers.role, 'owner'))
+        .catch(() => [])
+    ]);
 
     const ownerMap = new Map<string, { name: string; email: string }>();
-    for (const m of allMembers) {
+    for (const m of [...restaurantMembersList, ...cinemaMembersList]) {
       if (m.restaurantId && m.userEmail) {
         ownerMap.set(m.restaurantId, {
           name: m.userName || 'Owner',
@@ -331,8 +402,8 @@ superAdminRouter.get('/tenants', async (req: Request, res: Response) => {
       }
     }
 
-    // Retrieve cinema profiles if cinema
-    const allCinemaProfiles = await db
+    // 3. Retrieve cinema profiles from cinemaDb
+    const allCinemaProfiles = await cinemaDb
       .select({
         theatreId: cinemaProfiles.theatreId,
         theatreName: cinemaProfiles.theatreName,
@@ -343,45 +414,75 @@ superAdminRouter.get('/tenants', async (req: Request, res: Response) => {
         contactEmail: cinemaProfiles.contactEmail,
         onboardingCompleted: cinemaProfiles.onboardingCompleted
       })
-      .from(cinemaProfiles);
+      .from(cinemaProfiles)
+      .catch(() => []);
 
     const cinemaProfileMap = new Map<string, any>();
     for (const cp of allCinemaProfiles) {
       cinemaProfileMap.set(cp.theatreId, cp);
     }
 
-    // Retrieve active subscriptions
-    const allSubs = await db
-      .select({
-        restaurantId: tenantSubscriptions.restaurantId,
-        status: tenantSubscriptions.status,
-        billingCycle: tenantSubscriptions.billingCycle,
-        planId: tenantSubscriptions.planId,
-        planName: subscriptionPlans.name,
-        planSlug: subscriptionPlans.slug,
-        priceMonthlyPaise: subscriptionPlans.priceMonthlyPaise
-      })
-      .from(tenantSubscriptions)
-      .leftJoin(subscriptionPlans, eq(tenantSubscriptions.planId, subscriptionPlans.id))
-      .where(eq(tenantSubscriptions.status, 'active'));
+    // 4. Retrieve active subscriptions across both databases
+    const [restSubs, cineSubs] = await Promise.all([
+      restaurantDb
+        .select({
+          restaurantId: tenantSubscriptions.restaurantId,
+          status: tenantSubscriptions.status,
+          billingCycle: tenantSubscriptions.billingCycle,
+          planId: tenantSubscriptions.planId,
+          planName: subscriptionPlans.name,
+          planSlug: subscriptionPlans.slug,
+          priceMonthlyPaise: subscriptionPlans.priceMonthlyPaise
+        })
+        .from(tenantSubscriptions)
+        .leftJoin(subscriptionPlans, eq(tenantSubscriptions.planId, subscriptionPlans.id))
+        .where(eq(tenantSubscriptions.status, 'active'))
+        .catch(() => []),
+      cinemaDb
+        .select({
+          restaurantId: tenantSubscriptions.restaurantId,
+          status: tenantSubscriptions.status,
+          billingCycle: tenantSubscriptions.billingCycle,
+          planId: tenantSubscriptions.planId,
+          planName: subscriptionPlans.name,
+          planSlug: subscriptionPlans.slug,
+          priceMonthlyPaise: subscriptionPlans.priceMonthlyPaise
+        })
+        .from(tenantSubscriptions)
+        .leftJoin(subscriptionPlans, eq(tenantSubscriptions.planId, subscriptionPlans.id))
+        .where(eq(tenantSubscriptions.status, 'active'))
+        .catch(() => [])
+    ]);
 
     const subMap = new Map<string, any>();
-    for (const s of allSubs) {
+    for (const s of [...restSubs, ...cineSubs]) {
       subMap.set(s.restaurantId, s);
     }
 
-    // Retrieve order stats per restaurant
-    const orderAggregates = await db
-      .select({
-        restaurantId: orders.restaurantId,
-        orderCount: count(orders.id),
-        totalGmvPaise: sql<number>`coalesce(sum(${orders.totalAmount}), 0)`
-      })
-      .from(orders)
-      .groupBy(orders.restaurantId);
+    // 5. Retrieve order stats from both databases
+    const [restOrders, cineOrders] = await Promise.all([
+      restaurantDb
+        .select({
+          restaurantId: orders.restaurantId,
+          orderCount: count(orders.id),
+          totalGmvPaise: sql<number>`coalesce(sum(${orders.totalAmount}), 0)`
+        })
+        .from(orders)
+        .groupBy(orders.restaurantId)
+        .catch(() => []),
+      cinemaDb
+        .select({
+          restaurantId: orders.restaurantId,
+          orderCount: count(orders.id),
+          totalGmvPaise: sql<number>`coalesce(sum(${orders.totalAmount}), 0)`
+        })
+        .from(orders)
+        .groupBy(orders.restaurantId)
+        .catch(() => [])
+    ]);
 
     const orderStatsMap = new Map<string, { count: number; gmvPaise: number }>();
-    for (const o of orderAggregates) {
+    for (const o of [...restOrders, ...cineOrders]) {
       if (o.restaurantId) {
         orderStatsMap.set(o.restaurantId, {
           count: Number(o.orderCount || 0),
@@ -390,30 +491,32 @@ superAdminRouter.get('/tenants', async (req: Request, res: Response) => {
       }
     }
 
-    // Retrieve screen counts for cinema
-    const screenCounts = await db
+    // 6. Retrieve screen counts from cinemaDb
+    const screenCounts = await cinemaDb
       .select({
         theatreId: cinemaScreens.theatreId,
         count: count(cinemaScreens.id)
       })
       .from(cinemaScreens)
       .where(eq(cinemaScreens.status, 'active'))
-      .groupBy(cinemaScreens.theatreId);
+      .groupBy(cinemaScreens.theatreId)
+      .catch(() => []);
 
     const screenMap = new Map<string, number>();
     for (const s of screenCounts) {
       screenMap.set(s.theatreId, Number(s.count || 0));
     }
 
-    // Retrieve table counts for restaurants
-    const tableCounts = await db
+    // 7. Retrieve table counts from restaurantDb
+    const tableCounts = await restaurantDb
       .select({
         restaurantId: restaurantTables.restaurantId,
         count: count(restaurantTables.id)
       })
       .from(restaurantTables)
       .where(eq(restaurantTables.isActive, true))
-      .groupBy(restaurantTables.restaurantId);
+      .groupBy(restaurantTables.restaurantId)
+      .catch(() => []);
 
     const tableMap = new Map<string, number>();
     for (const t of tableCounts) {
@@ -486,7 +589,8 @@ superAdminRouter.patch('/tenants/:id/status', async (req: Request, res: Response
 
     const { isActive } = validation.data;
 
-    const updated = await db
+    // Try restaurantDb first
+    let updated = await restaurantDb
       .update(restaurants)
       .set({
         isActive,
@@ -494,6 +598,18 @@ superAdminRouter.patch('/tenants/:id/status', async (req: Request, res: Response
       })
       .where(eq(restaurants.id, id))
       .returning();
+
+    // If not found in restaurantDb, try cinemaDb
+    if (updated.length === 0) {
+      updated = await cinemaDb
+        .update(restaurants)
+        .set({
+          isActive,
+          updatedAt: new Date()
+        })
+        .where(eq(restaurants.id, id))
+        .returning();
+    }
 
     if (updated.length === 0) {
       res.status(404).json({ error: 'Tenant not found' });
@@ -527,21 +643,51 @@ superAdminRouter.patch('/tenants/:id/plan', async (req: Request, res: Response) 
 
     const { planId, billingCycle, status } = validation.data;
 
-    // Verify plan exists
-    const plan = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.id, planId)).limit(1);
+    // Identify target database for this venue
+    let targetDb = restaurantDb;
+    let [venue] = await restaurantDb
+      .select({ id: restaurants.id, tenantType: restaurants.tenantType })
+      .from(restaurants)
+      .where(eq(restaurants.id, restaurantId))
+      .limit(1);
+
+    if (!venue) {
+      targetDb = cinemaDb;
+      [venue] = await cinemaDb
+        .select({ id: restaurants.id, tenantType: restaurants.tenantType })
+        .from(restaurants)
+        .where(eq(restaurants.id, restaurantId))
+        .limit(1);
+    }
+
+    if (!venue) {
+      res.status(404).json({ error: 'Tenant not found' });
+      return;
+    }
+
+    // Verify plan exists (in targetDb or fallback)
+    let plan = await targetDb.select().from(subscriptionPlans).where(eq(subscriptionPlans.id, planId)).limit(1);
+    if (plan.length === 0) {
+      plan = await (targetDb === restaurantDb ? cinemaDb : restaurantDb)
+        .select()
+        .from(subscriptionPlans)
+        .where(eq(subscriptionPlans.id, planId))
+        .limit(1);
+    }
+
     if (plan.length === 0) {
       res.status(404).json({ error: 'Subscription plan not found' });
       return;
     }
 
-    // Cancel existing active subscriptions for this tenant
-    await db
+    // Cancel existing active subscriptions for this tenant in target database
+    await targetDb
       .update(tenantSubscriptions)
       .set({ status: 'cancelled', updatedAt: new Date() })
       .where(and(eq(tenantSubscriptions.restaurantId, restaurantId), eq(tenantSubscriptions.status, 'active')));
 
-    // Create new subscription
-    const newSub = await db
+    // Create new subscription in target database
+    const newSub = await targetDb
       .insert(tenantSubscriptions)
       .values({
         restaurantId,
@@ -571,10 +717,17 @@ superAdminRouter.patch('/tenants/:id/plan', async (req: Request, res: Response) 
  */
 superAdminRouter.get('/subscriptions', async (req: Request, res: Response) => {
   try {
-    const plans = await db
+    let plans = await restaurantDb
       .select()
       .from(subscriptionPlans)
       .orderBy(subscriptionPlans.sortOrder);
+
+    if (plans.length === 0) {
+      plans = await cinemaDb
+        .select()
+        .from(subscriptionPlans)
+        .orderBy(subscriptionPlans.sortOrder);
+    }
 
     res.json(plans);
   } catch (error: any) {
@@ -585,7 +738,7 @@ superAdminRouter.get('/subscriptions', async (req: Request, res: Response) => {
 
 /**
  * POST /api/super-admin/subscriptions
- * Create a new subscription plan
+ * Create a new subscription plan (synced across both databases)
  */
 superAdminRouter.post('/subscriptions', async (req: Request, res: Response) => {
   try {
@@ -595,8 +748,12 @@ superAdminRouter.post('/subscriptions', async (req: Request, res: Response) => {
       return;
     }
 
-    const created = await db.insert(subscriptionPlans).values(validation.data).returning();
-    res.status(201).json(created[0]);
+    const [createdInRest] = await Promise.all([
+      restaurantDb.insert(subscriptionPlans).values(validation.data).returning(),
+      cinemaDb.insert(subscriptionPlans).values(validation.data).returning().catch(() => [])
+    ]);
+
+    res.status(201).json(createdInRest[0]);
   } catch (error: any) {
     console.error('[Create Plan Error]:', error);
     res.status(500).json({ error: 'Failed to create subscription plan' });
@@ -605,7 +762,7 @@ superAdminRouter.post('/subscriptions', async (req: Request, res: Response) => {
 
 /**
  * PATCH /api/super-admin/subscriptions/:id
- * Update an existing subscription plan
+ * Update an existing subscription plan (synced across both databases)
  */
 superAdminRouter.patch('/subscriptions/:id', async (req: Request, res: Response) => {
   try {
@@ -616,21 +773,32 @@ superAdminRouter.patch('/subscriptions/:id', async (req: Request, res: Response)
       return;
     }
 
-    const updated = await db
-      .update(subscriptionPlans)
-      .set({
-        ...validation.data,
-        updatedAt: new Date()
-      })
-      .where(eq(subscriptionPlans.id, id))
-      .returning();
+    const [restUpdated] = await Promise.all([
+      restaurantDb
+        .update(subscriptionPlans)
+        .set({
+          ...validation.data,
+          updatedAt: new Date()
+        })
+        .where(eq(subscriptionPlans.id, id))
+        .returning(),
+      cinemaDb
+        .update(subscriptionPlans)
+        .set({
+          ...validation.data,
+          updatedAt: new Date()
+        })
+        .where(eq(subscriptionPlans.id, id))
+        .returning()
+        .catch(() => [])
+    ]);
 
-    if (updated.length === 0) {
+    if (restUpdated.length === 0) {
       res.status(404).json({ error: 'Subscription plan not found' });
       return;
     }
 
-    res.json(updated[0]);
+    res.json(restUpdated[0]);
   } catch (error: any) {
     console.error('[Update Plan Error]:', error);
     res.status(500).json({ error: 'Failed to update subscription plan' });
@@ -639,19 +807,27 @@ superAdminRouter.patch('/subscriptions/:id', async (req: Request, res: Response)
 
 /**
  * DELETE /api/super-admin/subscriptions/:id
- * Deactivates or deletes a subscription plan
+ * Deactivates a subscription plan (synced across both databases)
  */
 superAdminRouter.delete('/subscriptions/:id', async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
 
-    const updated = await db
-      .update(subscriptionPlans)
-      .set({ isActive: false, updatedAt: new Date() })
-      .where(eq(subscriptionPlans.id, id))
-      .returning();
+    const [restUpdated] = await Promise.all([
+      restaurantDb
+        .update(subscriptionPlans)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(subscriptionPlans.id, id))
+        .returning(),
+      cinemaDb
+        .update(subscriptionPlans)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(subscriptionPlans.id, id))
+        .returning()
+        .catch(() => [])
+    ]);
 
-    if (updated.length === 0) {
+    if (restUpdated.length === 0) {
       res.status(404).json({ error: 'Subscription plan not found' });
       return;
     }
@@ -665,18 +841,22 @@ superAdminRouter.delete('/subscriptions/:id', async (req: Request, res: Response
 
 /**
  * POST /api/super-admin/seed-plans
- * Seed default plans if empty
+ * Seed default plans if empty (synced to both databases)
  */
 superAdminRouter.post('/seed-plans', async (req: Request, res: Response) => {
   try {
-    const existing = await db.select().from(subscriptionPlans).limit(1);
+    const existing = await restaurantDb.select().from(subscriptionPlans).limit(1);
     if (existing.length > 0) {
       res.json({ message: 'Subscription plans already seeded', count: existing.length });
       return;
     }
 
-    const inserted = await db.insert(subscriptionPlans).values(DEFAULT_SUBSCRIPTION_PLANS).returning();
-    res.status(201).json({ success: true, message: 'Default subscription plans seeded', plans: inserted });
+    const [insertedRest] = await Promise.all([
+      restaurantDb.insert(subscriptionPlans).values(DEFAULT_SUBSCRIPTION_PLANS).returning(),
+      cinemaDb.insert(subscriptionPlans).values(DEFAULT_SUBSCRIPTION_PLANS).returning().catch(() => [])
+    ]);
+
+    res.status(201).json({ success: true, message: 'Default subscription plans seeded across databases', plans: insertedRest });
   } catch (error: any) {
     console.error('[Seed Plans Error]:', error);
     res.status(500).json({ error: 'Failed to seed default subscription plans' });

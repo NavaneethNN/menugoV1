@@ -1,10 +1,10 @@
 import express, { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../middleware/auth';
-import { db, restaurantMembers, restaurants, user, account } from '@menugo/database';
+import { db, restaurantDb, cinemaDb, restaurantMembers, restaurants, user, account } from '@menugo/database';
 import { eq, and, asc, or } from 'drizzle-orm';
 import { staffPinLoginSchema, staffPinCheckSchema } from '@menugo/shared';
 import { AppError } from '../middleware/error-handler';
-import { auth } from '../lib/auth';
+import { auth, restaurantAuth, cinemaAuth } from '../lib/auth';
 import { hashPassword } from 'better-auth/crypto';
 
 const router = Router();
@@ -16,22 +16,44 @@ router.use(express.json());
  */
 router.get('/me', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userMemberships = await db
-      .select({
-        membershipId: restaurantMembers.id,
-        role: restaurantMembers.role,
-        restaurant: {
-          id: restaurants.id,
-          name: restaurants.name,
-          slug: restaurants.slug,
-          isActive: restaurants.isActive,
-          currency: restaurants.currency,
-          tenantType: restaurants.tenantType
-        }
-      })
-      .from(restaurantMembers)
-      .innerJoin(restaurants, eq(restaurantMembers.restaurantId, restaurants.id))
-      .where(eq(restaurantMembers.userId, req.user!.id));
+    const [restaurantMemberships, cinemaMemberships] = await Promise.all([
+      restaurantDb
+        .select({
+          membershipId: restaurantMembers.id,
+          role: restaurantMembers.role,
+          restaurant: {
+            id: restaurants.id,
+            name: restaurants.name,
+            slug: restaurants.slug,
+            isActive: restaurants.isActive,
+            currency: restaurants.currency,
+            tenantType: restaurants.tenantType
+          }
+        })
+        .from(restaurantMembers)
+        .innerJoin(restaurants, eq(restaurantMembers.restaurantId, restaurants.id))
+        .where(eq(restaurantMembers.userId, req.user!.id))
+        .catch(() => []),
+      cinemaDb
+        .select({
+          membershipId: restaurantMembers.id,
+          role: restaurantMembers.role,
+          restaurant: {
+            id: restaurants.id,
+            name: restaurants.name,
+            slug: restaurants.slug,
+            isActive: restaurants.isActive,
+            currency: restaurants.currency,
+            tenantType: restaurants.tenantType
+          }
+        })
+        .from(restaurantMembers)
+        .innerJoin(restaurants, eq(restaurantMembers.restaurantId, restaurants.id))
+        .where(eq(restaurantMembers.userId, req.user!.id))
+        .catch(() => [])
+    ]);
+
+    const userMemberships = [...restaurantMemberships, ...cinemaMemberships];
 
     res.json({
       user: {
@@ -143,7 +165,7 @@ router.get('/staff-restaurants', async (_req: Request, res: Response, next: Next
  */
 router.get('/staff-theatres', async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const activeTheatres = await db
+    const activeTheatres = await cinemaDb
       .select({
         id: restaurants.id,
         name: restaurants.name,
@@ -176,7 +198,7 @@ router.get('/theatre-info/:slugOrId', async (req: Request, res: Response, next: 
       return res.status(400).json({ error: 'Theatre identifier is required' });
     }
 
-    const [theatre] = await db
+    const [theatre] = await cinemaDb
       .select({
         id: restaurants.id,
         name: restaurants.name,
@@ -233,24 +255,41 @@ router.post('/staff-pin-check', async (req: Request, res: Response, next: NextFu
   try {
     const { restaurantSlug, restaurantId, pin } = staffPinCheckSchema.parse(req.body);
 
-    // 1. Resolve restaurant
-    const [restaurant] = await db
+    // 1. Resolve restaurant/theatre across restaurantDb and cinemaDb
+    let targetDb = restaurantDb;
+    let [restaurant] = await targetDb
       .select({
         id: restaurants.id,
         name: restaurants.name,
         slug: restaurants.slug,
-        isActive: restaurants.isActive
+        isActive: restaurants.isActive,
+        tenantType: restaurants.tenantType
       })
       .from(restaurants)
       .where(restaurantSlug ? eq(restaurants.slug, restaurantSlug) : eq(restaurants.id, restaurantId!))
       .limit(1);
 
-    if (!restaurant || !restaurant.isActive) {
-      throw new AppError('Restaurant not found or is currently inactive', 404);
+    if (!restaurant) {
+      targetDb = cinemaDb;
+      [restaurant] = await targetDb
+        .select({
+          id: restaurants.id,
+          name: restaurants.name,
+          slug: restaurants.slug,
+          isActive: restaurants.isActive,
+          tenantType: restaurants.tenantType
+        })
+        .from(restaurants)
+        .where(restaurantSlug ? eq(restaurants.slug, restaurantSlug) : eq(restaurants.id, restaurantId!))
+        .limit(1);
     }
 
-    // 2. Resolve staff member by 4-digit PIN in this restaurant
-    const [member] = await db
+    if (!restaurant || !restaurant.isActive) {
+      throw new AppError('Restaurant or cinema theatre not found or is currently inactive', 404);
+    }
+
+    // 2. Resolve staff member by 4-digit PIN in this restaurant/theatre
+    const [member] = await targetDb
       .select({
         id: restaurantMembers.id,
         role: restaurantMembers.role,
@@ -270,11 +309,11 @@ router.post('/staff-pin-check', async (req: Request, res: Response, next: NextFu
       .limit(1);
 
     if (!member) {
-      throw new AppError('Invalid 4-digit PIN for this restaurant', 401);
+      throw new AppError('Invalid 4-digit PIN for this venue', 401);
     }
 
     // Resolve user account
-    const [staffUser] = await db
+    const [staffUser] = await targetDb
       .select({
         id: user.id,
         name: user.name,
@@ -285,7 +324,7 @@ router.post('/staff-pin-check', async (req: Request, res: Response, next: NextFu
       .limit(1);
 
     if (!staffUser) {
-      throw new AppError('Staff account error. Please contact the restaurant manager.', 500);
+      throw new AppError('Staff account error. Please contact your manager.', 500);
     }
 
     const displayName = member.staffName || staffUser.name;
@@ -309,24 +348,41 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
   try {
     const { restaurantSlug, restaurantId, pin, password, checkOnly } = staffPinLoginSchema.parse(req.body);
 
-    // 1. Resolve restaurant
-    const [restaurant] = await db
+    // 1. Resolve venue across restaurantDb and cinemaDb
+    let targetDb = restaurantDb;
+    let [restaurant] = await targetDb
       .select({
         id: restaurants.id,
         name: restaurants.name,
         slug: restaurants.slug,
-        isActive: restaurants.isActive
+        isActive: restaurants.isActive,
+        tenantType: restaurants.tenantType
       })
       .from(restaurants)
       .where(restaurantSlug ? eq(restaurants.slug, restaurantSlug) : eq(restaurants.id, restaurantId!))
       .limit(1);
 
-    if (!restaurant || !restaurant.isActive) {
-      throw new AppError('Restaurant not found or is currently inactive', 404);
+    if (!restaurant) {
+      targetDb = cinemaDb;
+      [restaurant] = await targetDb
+        .select({
+          id: restaurants.id,
+          name: restaurants.name,
+          slug: restaurants.slug,
+          isActive: restaurants.isActive,
+          tenantType: restaurants.tenantType
+        })
+        .from(restaurants)
+        .where(restaurantSlug ? eq(restaurants.slug, restaurantSlug) : eq(restaurants.id, restaurantId!))
+        .limit(1);
     }
 
-    // 2. Resolve staff member by 4-digit PIN in this restaurant
-    const [member] = await db
+    if (!restaurant || !restaurant.isActive) {
+      throw new AppError('Restaurant or cinema theatre not found or is currently inactive', 404);
+    }
+
+    // 2. Resolve staff member by 4-digit PIN in this venue
+    const [member] = await targetDb
       .select({
         id: restaurantMembers.id,
         role: restaurantMembers.role,
@@ -346,11 +402,11 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
       .limit(1);
 
     if (!member) {
-      throw new AppError('Invalid 4-digit PIN for this restaurant', 401);
+      throw new AppError('Invalid 4-digit PIN for this venue', 401);
     }
 
     // Resolve user account
-    const [staffUser] = await db
+    const [staffUser] = await targetDb
       .select({
         id: user.id,
         name: user.name,
@@ -361,7 +417,7 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
       .limit(1);
 
     if (!staffUser) {
-      throw new AppError('Staff account error. Please contact the restaurant manager.', 500);
+      throw new AppError('Staff account error. Please contact your manager.', 500);
     }
 
     const displayName = member.staffName || staffUser.name;
@@ -377,6 +433,8 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
       });
       return;
     }
+
+    const targetAuth = restaurant.tenantType === 'cinema' ? cinemaAuth : restaurantAuth;
 
     // 3. Case A: First-time login (Password NOT set yet)
     if (!member.isPasswordSet) {
@@ -396,7 +454,7 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
       const newHash = await hashPassword(password);
 
       // Update credential account password in database
-      await db
+      await targetDb
         .update(account)
         .set({ password: newHash, updatedAt: new Date() })
         .where(
@@ -407,13 +465,13 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
         );
 
       // Mark password as set on restaurant member record
-      await db
+      await targetDb
         .update(restaurantMembers)
         .set({ isPasswordSet: true, updatedAt: new Date() })
         .where(eq(restaurantMembers.id, member.id));
 
-      // Sign in through Better Auth to generate authoritative session & cookie
-      const authResponse = await auth.api.signInEmail({
+      // Sign in through target Better Auth to generate authoritative session & cookie
+      const authResponse = await targetAuth.api.signInEmail({
         body: {
           email: staffUser.email,
           password
@@ -428,7 +486,7 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
         member.role === 'kitchen'
           ? '/kitchen'
           : member.role === 'staff'
-          ? '/admin/service'
+          ? (restaurant.tenantType === 'cinema' ? '/admin/orders' : '/admin/service')
           : '/admin/dashboard';
 
       res.status(200).json({
@@ -457,10 +515,10 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
       throw new AppError('Please enter your 4-digit password', 400);
     }
 
-    // Verify 4-digit password using Better Auth signInEmail
+    // Verify 4-digit password using target Better Auth signInEmail
     let authResponse: Response | any;
     try {
-      authResponse = await auth.api.signInEmail({
+      authResponse = await targetAuth.api.signInEmail({
         body: {
           email: staffUser.email,
           password
@@ -482,7 +540,7 @@ router.post('/staff-login', async (req: Request, res: Response, next: NextFuncti
       member.role === 'kitchen'
         ? '/kitchen'
         : member.role === 'staff'
-        ? '/admin/service'
+        ? (restaurant.tenantType === 'cinema' ? '/admin/orders' : '/admin/service')
         : '/admin/dashboard';
 
     res.status(200).json({
