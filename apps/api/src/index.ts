@@ -28,6 +28,7 @@ import { superAdminRouter, getPublicSubscriptionPlans } from './routes/super-adm
 import { subscriptionRouter } from './routes/subscription.routes';
 import { ensureSuperAdminExists } from './lib/super-admin-seed';
 import { syncSubscriptionExpirations } from './lib/subscription-service';
+import { syncQrosDatabase } from './lib/qros-sync-service';
 
 import path from 'path';
 
@@ -263,6 +264,11 @@ if (!isTestEnv && !process.env.VERCEL) {
     // Auto-provision initial Super Admin if not already existing
     ensureSuperAdminExists().catch((err) => {
       console.warn('[SUPER ADMIN] Auto-provisioning notice:', err.message || err);
+    });
+
+    // Tri-database harmonization & sync (QROS Master DB + Restaurant DB + Cinema DB)
+    syncQrosDatabase().catch((err) => {
+      console.warn('[QROS DB] Tri-database sync notice:', err.message || err);
     });
 
     // Initial check of subscription expirations across tenants

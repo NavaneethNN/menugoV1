@@ -85,37 +85,46 @@ menugo-V1/
 
 ---
 
-## 🗄️ Dual-Database Architecture & Isolation
+## 🗄️ Tri-Database Architecture & Isolation
 
-To support massive scalability and complete domain separation between independent restaurants and high-volume theatre multiplex chains, QROS implements a **Dual-Database Architecture**:
+To support massive scalability, clean multi-tenancy, and centralized platform governance, QROS implements a **Tri-Database Architecture**:
 
 ### 1. Connection Pools & Dynamic Routing (`packages/database/src/client.ts`)
 
-Instead of forcing all tenants into one shared database instance, the platform configures two distinct Neon PostgreSQL connection pools:
+Instead of overloading a single database instance, the platform configures three distinct Neon PostgreSQL connection pools:
 
 ```typescript
 // packages/database/src/client.ts
+export const qrosDb = drizzle(qrosPool, { schema });
 export const restaurantDb = drizzle(restaurantPool, { schema });
 export const cinemaDb = drizzle(cinemaPool, { schema });
 
-export function getDb(type?: 'restaurant' | 'cinema' | string) {
+export function getDb(type?: 'restaurant' | 'cinema' | 'qros' | 'superadmin' | string) {
+  if (type === 'qros' || type === 'superadmin' || type === 'platform') return qrosDb;
   if (type === 'cinema') return cinemaDb;
   return restaurantDb;
 }
 ```
 
-- **Restaurant DB (`RESTAURANT_DATABASE_URL` / `DATABASE_URL`)**:
-  - Houses restaurant profiles, tables, QR tokens, menus, categories, orders, order items, and restaurant staff.
-- **Cinema DB (`CINEMA_DATABASE_URL` / `DATABASE_URL`)**:
-  - Houses theatres, screens, auditoriums, seat layouts, cinema concessions, shows, cinema orders, and runner assignments.
+- **👑 Central QROS Master Database (`QROS_DATABASE_URL`)**:
+  - Central system of record for **Super Admin operations**.
+  - Master registry containing **all restaurants and all cinema theatres** on the platform (`tenantType = 'restaurant' | 'cinema'`).
+  - Master catalog of **subscription plans** (`subscription_plans`).
+  - Platform-wide **tenant subscriptions** (`tenant_subscriptions`), billing logs, and payment transactions (`subscription_payments`).
+  - Super Administrator account provisioning and platform-wide analytics.
+- **🍽️ Restaurant Operational Database (`RESTAURANT_DATABASE_URL`)**:
+  - Houses restaurant dine-in tables, QR session tokens, digital menus, categories, live orders, order items, KDS, and restaurant staff PINs.
+- **🎬 Cinema Operational Database (`CINEMA_DATABASE_URL`)**:
+  - Houses multiplexes, screens, auditoriums, row/seat layouts, showtimes, concessions, in-seat orders, and runner dispatch feeds.
 
 > [!NOTE]
-> In local development or staging, `RESTAURANT_DATABASE_URL` and `CINEMA_DATABASE_URL` can point to the same database connection string if desired. The system seamlessly handles both unified and split configurations.
+> The tri-database synchronization engine (`apps/api/src/lib/qros-sync-service.ts`) automatically harmonizes subscription plans and venue registrations across all three databases on startup and on tenant onboarding.
 
 ### 2. Tenant Isolation & Context Scoping
 All database queries are strictly scoped to the active tenant ID:
 - Restaurant queries require `restaurant_id` validation via `requireRestaurantMember`.
 - Cinema queries require `theatre_id` validation via `requireTheatreMember`.
+- Super Admin operations query `qrosDb` with validation via `requireSuperAdmin` and `x-super-admin-key`.
 
 Cross-tenant data leakage is prevented at both the middleware layer and the SQL query builder layer.
 

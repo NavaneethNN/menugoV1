@@ -1,9 +1,9 @@
 import { auth } from './auth';
-import { restaurantDb, user } from '@menugo/database';
+import { restaurantDb, qrosDb, user } from '@menugo/database';
 import { eq } from 'drizzle-orm';
 
 /**
- * Ensures the platform super admin account exists in the primary database.
+ * Ensures the platform super admin account exists in the primary database and QROS master database.
  * If not present, it auto-provisions it using Better Auth with a default or configured password.
  * Also verifies that existing super admin accounts have role = 'super_admin' and tenantType = 'platform'.
  */
@@ -48,14 +48,24 @@ export async function ensureSuperAdminExists(): Promise<void> {
           }
         });
 
-        await restaurantDb
-          .update(user)
-          .set({
-            role: 'super_admin',
-            tenantType: 'platform',
-            emailVerified: true
-          })
-          .where(eq(user.email, primaryEmail));
+        await Promise.allSettled([
+          restaurantDb
+            .update(user)
+            .set({
+              role: 'super_admin',
+              tenantType: 'platform',
+              emailVerified: true
+            })
+            .where(eq(user.email, primaryEmail)),
+          qrosDb
+            .update(user)
+            .set({
+              role: 'super_admin',
+              tenantType: 'platform',
+              emailVerified: true
+            })
+            .where(eq(user.email, primaryEmail))
+        ]);
 
         console.log(`[SUPER ADMIN] Initial super admin created successfully: ${primaryEmail}`);
       } catch (signupErr: any) {
@@ -66,14 +76,24 @@ export async function ensureSuperAdminExists(): Promise<void> {
     } else {
       const existing = existingUsers[0];
       if (existing && existing.role !== 'super_admin') {
-        await restaurantDb
-          .update(user)
-          .set({
-            role: 'super_admin',
-            tenantType: 'platform',
-            emailVerified: true
-          })
-          .where(eq(user.email, primaryEmail));
+        await Promise.allSettled([
+          restaurantDb
+            .update(user)
+            .set({
+              role: 'super_admin',
+              tenantType: 'platform',
+              emailVerified: true
+            })
+            .where(eq(user.email, primaryEmail)),
+          qrosDb
+            .update(user)
+            .set({
+              role: 'super_admin',
+              tenantType: 'platform',
+              emailVerified: true
+            })
+            .where(eq(user.email, primaryEmail))
+        ]);
         console.log(`[SUPER ADMIN] Upgraded role to super_admin for: ${primaryEmail}`);
       }
     }

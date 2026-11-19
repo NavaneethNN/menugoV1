@@ -5,8 +5,13 @@ import path from 'path';
 dotenv.config();
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is missing.');
+const targetDbUrl =
+  process.env.QROS_DATABASE_URL ||
+  process.env.DATABASE_URL ||
+  process.env.RESTAURANT_DATABASE_URL;
+
+if (!targetDbUrl) {
+  throw new Error('DATABASE_URL or QROS_DATABASE_URL environment variable is missing.');
 }
 
 export default defineConfig({
@@ -14,7 +19,7 @@ export default defineConfig({
   out: './drizzle/migrations',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL
+    url: targetDbUrl
   },
   verbose: true,
   strict: false

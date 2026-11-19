@@ -94,15 +94,17 @@ The project uses `.env` in the root (for the backend API and database migrations
    cp .env.example .env
    ```
 
-2. **Configure Database Connection in `.env`:**
-   You can either use a single database connection string for both verticals or two separate database connection strings (Dual-DB Architecture):
+2. **Configure Database Connections in `.env` (Tri-Database Architecture):**
    ```env
-   # Option A: Shared database for local development
-   DATABASE_URL="postgresql://user:password@ep-sample-pooler.us-east-2.aws.neon.tech/menugo?sslmode=require"
+   # Central Master Database for Platform Super Admin & Operations (QROS DB)
+   QROS_DATABASE_URL="postgresql://user:password@ep-qros-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require"
 
-   # Option B: Dedicated database URLs (Recommended for dual-db parity)
+   # Dedicated Operational Databases for Restaurants and Cinemas
    RESTAURANT_DATABASE_URL="postgresql://user:password@ep-rest-pooler.us-east-2.aws.neon.tech/restaurant_db?sslmode=require"
    CINEMA_DATABASE_URL="postgresql://user:password@ep-cine-pooler.us-east-2.aws.neon.tech/cinema_db?sslmode=require"
+
+   # (Optional Fallback) Shared database URL if using a single DB in local dev
+   DATABASE_URL="postgresql://user:password@ep-sample-pooler.us-east-2.aws.neon.tech/menugo?sslmode=require"
 
    # Better Auth Secret (generate a random 32-char string: openssl rand -base64 32)
    BETTER_AUTH_SECRET="your-32-character-random-secret-key-goes-here"

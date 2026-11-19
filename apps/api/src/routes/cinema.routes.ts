@@ -66,6 +66,7 @@ import { requireCinemaTenant } from '../middleware/tenant-auth';
 import { AppError } from '../middleware/error-handler';
 import { tableVerificationRateLimiter } from '../middleware/rate-limiter';
 import { publishOrderUpdated } from '../lib/realtime';
+import { syncSingleVenueToQros } from '../lib/qros-sync-service';
 import QRCode from 'qrcode';
 import crypto from 'crypto';
 import cinemaPaymentRoutes from './cinema-payment.routes';
@@ -216,6 +217,12 @@ router.post(['/theatres', '/theatre'], requireAuth, async (req: Request, res: Re
 
       return { theatre, profile, membership };
     });
+
+    // Mirror newly onboarded theatre & profile to central QROS master DB
+    syncSingleVenueToQros(
+      { ...result.theatre, tenantType: 'cinema' },
+      result.profile
+    ).catch(() => {});
 
     res.status(201).json({
       message: 'Cinema theatre registered successfully',

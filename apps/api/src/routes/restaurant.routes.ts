@@ -5,6 +5,7 @@ import { createRestaurantSchema, updateRestaurantSchema } from '@menugo/shared';
 import { requireAuth } from '../middleware/auth';
 import { requireTenant } from '../middleware/tenant-auth';
 import { AppError } from '../middleware/error-handler';
+import { syncSingleVenueToQros } from '../lib/qros-sync-service';
 import crypto from 'crypto';
 
 const router = Router();
@@ -83,6 +84,12 @@ router.post('/', requireAuth, async (req: Request, res: Response, next) => {
 
       return { restaurant, membership };
     });
+
+    // Mirror newly onboarded restaurant to central QROS master DB
+    syncSingleVenueToQros({
+      ...result.restaurant,
+      tenantType: 'restaurant'
+    }).catch(() => {});
 
     res.status(201).json({
       message: 'Restaurant created successfully',

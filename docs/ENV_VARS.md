@@ -31,9 +31,10 @@ The monorepo separates secrets and configurations into scoped files:
 
 | Variable Name | Required | Default / Example | Purpose & Description |
 |---|---|---|---|
-| `DATABASE_URL` | **Yes** (or Dual URLs) | `postgresql://user:pass@ep-sample-pooler.us-east-2.aws.neon.tech/menugo?sslmode=require` | Primary PostgreSQL connection string. Must use pooled host (`-pooler`) and `sslmode=require` in Neon. |
-| `RESTAURANT_DATABASE_URL` | Optional | `postgresql://user:pass@ep-rest-pooler.us-east-2.aws.neon.tech/restaurant_db?sslmode=require` | Dedicated restaurant database connection string in Dual-DB mode. Falls back to `DATABASE_URL` if unset. |
-| `CINEMA_DATABASE_URL` | Optional | `postgresql://user:pass@ep-cine-pooler.us-east-2.aws.neon.tech/cinema_db?sslmode=require` | Dedicated cinema database connection string in Dual-DB mode. Falls back to `DATABASE_URL` if unset. |
+| `QROS_DATABASE_URL` | **Yes** (Tri-DB) | `postgresql://user:pass@ep-qros-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require` | Central Master Platform Database for Super Admin, central venue registry (all restaurants & cinema theatres), subscription plans, and platform billing. |
+| `RESTAURANT_DATABASE_URL` | Optional | `postgresql://user:pass@ep-rest-pooler.us-east-2.aws.neon.tech/restaurant_db?sslmode=require` | Dedicated restaurant operational database connection string. Falls back to `DATABASE_URL` if unset. |
+| `CINEMA_DATABASE_URL` | Optional | `postgresql://user:pass@ep-cine-pooler.us-east-2.aws.neon.tech/cinema_db?sslmode=require` | Dedicated cinema operational database connection string. Falls back to `DATABASE_URL` if unset. |
+| `DATABASE_URL` | Optional | `postgresql://user:pass@ep-sample-pooler.us-east-2.aws.neon.tech/menugo?sslmode=require` | Fallback pooled PostgreSQL connection string used when dedicated URLs are not provided. |
 | `DB_POOL_MAX` | No | `10` (prod), `20` (dev) | Maximum database connection pool size per serverless/container instance. |
 | `DB_CONNECTION_TIMEOUT` | No | `15000` | Connection timeout in milliseconds for PostgreSQL client connection attempts. |
 | `BETTER_AUTH_SECRET` | **Yes** | 32+ character random string | Secret key for hashing, signing, and encrypting Better Auth session cookies. |

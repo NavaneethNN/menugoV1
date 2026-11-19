@@ -13,11 +13,18 @@ function normalizeConnectionString(rawUrl?: string, fallback = 'postgresql://pos
   return rawUrl.replace(/([?&])sslmode=(require|prefer|verify-ca)(&|$)/, '$1sslmode=verify-full$3');
 }
 
+const rawQrosUrl = process.env.QROS_DATABASE_URL || process.env.DATABASE_URL;
 const rawRestaurantUrl = process.env.RESTAURANT_DATABASE_URL || process.env.DATABASE_URL;
 const rawCinemaUrl = process.env.CINEMA_DATABASE_URL || process.env.DATABASE_URL;
 
+const qrosConnectionString = normalizeConnectionString(rawQrosUrl, 'postgresql://postgres:postgres@localhost:5432/qros');
 const restaurantConnectionString = normalizeConnectionString(rawRestaurantUrl);
 const cinemaConnectionString = normalizeConnectionString(rawCinemaUrl);
+
+const isQrosSsl =
+  Boolean(rawQrosUrl?.includes('sslmode=')) ||
+  Boolean(rawQrosUrl?.includes('neon.tech')) ||
+  process.env.NODE_ENV === 'production';
 
 const isRestaurantSsl =
   Boolean(rawRestaurantUrl?.includes('sslmode=')) ||
@@ -53,11 +60,17 @@ function createPool(connectionString: string, sslRequired: boolean, label: strin
 
 // Preserve pool and db instances on globalThis across hot reloads and warm serverless lambdas
 const globalForDb = globalThis as unknown as {
+  qrosPool?: Pool;
   restaurantPool?: Pool;
   cinemaPool?: Pool;
+  qrosDb?: NodePgDatabase<typeof schema>;
   restaurantDb?: NodePgDatabase<typeof schema>;
   cinemaDb?: NodePgDatabase<typeof schema>;
 };
+
+export const qrosPool =
+  globalForDb.qrosPool ||
+  createPool(qrosConnectionString, isQrosSsl, 'QROS');
 
 export const restaurantPool =
   globalForDb.restaurantPool ||
@@ -67,12 +80,15 @@ export const cinemaPool =
   globalForDb.cinemaPool ||
   createPool(cinemaConnectionString, isCinemaSsl, 'Cinema');
 
+export const qrosDb = globalForDb.qrosDb || drizzle(qrosPool, { schema });
 export const restaurantDb = globalForDb.restaurantDb || drizzle(restaurantPool, { schema });
 export const cinemaDb = globalForDb.cinemaDb || drizzle(cinemaPool, { schema });
 
 if (process.env.NODE_ENV !== 'production' || process.env.VERCEL) {
+  globalForDb.qrosPool = qrosPool;
   globalForDb.restaurantPool = restaurantPool;
   globalForDb.cinemaPool = cinemaPool;
+  globalForDb.qrosDb = qrosDb;
   globalForDb.restaurantDb = restaurantDb;
   globalForDb.cinemaDb = cinemaDb;
 }
@@ -83,8 +99,15 @@ export const db = restaurantDb;
 
 /**
  * Access database instance dynamically based on tenant type.
+ * Supports:
+ * - 'qros' | 'superadmin' | 'platform' -> Central QROS Master Database
+ * - 'cinema' -> Cinema Operational Database
+ * - 'restaurant' (default) -> Restaurant Operational Database
  */
-export function getDb(type?: 'restaurant' | 'cinema' | string): NodePgDatabase<typeof schema> {
+export function getDb(type?: 'restaurant' | 'cinema' | 'qros' | 'superadmin' | 'platform' | string): NodePgDatabase<typeof schema> {
+  if (type === 'qros' || type === 'superadmin' || type === 'platform') {
+    return qrosDb;
+  }
   if (type === 'cinema') {
     return cinemaDb;
   }
@@ -94,7 +117,10 @@ export function getDb(type?: 'restaurant' | 'cinema' | string): NodePgDatabase<t
 /**
  * Access connection pool dynamically based on tenant type.
  */
-export function getPool(type?: 'restaurant' | 'cinema' | string): Pool {
+export function getPool(type?: 'restaurant' | 'cinema' | 'qros' | 'superadmin' | 'platform' | string): Pool {
+  if (type === 'qros' || type === 'superadmin' || type === 'platform') {
+    return qrosPool;
+  }
   if (type === 'cinema') {
     return cinemaPool;
   }
@@ -102,10 +128,10 @@ export function getPool(type?: 'restaurant' | 'cinema' | string): Pool {
 }
 
 /**
- * Graceful pool shutdown for both databases.
+ * Graceful pool shutdown for all three databases.
  */
 export async function closePools(): Promise<void> {
-  await Promise.allSettled([restaurantPool.end(), cinemaPool.end()]);
+  await Promise.allSettled([qrosPool.end(), restaurantPool.end(), cinemaPool.end()]);
 }
 
 export type Database = typeof restaurantDb;
