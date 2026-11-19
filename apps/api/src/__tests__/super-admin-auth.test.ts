@@ -1,7 +1,8 @@
-import { describe, it, after } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
 import request from 'supertest';
 import app from '../index';
+import { ensureSuperAdminExists } from '../lib/super-admin-seed';
 
 process.env.SUPER_ADMIN_KEY ||= 'test-only-master-key';
 process.env.SUPER_ADMIN_EMAILS ||= 'admin@menugo.in';
@@ -11,6 +12,10 @@ describe('Super Admin Authentication & CORS Suite', () => {
   const MASTER_KEY = process.env.SUPER_ADMIN_KEY!;
   const ADMIN_EMAIL = 'admin@menugo.in';
   const ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD!;
+
+  before(async () => {
+    await ensureSuperAdminExists();
+  });
 
   after(() => {
     // Graceful exit after test suite completion

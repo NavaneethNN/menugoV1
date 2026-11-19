@@ -84,3 +84,17 @@ export function maskSecret(secret: string): string {
   }
   return `••••••••${trimmed.slice(-4)}`;
 }
+
+/**
+ * Constant-time string comparison to prevent timing attack side-channels.
+ * Hashes inputs with SHA-256 first to guarantee equal buffer lengths and avoid early exits.
+ */
+export function timingSafeMatch(a: string | undefined | null, b: string | undefined | null): boolean {
+  if (!a || !b || typeof a !== 'string' || typeof b !== 'string') {
+    return false;
+  }
+  const aHash = crypto.createHash('sha256').update(a).digest();
+  const bHash = crypto.createHash('sha256').update(b).digest();
+  return crypto.timingSafeEqual(aHash, bHash);
+}
+

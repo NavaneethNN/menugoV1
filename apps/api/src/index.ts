@@ -155,8 +155,9 @@ if (process.env.NODE_ENV === 'production') {
   app.use(morgan('dev'));
 }
 
-// Authentication Rate Limiting (applied once across /api/auth mutations)
+// Authentication Rate Limiting (applied across /api/auth and /api/cinema/auth mutations)
 app.use('/api/auth', authRateLimiter);
+app.use('/api/cinema/auth', authRateLimiter);
 
 // Custom Auth extension routes (e.g. /api/auth/me, /api/auth/staff-login)
 app.use('/api/auth', authRoutes);

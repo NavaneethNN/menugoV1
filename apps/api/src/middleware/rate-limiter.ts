@@ -117,3 +117,22 @@ export const authRateLimiter = rateLimit({
   handler: rateLimitHandler('Too many authentication attempts from this IP. Please wait a few moments before trying again.')
 });
 
+/**
+ * 6. Staff PIN Verification Rate Limiter
+ * Mitigates brute-force attacks against 4-digit staff PINs (10,000 combinations).
+ * 10 attempts per 5 minutes per IP (50 in development).
+ */
+export const staffPinRateLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes rolling window
+  max: (req: Request) => {
+    if (req.headers['x-test-rate-limit']) return 3;
+    if (process.env.NODE_ENV !== 'production') return 50;
+    return 10;
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req: Request) => isTest && !req.headers['x-test-rate-limit'],
+  handler: rateLimitHandler('Too many PIN verification attempts from this IP address. Please wait 5 minutes before trying again.')
+});
+
+

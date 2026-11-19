@@ -6,7 +6,7 @@ import type { Router, Request, Response, NextFunction } from 'express';
 const SERVICE_KEY =
   process.env.INTERNAL_SERVICE_KEY ||
   process.env.SUPER_ADMIN_KEY ||
-  'qros-internal-service-secret-2026';
+  (process.env.NODE_ENV !== 'production' ? 'qros-internal-service-secret-2026' : '');
 
 function getBaseUrl(): string {
   const port = process.env.PORT || '5001';

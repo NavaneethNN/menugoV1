@@ -124,8 +124,22 @@
     {
       "idx": 17,
       "version": "7",
+      "when": 1794685000000,
+      "tag": "0017_user_tenant_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
       "when": 1795050000000,
       "tag": "0018_cinema_customer_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795101775196,
+      "tag": "0019_smart_whizzer",
       "breakpoints": true
     }
   ]

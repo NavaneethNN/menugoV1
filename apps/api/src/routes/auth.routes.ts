@@ -6,6 +6,7 @@ import { staffPinLoginSchema, staffPinCheckSchema } from '@menugo/shared';
 import { AppError } from '../middleware/error-handler';
 import { auth, restaurantAuth, cinemaAuth } from '../lib/auth';
 import { hashPassword } from 'better-auth/crypto';
+import { staffPinRateLimiter } from '../middleware/rate-limiter';
 
 const router = Router();
 router.use(express.json());
@@ -251,7 +252,7 @@ export function forwardAuthCookies(authResponse: any, res: Response) {
  * Staff 4-digit PIN verification endpoint.
  * Validates PIN and informs frontend whether staff needs first-time password setup.
  */
-router.post('/staff-pin-check', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/staff-pin-check', staffPinRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { restaurantSlug, restaurantId, pin } = staffPinCheckSchema.parse(req.body);
 
@@ -344,7 +345,7 @@ router.post('/staff-pin-check', async (req: Request, res: Response, next: NextFu
 /**
  * Staff 4-digit PIN + 4-digit Password Direct Login & First-Time Setup.
  */
-router.post('/staff-login', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/staff-login', staffPinRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { restaurantSlug, restaurantId, pin, password, checkOnly } = staffPinLoginSchema.parse(req.body);
 

@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { timingSafeMatch } from '../lib/encryption';
 
 /**
  * Middleware ensuring that internal cross-domain communications
@@ -23,16 +24,21 @@ export function requireInternalService(req: Request, res: Response, next: NextFu
 
   const providedKey = (serviceKeyHeader || bearerToken || '').trim();
 
+  const isProduction = process.env.NODE_ENV === 'production';
   const validKeys = [
     process.env.INTERNAL_SERVICE_KEY,
     process.env.SUPER_ADMIN_KEY,
     process.env.SUPER_ADMIN_MASTER_KEY,
-    'qros-internal-service-secret-2026',
-    'menugo-superadmin-secret-2026'
+    !isProduction ? 'qros-internal-service-secret-2026' : null,
+    !isProduction ? 'menugo-superadmin-secret-2026' : null
   ].filter((k): k is string => Boolean(k?.trim()));
 
-  if (providedKey && validKeys.includes(providedKey)) {
-    return next();
+  if (providedKey) {
+    for (const validKey of validKeys) {
+      if (timingSafeMatch(providedKey, validKey)) {
+        return next();
+      }
+    }
   }
 
   // Also allow authenticated super admin sessions

@@ -4542,7 +4542,39 @@ async function validateAndResolveCinemaContext(params: {
     throw new AppError('Selected screen does not belong to this theatre or is inactive', 400);
   }
 
-  // 4. Validate seat
+  // 4. Validate show if showId is provided
+  let show: typeof cinemaShows.$inferSelect | null = null;
+  let movie: typeof cinemaMovies.$inferSelect | null = null;
+
+  if (showId) {
+    const [foundShow] = await db
+      .select()
+      .from(cinemaShows)
+      .where(
+        and(
+          eq(cinemaShows.id, showId),
+          eq(cinemaShows.theatreId, qr.theatreId),
+          eq(cinemaShows.screenId, screenId)
+        )
+      )
+      .limit(1);
+
+    if (!foundShow) {
+      throw new AppError('Selected show does not belong to this screen or theatre', 404);
+    }
+
+    show = foundShow;
+    if (foundShow.movieId) {
+      const [foundMovie] = await db
+        .select()
+        .from(cinemaMovies)
+        .where(eq(cinemaMovies.id, foundShow.movieId))
+        .limit(1);
+      movie = foundMovie || null;
+    }
+  }
+
+  // 5. Validate seat
   const [seat] = await db
     .select()
     .from(cinemaSeats)
@@ -4566,36 +4598,6 @@ async function validateAndResolveCinemaContext(params: {
       `Selected seat ${seatNumber} (Row ${seatRow}) does not exist on ${screen.screenName}`,
       400
     );
-  }
-
-  // 5. Optional show & movie lookup (no error thrown if omitted or not scheduled, no ordering window blocking)
-  let show: typeof cinemaShows.$inferSelect | null = null;
-  let movie: typeof cinemaMovies.$inferSelect | null = null;
-
-  if (showId) {
-    const [foundShow] = await db
-      .select()
-      .from(cinemaShows)
-      .where(
-        and(
-          eq(cinemaShows.id, showId),
-          eq(cinemaShows.theatreId, qr.theatreId),
-          eq(cinemaShows.screenId, screenId)
-        )
-      )
-      .limit(1);
-
-    if (foundShow) {
-      show = foundShow;
-      if (foundShow.movieId) {
-        const [foundMovie] = await db
-          .select()
-          .from(cinemaMovies)
-          .where(eq(cinemaMovies.id, foundShow.movieId))
-          .limit(1);
-        movie = foundMovie || null;
-      }
-    }
   }
 
   return {
