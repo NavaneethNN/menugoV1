@@ -162,11 +162,11 @@ const CINEMA_STEPS: Step[] = [
   {
     id: 'cinema-scan',
     stepNumber: '01',
-    title: 'Scan Seat QR',
+    title: 'Scan Armrest QR',
     shortDesc: 'Seat-level QR code',
     headline: 'Scan from the comfort of your seat without leaving the screening.',
     details:
-      'Every cinema seat or screen auditorium features a unique MenuGo QR sticker. Moviegoers open their camera and access the theatre concession menu instantly.',
+      'Every cinema seat armrest or auditorium entry features a clear MenuGo QR code. Moviegoers open their smartphone camera to open the menu instantly.',
     highlights: [
       'Scan from armrest QR without downloading apps',
       'Auditorium and screen context auto-detected',
@@ -183,71 +183,71 @@ const CINEMA_STEPS: Step[] = [
     }
   },
   {
-    id: 'cinema-show',
-    stepNumber: '02',
-    title: 'Select Movie Show',
-    shortDesc: 'Current screening schedule',
-    headline: 'Orders are accurately scheduled for the active movie show.',
-    details:
-      'Guests pick their current screening or interval time slot, ensuring hot snacks are prepared and delivered exactly when desired.',
-    highlights: [
-      'Synchronized with theatre daily showtimes',
-      'Guarantees food is prepared for the right movie window',
-      'Delivery cutoff controls prevent late orders'
-    ],
-    icon: CalendarDays,
-    previewBadge: 'Show Timing',
-    previewCard: {
-      tag: 'Now Showing',
-      subtag: '6:30 PM Show',
-      title: 'Screen 2 · Blockbuster Feature',
-      detail: 'Current runtime: 2h 15m. Concession orders open.',
-      actionText: 'Confirm Show & Seat'
-    }
-  },
-  {
     id: 'cinema-seat',
-    stepNumber: '03',
-    title: 'Row & Seat Verification',
-    shortDesc: 'Precision seat mapping',
+    stepNumber: '02',
+    title: 'Screen, Row & Seat',
+    shortDesc: 'Precision seat selection',
     headline: 'Confirm your screen, row letter, and seat number.',
     details:
-      'Visual interactive seat validation ensures delivery runners bring the snacks to the exact seat in the dark auditorium without disturbance.',
+      'Guests confirm their exact seat (e.g. Row F, Seat 12). No complicated movie scheduling needed—simply pick your seat and you are ready to order.',
     highlights: [
-      'Auditorium layout visual confirmation',
-      'Prevents misplaced concession deliveries',
+      'Visual screen and row selection',
+      'No complex schedules or movie configurations required',
       'Supports VIP recliners, balcony, and standard rows'
     ],
     icon: Armchair,
-    previewBadge: 'Seat Verification',
+    previewBadge: 'Seat Selection',
     previewCard: {
       tag: 'Row F · Seat 12',
       subtag: 'Auditorium Center',
       title: 'Auditorium Screen 2',
-      detail: 'Confirmed: Row F, Seat 12. Seat delivery tag generated.',
+      detail: 'Confirmed: Screen 2, Row F, Seat 12. Seat delivery tag ready.',
       actionText: 'Choose Snacks'
+    }
+  },
+  {
+    id: 'cinema-menu',
+    stepNumber: '03',
+    title: 'Pick Snacks & Combos',
+    shortDesc: 'Concession menu',
+    headline: 'Browse hot popcorn, nachos, cold drinks, and combo deals.',
+    details:
+      'Guests explore visual concession categories, pick sizes (Regular, Large, Tub), add combos, and customize snacks without missing a scene.',
+    highlights: [
+      'Visual snack categories & combo bundles',
+      'Clear portion sizes and flavor options',
+      'Real-time item availability synced with kitchen'
+    ],
+    icon: Popcorn,
+    previewBadge: 'Concessions',
+    previewCard: {
+      tag: 'Cinema Combo',
+      subtag: 'Best Seller',
+      title: 'Caramel Tub + Cold Drink',
+      detail: 'Freshly popped caramel popcorn with chilled beverage.',
+      actionText: '+ Add to Order · ₹390'
     }
   },
   {
     id: 'cinema-pay',
     stepNumber: '04',
-    title: 'Order & Secure Pay',
+    title: 'Instant Online Pay',
     shortDesc: 'Pre-paid in-seat checkout',
-    headline: 'Select signature popcorn and snacks, pay securely via Razorpay/Stripe.',
+    headline: 'Pay securely via UPI, Cards, or Netbanking (Razorpay / Paytm).',
     details:
-      'Concessions must be paid prior to delivery so cinema runners can deliver swiftly without handling cash or cards inside the dark theatre.',
+      'Concessions are paid directly to your theatre merchant account so delivery runners can deliver swiftly without handling cash or POS machines in the dark.',
     highlights: [
       'Instant UPI, Cards & Netbanking checkout',
-      'Theatre directly receives 100% of payments',
+      'Theatre directly receives 100% of settlements',
       'Instant digital ticket and delivery tracking'
     ],
     icon: CreditCard,
-    previewBadge: 'Pre-Paid Order',
+    previewBadge: 'Direct Settlement',
     previewCard: {
       tag: 'Paid ₹390 via UPI',
       subtag: 'Concession Ticket',
       title: 'Order #C-1048 Paid',
-      detail: '1x Large Caramel Popcorn · 1x Cold Brew Coffee.',
+      detail: '1x Large Caramel Popcorn · 1x Cold Drink.',
       actionText: 'Dispatching to Runner'
     }
   },
@@ -255,16 +255,16 @@ const CINEMA_STEPS: Step[] = [
     id: 'cinema-deliver',
     stepNumber: '05',
     title: 'Seat Delivery',
-    shortDesc: 'Silent stealth delivery',
+    shortDesc: 'Direct armrest delivery',
     headline: 'Runner delivers directly to your seat without missing a single movie scene.',
     details:
-      'Cinema runners receive seat-specific navigation slips and silently deliver piping hot popcorn and drinks straight to seat Row F-12.',
+      'Cinema floor runners receive seat-specific dispatch tickets and deliver hot popcorn and drinks straight to seat Row F-12 inside the auditorium.',
     highlights: [
-      'Silent runner dispatch system',
-      'No more long interval concession queue lines',
-      'Doubles cinema per-screen food and beverage revenue'
+      'Stealth runner dispatch system',
+      'Eliminates long interval concession queues',
+      'Significantly increases theatre food and beverage revenue'
     ],
-    icon: Popcorn,
+    icon: ChefHat,
     previewBadge: 'Delivered to Seat',
     previewCard: {
       tag: 'Delivered to F12',
