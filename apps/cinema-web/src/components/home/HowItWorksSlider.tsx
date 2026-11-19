@@ -48,7 +48,7 @@ const RESTAURANT_STEPS: Step[] = [
     shortDesc: 'Instant table access',
     headline: 'Point, scan, and start browsing in under 2 seconds.',
     details:
-      'Guests simply point their standard phone camera at the physical MenuGo QR stand on their table. No app download, registration, or password required.',
+      'Guests simply point their standard phone camera at the physical The QROS QR stand on their table. No app download, registration, or password required.',
     highlights: [
       'Works in default camera on iOS & Android',
       'Table number automatically bound to session',
@@ -166,7 +166,7 @@ const CINEMA_STEPS: Step[] = [
     shortDesc: 'Seat-level QR code',
     headline: 'Scan from the comfort of your seat without leaving the screening.',
     details:
-      'Every cinema seat armrest or auditorium entry features a clear MenuGo QR code. Moviegoers open their smartphone camera to open the menu instantly.',
+      'Every cinema seat armrest or auditorium entry features a clear The QROS QR code. Moviegoers open their smartphone camera to open the menu instantly.',
     highlights: [
       'Scan from armrest QR without downloading apps',
       'Auditorium and screen context auto-detected',
@@ -487,7 +487,7 @@ export function HowItWorksSlider({ businessType }: HowItWorksSliderProps) {
                   </div>
                   <div>
                     <span className="text-xs font-black tracking-tight text-white block">
-                      MenuGo Live
+                      The QROS Live
                     </span>
                     <span className="text-[10px] text-slate-400 block -mt-0.5">
                       {currentStep.previewCard.tag}

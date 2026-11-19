@@ -2,8 +2,8 @@ import { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'MenuGo — Smart Table Dining & Order Management',
-    short_name: 'MenuGo',
+    name: 'The QROS — Smart Table Dining & Order Management',
+    short_name: 'The QROS',
     description: 'Instant QR code digital menus and ordering platform for restaurants and diners.',
     start_url: '/',
     display: 'standalone',
@@ -11,9 +11,9 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#ea580c',
     icons: [
       {
-        src: '/icon.svg',
+        src: '/qros_logo.png',
         sizes: 'any',
-        type: 'image/svg+xml'
+        type: 'image/png'
       }
     ]
   };

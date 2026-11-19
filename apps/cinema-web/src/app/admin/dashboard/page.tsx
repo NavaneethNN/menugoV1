@@ -18,6 +18,7 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   Lock,
   UtensilsCrossed,
   CreditCard,
@@ -56,6 +57,7 @@ export default function CinemaAdminDashboardPage() {
   const [summary, setSummary] = useState<any>(null);
   const [onboarding, setOnboarding] = useState<any>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +87,7 @@ export default function CinemaAdminDashboardPage() {
       const todayStr = new Date().toISOString().split('T')[0]!;
 
       // Parallel fetch summary, onboarding status & recent orders
-      const [summaryData, onboardingData, ordersData] = await Promise.all([
+      const [summaryData, onboardingData, ordersData, subData] = await Promise.all([
         apiRequest('/api/cinema/dashboard/summary', {
           theatreId: activeTheatreId
         }).catch((err) => {
@@ -104,12 +106,17 @@ export default function CinemaAdminDashboardPage() {
         }).catch((err) => {
           console.warn('Could not load recent orders:', err);
           return { orders: [] };
+        }),
+        apiRequest('/api/subscriptions/current').catch((err) => {
+          console.warn('Could not load subscription:', err);
+          return null;
         })
       ]);
 
       setSummary(summaryData);
       setOnboarding(onboardingData);
       setRecentOrders(ordersData?.orders || []);
+      setSubscription(subData);
 
       if (onboardingData?.isComplete || (onboardingData?.percentage ?? 0) === 100) {
         setWizardCollapsed(true);
@@ -310,9 +317,64 @@ export default function CinemaAdminDashboardPage() {
               <QrCode className="w-4 h-4" />
               <span>Screen QR Codes</span>
             </Link>
+
+            <Link
+              href="/cinema/admin/billing"
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              <span>Plan &amp; Billing</span>
+            </Link>
           </div>
         </div>
       </div>
+
+      {/* Subscription Expiration / Warning Alerts */}
+      {subscription?.isExpired && (
+        <div className="bg-rose-950/80 border border-rose-800 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-rose-200">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-rose-900/80 border border-rose-700 text-rose-400 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">Theatre Subscription Expired</p>
+              <p className="text-xs text-rose-300">
+                Your plan duration has ended. Renew now via Razorpay to ensure your patrons can continue placing orders seamlessly.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/cinema/admin/billing"
+            className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md shrink-0 transition"
+          >
+            Renew Now via Razorpay
+          </Link>
+        </div>
+      )}
+
+      {!subscription?.isExpired && subscription?.daysRemaining !== null && subscription?.daysRemaining !== undefined && subscription?.daysRemaining <= 5 && (
+        <div className="bg-amber-950/70 border border-amber-800 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-amber-200">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-900/80 border border-amber-700 text-amber-400 flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">
+                Subscription Expiring Soon ({subscription.daysRemaining} {subscription.daysRemaining === 1 ? 'day' : 'days'} left)
+              </p>
+              <p className="text-xs text-amber-300">
+                Your theatre {subscription.plan?.name || ''} plan expires in {subscription.daysRemaining} {subscription.daysRemaining === 1 ? 'day' : 'days'}. Renew to maintain uninterrupted screen ordering.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/cinema/admin/billing"
+            className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md shrink-0 transition"
+          >
+            Extend Duration
+          </Link>
+        </div>
+      )}
 
       {/* Live Operational Metrics Ribbon */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

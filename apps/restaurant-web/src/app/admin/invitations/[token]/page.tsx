@@ -88,7 +88,7 @@ export default function InvitationAcceptPage() {
             M
           </div>
           <span className="font-black text-xl text-slate-900">
-            Menu<span className="text-orange-600">Go</span>
+            The QROS
           </span>
         </div>
 
@@ -139,7 +139,7 @@ export default function InvitationAcceptPage() {
                 Join {invitation?.restaurant?.name}
               </h2>
               <p className="text-slate-500 text-xs mt-1">
-                You have been invited to collaborate as staff on MenuGo.
+                You have been invited to collaborate as staff on The QROS.
               </p>
             </div>
 

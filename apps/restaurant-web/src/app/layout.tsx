@@ -13,8 +13,8 @@ const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://menugo.com').replace
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
   title: {
-    default: 'MenuGo | Smart Table Dining & Order Management',
-    template: '%s | MenuGo'
+    default: 'The QROS | Smart Table Dining & Order Management',
+    template: '%s | The QROS'
   },
   description:
     'Instant QR code digital menus and table ordering platform. No app downloads or registrations required. Scan, explore, and order at your own pace.',
@@ -24,11 +24,11 @@ export const metadata: Metadata = {
     'contactless dining',
     'table ordering',
     'kitchen display system',
-    'MenuGo'
+    'The QROS'
   ],
-  authors: [{ name: 'MenuGo' }],
-  creator: 'MenuGo',
-  publisher: 'MenuGo',
+  authors: [{ name: 'The QROS' }],
+  creator: 'The QROS',
+  publisher: 'The QROS',
   robots: {
     index: true,
     follow: true,
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' }
+      { url: '/qros_logo.png', type: 'image/png' }
     ],
     apple: [{ url: '/apple-icon' }]
   },
@@ -50,25 +50,25 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: appUrl,
-    siteName: 'MenuGo',
-    title: 'MenuGo | Your Table. Your Time. Your Order.',
+    siteName: 'The QROS',
+    title: 'The QROS | Your Table. Your Time. Your Order.',
     description:
       'Give your customers the freedom to explore your menu and order whenever they are ready. Give your restaurant a simpler way to receive and manage table orders.',
     images: [
       {
-        url: '/icon.svg',
-        width: 512,
-        height: 512,
-        alt: 'MenuGo Smart Dining Platform'
+        url: '/qros_logo.png',
+        width: 2172,
+        height: 724,
+        alt: 'The QROS'
       }
     ]
   },
   twitter: {
     card: 'summary',
-    title: 'MenuGo | Your Table. Your Time. Your Order.',
+    title: 'The QROS | Your Table. Your Time. Your Order.',
     description:
       'A better way to dine. A smarter way to serve. No app downloads. Just scan, explore and order.',
-    images: ['/icon.svg']
+    images: ['/qros_logo.png']
   }
 };
 

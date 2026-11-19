@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -12,7 +12,9 @@ import {
   ArrowLeft,
   Loader2,
   AlertCircle,
-  Laptop
+  Eye,
+  EyeOff,
+  CheckCircle2
 } from 'lucide-react';
 import { signIn } from '@/lib/auth-client';
 import { apiRequest } from '@/lib/api';
@@ -24,37 +26,90 @@ export default function SuperAdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [masterKey, setMasterKey] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showMasterKey, setShowMasterKey] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successNotice, setSuccessNotice] = useState<string | null>(null);
+  const [checkingExisting, setCheckingExisting] = useState(true);
+
+  // On mount: check if already authenticated as Super Admin
+  useEffect(() => {
+    let mounted = true;
+    async function checkExistingAuth() {
+      try {
+        const data = await apiRequest('/api/super-admin/me');
+        if (mounted && data?.isSuperAdmin) {
+          router.replace('/super-admin');
+          return;
+        }
+      } catch {
+        // Not authenticated yet
+      } finally {
+        if (mounted) setCheckingExisting(false);
+      }
+    }
+
+    checkExistingAuth();
+    return () => {
+      mounted = false;
+    };
+  }, [router]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessNotice(null);
     setLoading(true);
 
+    const cleanEmail = email.trim().toLowerCase();
+
     try {
+      // 1. Try dedicated Super Admin login endpoint
+      try {
+        const res = await apiRequest('/api/super-admin/login', {
+          method: 'POST',
+          body: JSON.stringify({ email: cleanEmail, password })
+        });
+
+        if (res?.isSuperAdmin) {
+          localStorage.removeItem('menugo_super_admin_key');
+          setSuccessNotice('Authentication successful. Redirecting...');
+          router.push('/super-admin');
+          return;
+        }
+      } catch (loginErr: any) {
+        // If not a 404 route error, throw the actual login error message
+        if (!loginErr?.message?.includes('404')) {
+          throw loginErr;
+        }
+      }
+
+      // 2. Fallback to Better Auth sign-in
       const res = await signIn.email({
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         password
       });
 
-      if (res.error) {
-        setError(res.error.message || 'Invalid administrator credentials');
+      if (res?.error) {
+        setError(res.error.message || 'Invalid administrator email or password.');
         setLoading(false);
         return;
       }
 
       // Verify super admin authorization
-      const check = await apiRequest('/api/super-admin/me').catch(() => null);
+      const check = await apiRequest('/api/super-admin/me');
       if (check?.isSuperAdmin) {
+        localStorage.removeItem('menugo_super_admin_key');
+        setSuccessNotice('Authentication successful. Redirecting...');
         router.push('/super-admin');
       } else {
-        setError('Access Denied: This account is not authorized as a MenuGo Super Administrator.');
+        setError('Access Denied: This account is not authorized as a The QROS Super Administrator.');
         setLoading(false);
       }
     } catch (err: any) {
-      setError(err?.message || 'Authentication failed. Please verify credentials.');
+      setError(err?.message || 'Authentication failed. Please verify administrator credentials.');
       setLoading(false);
     }
   };
@@ -62,22 +117,44 @@ export default function SuperAdminLoginPage() {
   const handleMasterKeyLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessNotice(null);
     setLoading(true);
 
+    const key = masterKey.trim();
+    if (!key) {
+      setError('Please enter the platform master key');
+      setLoading(false);
+      return;
+    }
+
     try {
-      if (!masterKey.trim()) {
-        setError('Please enter the platform master key');
-        setLoading(false);
-        return;
+      // 1. Try dedicated Super Admin login endpoint
+      try {
+        const res = await apiRequest('/api/super-admin/login', {
+          method: 'POST',
+          body: JSON.stringify({ masterKey: key })
+        });
+
+        if (res?.isSuperAdmin) {
+          localStorage.setItem('menugo_super_admin_key', key);
+          setSuccessNotice('Master Key verified. Redirecting...');
+          router.push('/super-admin');
+          return;
+        }
+      } catch (loginErr: any) {
+        if (!loginErr?.message?.includes('404')) {
+          throw loginErr;
+        }
       }
 
-      // Test master key with API
+      // 2. Fallback to /api/super-admin/me with header
       const res = await apiRequest('/api/super-admin/me', {
-        superAdminKey: masterKey.trim()
+        superAdminKey: key
       });
 
       if (res?.isSuperAdmin) {
-        localStorage.setItem('menugo_super_admin_key', masterKey.trim());
+        localStorage.setItem('menugo_super_admin_key', key);
+        setSuccessNotice('Master Key verified. Redirecting...');
         router.push('/super-admin');
       } else {
         setError('Invalid master administration key');
@@ -104,6 +181,15 @@ export default function SuperAdminLoginPage() {
     }
   };
 
+  if (checkingExisting) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white p-4">
+        <Loader2 className="w-8 h-8 animate-spin text-red-500 mb-3" />
+        <p className="text-xs text-slate-400 font-medium">Checking admin session...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white p-4 sm:p-6">
       <div className="w-full max-w-md">
@@ -114,7 +200,7 @@ export default function SuperAdminLoginPage() {
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Return to MenuGo Public Portal</span>
+            <span>Return to The QROS Public Portal</span>
           </Link>
         </div>
 
@@ -132,9 +218,17 @@ export default function SuperAdminLoginPage() {
               Super Admin Console
             </h1>
             <p className="text-xs text-slate-400 mt-2 max-w-xs mx-auto leading-relaxed">
-              Restricted management console for MenuGo platform operators and engineers.
+              Restricted management console for The QROS platform operators and engineers.
             </p>
           </div>
+
+          {/* Success Banner */}
+          {successNotice && (
+            <div className="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="flex-1 leading-relaxed">{successNotice}</div>
+            </div>
+          )}
 
           {/* Error Banner */}
           {error && (
@@ -214,9 +308,10 @@ export default function SuperAdminLoginPage() {
                     <input
                       type="email"
                       required
+                      autoComplete="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="admin@menugo.in"
+                      placeholder="you@yourvenue.com"
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-500 transition"
                     />
                   </div>
@@ -229,13 +324,22 @@ export default function SuperAdminLoginPage() {
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       required
+                      autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-500 transition"
+                      className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-500 transition"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
@@ -265,13 +369,21 @@ export default function SuperAdminLoginPage() {
                 <div className="relative">
                   <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <input
-                    type="password"
+                    type={showMasterKey ? 'text' : 'password'}
                     required
                     value={masterKey}
                     onChange={(e) => setMasterKey(e.target.value)}
-                    placeholder="Enter platform secret key..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-500 transition font-mono"
+                    placeholder="Enter platform master key..."
+                    className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-500 transition font-mono"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowMasterKey(!showMasterKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
+                    tabIndex={-1}
+                  >
+                    {showMasterKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
                 <p className="text-[10px] text-slate-500 mt-2">
                   Emergency operator key for initial platform setup and infrastructure recovery.
@@ -294,6 +406,8 @@ export default function SuperAdminLoginPage() {
               </button>
             </form>
           )}
+
+
         </div>
       </div>
     </div>

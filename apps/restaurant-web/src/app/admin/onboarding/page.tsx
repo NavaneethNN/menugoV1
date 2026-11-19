@@ -51,11 +51,9 @@ export default function RestaurantOnboardingPage() {
               <span>Back to Homepage</span>
             </Link>
             <Link href="/" className="inline-flex items-center gap-2">
-              <div className="w-9 h-9 rounded-lg bg-red-700 text-white font-extrabold flex items-center justify-center text-lg">
-                M
-              </div>
+              <img src="/qros_logo.png" alt="The QROS" className="w-24 h-9 rounded bg-white object-contain" />
               <span className="font-bold text-xl text-slate-900 tracking-tight">
-                Menu<span className="text-red-700">Go</span>
+                The QROS
               </span>
             </Link>
           </div>

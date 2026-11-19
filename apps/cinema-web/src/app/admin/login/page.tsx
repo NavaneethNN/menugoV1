@@ -174,17 +174,14 @@ function CinemaAdminLoginForm() {
 
         <div>
           <Link href="/" className="inline-flex items-center gap-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/70">
-            <span className="w-11 h-11 rounded-2xl bg-white text-red-700 flex items-center justify-center font-black text-2xl shadow-lg">M</span>
-            <div className="flex flex-col">
-              <span className="text-2xl font-black tracking-tight leading-none">MenuGo</span>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-red-200 mt-1">Cinema Portal</span>
-            </div>
+            <img src="/qros_logo.png" alt="The QROS" className="w-36 h-12 rounded-lg bg-white object-contain shadow-lg" />
+            <span className="sr-only">The QROS Cinema Portal</span>
           </Link>
 
           <div className="mt-8 sm:mt-10 lg:mt-7 xl:mt-9 max-w-xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3.5 py-2 text-xs font-bold text-white/95 backdrop-blur-sm">
               <Film className="w-4 h-4" />
-              <span>MenuGo for Theatres</span>
+              <span>The QROS for Theatres</span>
             </div>
             <p className="mt-6 xl:mt-7 text-xs font-extrabold uppercase tracking-[0.2em] text-red-100">
               {mode === 'signup' ? 'Modern Concession Operations' : 'Theatre Management Workspace'}

@@ -232,7 +232,7 @@ router.get('/theatre-info/:slugOrId', async (req: Request, res: Response, next: 
  * Helper to safely forward session cookies from Better Auth to Express response.
  * Handles both standard getSetCookie() (multiple cookies) and fallback string.
  */
-function forwardAuthCookies(authResponse: any, res: Response) {
+export function forwardAuthCookies(authResponse: any, res: Response) {
   const getSetCookieFn = authResponse?.headers?.getSetCookie;
   if (typeof getSetCookieFn === 'function') {
     const cookies = getSetCookieFn.call(authResponse.headers);

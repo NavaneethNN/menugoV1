@@ -331,11 +331,9 @@ export default function AdminCategoriesPage() {
           </Link>
 
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-orange-600 text-white font-bold flex items-center justify-center">
-              M
-            </div>
+            <img src="/qros_logo.png" alt="The QROS" className="w-20 h-8 rounded bg-white object-contain" />
             <span className="font-extrabold text-lg text-slate-900 hidden sm:inline">
-              Menu<span className="text-orange-600">Go</span>
+              The QROS
             </span>
           </div>
 

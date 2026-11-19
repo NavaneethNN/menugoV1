@@ -448,7 +448,7 @@ function CustomerMenuContent() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${data?.restaurant.name || 'MenuGo'} - Table Menu`,
+          title: `${data?.restaurant.name || 'The QROS'} - Table Menu`,
           text: `Check out the menu and order together at ${data?.restaurant.name}!`,
           url
         });
@@ -1295,7 +1295,7 @@ function CustomerMenuContent() {
         <div className="mt-8 pt-6 pb-6 text-center border-t border-slate-100">
           <p className="text-xs text-slate-400 flex items-center justify-center gap-1">
             <span>Powered by</span>
-            <span className="font-extrabold text-slate-700">MenuGo</span>
+            <span className="font-extrabold text-slate-700">The QROS</span>
           </p>
         </div>
       </div>

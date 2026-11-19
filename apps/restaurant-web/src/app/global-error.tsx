@@ -31,7 +31,7 @@ export default function GlobalError({
               cursor: 'pointer'
             }}
           >
-            Reload MenuGo
+            Reload The QROS
           </button>
         </div>
       </body>

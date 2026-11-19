@@ -1192,16 +1192,69 @@ export const tenantSubscriptions = pgTable(
 );
 
 export const subscriptionPlansRelations = relations(subscriptionPlans, ({ many }) => ({
-  subscriptions: many(tenantSubscriptions)
+  subscriptions: many(tenantSubscriptions),
+  payments: many(subscriptionPayments)
 }));
 
-export const tenantSubscriptionsRelations = relations(tenantSubscriptions, ({ one }) => ({
+export const tenantSubscriptionsRelations = relations(tenantSubscriptions, ({ one, many }) => ({
   restaurant: one(restaurants, {
     fields: [tenantSubscriptions.restaurantId],
     references: [restaurants.id]
   }),
   plan: one(subscriptionPlans, {
     fields: [tenantSubscriptions.planId],
+    references: [subscriptionPlans.id]
+  }),
+  payments: many(subscriptionPayments)
+}));
+
+// 20. Platform Subscription Payment Transactions (Razorpay Billing Records)
+export const subscriptionPayments = pgTable(
+  'subscription_payments',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    subscriptionId: text('subscription_id')
+      .references(() => tenantSubscriptions.id, { onDelete: 'set null' }),
+    restaurantId: text('restaurant_id')
+      .notNull()
+      .references(() => restaurants.id, { onDelete: 'cascade' }),
+    planId: text('plan_id')
+      .notNull()
+      .references(() => subscriptionPlans.id, { onDelete: 'restrict' }),
+    amountPaise: integer('amount_paise').notNull(),
+    currency: varchar('currency', { length: 10 }).default('INR').notNull(),
+    billingCycle: varchar('billing_cycle', { length: 20 }).default('monthly').notNull(),
+    provider: varchar('provider', { length: 30 }).default('razorpay').notNull(),
+    razorpayOrderId: varchar('razorpay_order_id', { length: 255 }),
+    razorpayPaymentId: varchar('razorpay_payment_id', { length: 255 }),
+    razorpaySignature: varchar('razorpay_signature', { length: 500 }),
+    status: varchar('status', { length: 50 }).default('pending').notNull(), // 'pending' | 'success' | 'failed'
+    notes: jsonb('notes').default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('subscription_payment_restaurant_idx').on(table.restaurantId),
+    index('subscription_payment_plan_idx').on(table.planId),
+    index('subscription_payment_rzp_order_idx').on(table.razorpayOrderId),
+    index('subscription_payment_rzp_pay_idx').on(table.razorpayPaymentId),
+    index('subscription_payment_status_idx').on(table.status)
+  ]
+);
+
+export const subscriptionPaymentsRelations = relations(subscriptionPayments, ({ one }) => ({
+  subscription: one(tenantSubscriptions, {
+    fields: [subscriptionPayments.subscriptionId],
+    references: [tenantSubscriptions.id]
+  }),
+  restaurant: one(restaurants, {
+    fields: [subscriptionPayments.restaurantId],
+    references: [restaurants.id]
+  }),
+  plan: one(subscriptionPlans, {
+    fields: [subscriptionPayments.planId],
     references: [subscriptionPlans.id]
   })
 }));

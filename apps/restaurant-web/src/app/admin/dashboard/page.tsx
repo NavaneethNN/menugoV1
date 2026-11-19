@@ -29,7 +29,10 @@ import {
   ChevronDown,
   User,
   Menu,
-  ClipboardList
+  ClipboardList,
+  Coins,
+  AlertTriangle,
+  Clock
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -41,6 +44,7 @@ export default function AdminDashboardPage() {
 
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [selectedMembership, setSelectedMembership] = useState<any>(null);
+  const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   // Modals
@@ -90,8 +94,14 @@ export default function AdminDashboardPage() {
             return found || restaurantOnly[0];
           });
         }
+
+        // Fetch subscription status for the active restaurant
+        apiRequest('/api/subscriptions/current')
+          .then((sub) => setSubscription(sub))
+          .catch((err) => console.warn('Could not load restaurant subscription:', err));
       } else {
         setSelectedMembership(null);
+        setSubscription(null);
       }
     } catch (err: any) {
       console.error('Failed to load restaurants:', err);
@@ -131,7 +141,7 @@ export default function AdminDashboardPage() {
               M
             </div>
             <span className="font-extrabold text-base sm:text-xl text-slate-900 leading-none">
-              Menu<span className="text-orange-600">Go</span>
+              The QROS
             </span>
           </Link>
 
@@ -207,7 +217,7 @@ export default function AdminDashboardPage() {
                   M
                 </div>
                 <span className="font-extrabold text-base text-slate-900">
-                  Menu<span className="text-orange-600">Go</span>
+                  The QROS
                 </span>
                 <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-800">
                   Admin
@@ -392,6 +402,17 @@ export default function AdminDashboardPage() {
                       </div>
                       <span>Staff &amp; Memberships</span>
                     </Link>
+
+                    <Link
+                      href="/admin/billing"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center">
+                        <Coins className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Billing &amp; Subscriptions</span>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -448,7 +469,7 @@ export default function AdminDashboardPage() {
             <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mx-auto mb-4">
               <Store className="w-8 h-8" />
             </div>
-            <h3 className="text-2xl font-black text-slate-900">Welcome to MenuGo!</h3>
+            <h3 className="text-2xl font-black text-slate-900">Welcome to The QROS!</h3>
             <p className="text-slate-600 text-sm mt-2 max-w-md mx-auto leading-relaxed">
               You haven&apos;t registered any restaurants yet. Set up your restaurant identity and customer QR slug to start serving digital contactless orders.
             </p>
@@ -462,6 +483,53 @@ export default function AdminDashboardPage() {
           </div>
         ) : (
           <div className="space-y-6">
+            {/* Subscription Expiration Alert */}
+            {subscription?.isExpired && (
+              <div className="bg-red-50 border border-red-200 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-red-900 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-red-900">Restaurant Subscription Expired</p>
+                    <p className="text-xs text-red-700">
+                      Your restaurant subscription plan has ended. Renew now to ensure patrons can place contactless table orders without interruption.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href="/admin/billing"
+                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm shrink-0 transition"
+                >
+                  Renew Now via Razorpay
+                </Link>
+              </div>
+            )}
+
+            {!subscription?.isExpired && subscription?.daysRemaining !== null && subscription?.daysRemaining !== undefined && subscription?.daysRemaining <= 5 && (
+              <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-amber-900 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-amber-900">
+                      Subscription Expiring Soon ({subscription.daysRemaining} {subscription.daysRemaining === 1 ? 'day' : 'days'} left)
+                    </p>
+                    <p className="text-xs text-amber-700">
+                      Your {subscription.plan?.name || ''} plan expires in {subscription.daysRemaining} {subscription.daysRemaining === 1 ? 'day' : 'days'}. Renew your subscription to maintain active service.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href="/admin/billing"
+                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm shrink-0 transition"
+                >
+                  Extend Subscription
+                </Link>
+              </div>
+            )}
+
             {/* Restaurant Profile Banner */}
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
               <div className="space-y-2">
@@ -507,6 +575,14 @@ export default function AdminDashboardPage() {
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  href="/admin/billing"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold transition shadow-sm"
+                >
+                  <Coins className="w-4 h-4" />
+                  <span>Billing &amp; Plans</span>
+                </Link>
+
                 <button
                   onClick={() => setShowProfileModal(true)}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-semibold transition shadow-sm"

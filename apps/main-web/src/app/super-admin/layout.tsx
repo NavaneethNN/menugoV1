@@ -107,11 +107,9 @@ export default function SuperAdminLayout({
         {/* Brand header */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800">
           <Link href="/super-admin" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-red-600 text-white font-black text-lg flex items-center justify-center">
-              M
-            </div>
+            <img src="/qros_logo.png" alt="The QROS" className="w-28 h-10 rounded bg-white object-contain" />
             <div>
-              <span className="font-black text-base tracking-tight text-white">MenuGo</span>
+              <span className="font-black text-base tracking-tight text-white">The QROS</span>
               <span className="ml-2 text-[9px] font-black uppercase tracking-wider bg-red-600 text-white px-1.5 py-0.5 rounded">
                 Super Admin
               </span>
@@ -237,7 +235,7 @@ export default function SuperAdminLayout({
             />
             <div className="relative w-72 max-w-full bg-slate-950 text-white flex flex-col p-6 z-10">
               <div className="flex items-center justify-between pb-6 border-b border-slate-800">
-                <span className="font-black text-lg">MenuGo Super Admin</span>
+                <span className="font-black text-lg">The QROS Super Admin</span>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-white"

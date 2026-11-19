@@ -1,5 +1,5 @@
 /**
- * MenuGo V1 - Cinema Cart Domain Logic & Local Persistence (Task 10)
+ * The QROS V1 - Cinema Cart Domain Logic & Local Persistence (Task 10)
  *
  * Implements pure, unit-testable cinema cart calculations, cinema order context scoping,
  * and localStorage persistence for the mobile-first customer cinema experience.

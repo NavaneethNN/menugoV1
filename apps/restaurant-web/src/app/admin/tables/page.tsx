@@ -878,7 +878,7 @@ export default function AdminTablesPage() {
                 </div>
 
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  {restaurant?.name || 'MenuGo'}
+                  {restaurant?.name || 'The QROS'}
                 </h3>
                 <p className="text-xs font-bold text-orange-600 uppercase tracking-widest mt-1">
                   Contactless Table Ordering
@@ -911,7 +911,7 @@ export default function AdminTablesPage() {
 
                 <div className="mt-4 pt-3 border-t border-slate-100 w-full text-center print:border-slate-300">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider print:text-slate-600">
-                    Powered by MenuGo Smart Dining SaaS
+                    Powered by The QROS Smart Dining SaaS
                   </p>
                 </div>
               </div>

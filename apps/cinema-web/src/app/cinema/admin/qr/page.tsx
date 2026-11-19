@@ -723,7 +723,7 @@ export default function CinemaQrManagementPage() {
 
                 <div className="pt-3 border-t border-slate-200">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider print:text-slate-600">
-                    Powered by MenuGo Cinema Contactless SaaS
+                    Powered by The QROS Cinema Contactless SaaS
                   </p>
                 </div>
               </div>

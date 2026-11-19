@@ -72,6 +72,11 @@ function createBetterAuthConfig(targetDb: typeof restaurantDb, defaultTenantType
           type: 'string' as const,
           defaultValue: defaultTenantType,
           input: true
+        },
+        role: {
+          type: 'string' as const,
+          defaultValue: 'user',
+          input: true
         }
       }
     },

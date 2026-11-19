@@ -1181,7 +1181,7 @@ export type AssignCinemaRoleInput = z.infer<typeof assignCinemaRoleSchema>;
 // 21. Subscription Plans & Platform Super Admin Schemas
 // ---------------------------------------------------------------------------
 export const SUBSCRIPTION_TENANT_TYPES = ['restaurant', 'cinema', 'all'] as const;
-export const SUBSCRIPTION_STATUSES = ['active', 'trialing', 'past_due', 'cancelled'] as const;
+export const SUBSCRIPTION_STATUSES = ['active', 'trialing', 'past_due', 'cancelled', 'expired'] as const;
 export const BILLING_CYCLES = ['monthly', 'annual'] as const;
 
 export const subscriptionPlanSchema = z.object({
@@ -1243,6 +1243,27 @@ export const assignTenantSubscriptionSchema = z.object({
 
 export const updateTenantStatusSchema = z.object({
   isActive: z.boolean()
+});
+
+export const createSubscriptionCheckoutSchema = z.object({
+  planId: z.string().min(1, 'Plan ID is required'),
+  billingCycle: z.enum(BILLING_CYCLES).default('monthly'),
+  restaurantId: z.string().optional()
+});
+
+export const verifySubscriptionPaymentSchema = z.object({
+  planId: z.string().min(1, 'Plan ID is required'),
+  billingCycle: z.enum(BILLING_CYCLES).default('monthly'),
+  razorpayOrderId: z.string().min(1, 'Razorpay order ID is required'),
+  razorpayPaymentId: z.string().min(1, 'Razorpay payment ID is required'),
+  razorpaySignature: z.string().min(1, 'Razorpay signature is required'),
+  restaurantId: z.string().optional()
+});
+
+export const updateSubscriptionDurationSchema = z.object({
+  daysToAdd: z.number().int().optional(),
+  currentPeriodEnd: z.string().or(z.date()).optional(),
+  status: z.enum(SUBSCRIPTION_STATUSES).optional()
 });
 
 

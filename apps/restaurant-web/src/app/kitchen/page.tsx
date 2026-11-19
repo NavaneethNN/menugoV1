@@ -714,7 +714,7 @@ export default function KitchenDashboardPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg md:text-xl font-black tracking-tight text-white flex items-center gap-2">
-                  MenuGo KDS
+                  The QROS KDS
                 </h1>
                 {/* Connection Status Pill */}
                 <span

@@ -432,7 +432,7 @@ export default function CinemaOnboardingPage() {
             </div>
             <div className="flex flex-col">
               <span className="text-lg font-black tracking-tight text-slate-900 leading-none">
-                Menu<span className="text-red-600">Go</span> <span className="text-[10px] uppercase bg-red-50 text-red-700 font-bold px-2 py-0.5 rounded-full border border-red-200 ml-1">Cinema</span>
+                The QROS <span className="text-[10px] uppercase bg-red-50 text-red-700 font-bold px-2 py-0.5 rounded-full border border-red-200 ml-1">Cinema</span>
               </span>
               <span className="text-[9px] uppercase font-bold tracking-widest text-slate-600 mt-0.5">
                 Multi-Step Onboarding
@@ -1271,7 +1271,7 @@ export default function CinemaOnboardingPage() {
 
       {/* Footer */}
       <footer className="border-t border-slate-200 py-3 sm:py-4 text-center text-xs text-slate-500 shrink-0">
-        <p>MenuGo Cinema Module • Multi-Tenant Enterprise Architecture</p>
+        <p>The QROS Cinema Module • Multi-Tenant Enterprise Architecture</p>
       </footer>
     </div>
   );

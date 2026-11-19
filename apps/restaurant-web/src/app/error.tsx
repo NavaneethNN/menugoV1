@@ -13,7 +13,7 @@ export default function ErrorBoundary({
 }) {
   useEffect(() => {
     // Log sanitized error details in client console for diagnostics
-    console.error('[MenuGo Client Error Boundary]:', error?.message || error);
+    console.error('[The QROS Client Error Boundary]:', error?.message || error);
   }, [error]);
 
   return (

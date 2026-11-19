@@ -1,41 +1,28 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
-  UtensilsCrossed,
-  Film,
-  ShieldCheck,
-  CheckCircle2,
   ArrowRight,
-  ExternalLink,
-  Laptop,
-  Check,
-  Sparkles,
-  QrCode,
-  ChefHat,
-  Armchair,
-  Tv,
-  Coins,
-  ChevronRight,
-  Loader2,
-  Building2,
-  Zap,
-  TrendingUp,
-  Percent,
-  Clock,
-  Printer,
-  HeartHandshake,
-  Smartphone,
-  Truck,
-  Popcorn,
-  CreditCard,
   BarChart3,
-  Users,
-  Store,
-  Layers,
+  Check,
+  ChefHat,
+  ChevronDown,
+  CircleDollarSign,
+  ExternalLink,
+  Film,
   HelpCircle,
-  ChevronDown
+  LayoutDashboard,
+  Menu,
+  QrCode,
+  ShieldCheck,
+  Sparkles,
+  Store,
+  Truck,
+  UtensilsCrossed,
+  Users,
+  X
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 
@@ -56,28 +43,53 @@ interface Plan {
   sortOrder: number;
 }
 
-export default function MainPlatformHomePage() {
-  const restaurantUrl = process.env.NEXT_PUBLIC_RESTAURANT_URL || 'http://localhost:3000';
-  const cinemaUrl = process.env.NEXT_PUBLIC_CINEMA_URL || 'http://localhost:3001';
+const faqs = [
+  { q: 'Do guests need to download an app?', a: 'No. Guests scan a table or seat QR code with their phone camera and place an order in their mobile browser.' },
+  { q: 'Does The QROS take a commission on orders?', a: 'The QROS is sold as a subscription. Your venue keeps its food and beverage revenue, with payments handled through your connected merchant gateway.' },
+  { q: 'Can it work with the devices we already own?', a: 'Yes. The browser-based kitchen, cashier, and runner workstations can run on supported tablets, touch displays, and computers.' },
+  { q: 'How does it adapt to a restaurant and a cinema?', a: 'Restaurants can route table orders to service and kitchen teams. Cinemas can map QR codes to screens, rows, and seats, then dispatch orders to runners.' },
+  { q: 'How do payments work?', a: 'Payment options depend on your venue workflow and connected gateway. Your team can configure the ordering and settlement setup for your business.' }
+];
 
+const venueData = {
+  restaurant: {
+    label: 'Restaurants',
+    eyebrow: 'For restaurants, cafés & bars',
+    heading: 'Make every table an easier way to order.',
+    description: 'Give guests the freedom to browse at their own pace, while orders reach your kitchen with the table context your team needs.',
+    icon: UtensilsCrossed,
+    url: process.env.NEXT_PUBLIC_RESTAURANT_URL || 'http://localhost:3000',
+    steps: ['Guest scans table QR', 'Order reaches kitchen', 'Team serves with context'],
+  },
+  cinema: {
+    label: 'Cinemas',
+    eyebrow: 'For cinemas & multiplexes',
+    heading: 'Keep guests in the film. Bring concessions to their seat.',
+    description: 'Make armrest QR ordering a natural part of movie night, with each order routed from concession kitchen to the right seat.',
+    icon: Film,
+    url: process.env.NEXT_PUBLIC_CINEMA_URL || 'http://localhost:3001',
+    steps: ['Guest scans seat QR', 'Kitchen prepares order', 'Runner delivers to seat'],
+  }
+};
+
+export default function MainPlatformHomePage() {
+  const restaurantUrl = venueData.restaurant.url;
+  const cinemaUrl = venueData.cinema.url;
   const [activeTab, setActiveTab] = useState<'restaurant' | 'cinema'>('restaurant');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [planFilter, setPlanFilter] = useState<'all' | 'restaurant' | 'cinema'>('all');
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Load live subscription plans from API
   useEffect(() => {
     async function fetchPlans() {
       try {
-        setLoadingPlans(true);
         const data = await apiRequest('/api/public/subscription-plans');
-        if (Array.isArray(data)) {
-          setPlans(data);
-        }
+        if (Array.isArray(data)) setPlans(data);
       } catch (err) {
-        console.warn('Failed to fetch live plans, using default presentation:', err);
+        console.warn('Failed to fetch live plans:', err);
       } finally {
         setLoadingPlans(false);
       }
@@ -85,801 +97,61 @@ export default function MainPlatformHomePage() {
     fetchPlans();
   }, []);
 
-  const filteredPlans = plans.filter((p) => {
-    if (!p.isActive) return false;
-    if (planFilter === 'all') return true;
-    return p.tenantType === planFilter || p.tenantType === 'all';
-  });
-
-  const faqs = [
-    {
-      q: 'Do patrons need to download an iOS or Android app to place orders?',
-      a: 'No. MenuGo operates 100% inside mobile web browsers (Safari, Chrome, etc.). Patrons scan the table or armrest QR code with their smartphone camera and immediately open the verified digital menu in under 2 seconds.'
-    },
-    {
-      q: 'How do payments work for dining restaurants vs movie theatres?',
-      a: 'In restaurants, guests can either pay directly via online UPI/cards or request the bill for traditional cash/card settlement through the cashier workstation. In theatres, orders are pre-paid online via Razorpay or Paytm so delivery runners can deliver silently in the dark auditorium without handling cash or cards.'
-    },
-    {
-      q: 'Does MenuGo charge a percentage commission on food sales?',
-      a: 'No. Unlike traditional food delivery aggregators that take 15% to 30% of gross sales, MenuGo operates on a flat, transparent SaaS subscription tier. You retain 100% of your food, beverage, and concession revenue.'
-    },
-    {
-      q: 'Can we use our existing tablets or kitchen screens?',
-      a: 'Yes. MenuGo is cloud-based and hardware-agnostic. Kitchen Display Systems (KDS), cashier terminals, and delivery runner consoles run in any standard web browser on iPads, Android tablets, touch monitors, or laptops.'
-    },
-    {
-      q: 'How does MenuGo for Theatres handle screen and seat allocation?',
-      a: 'Setup is remarkably simple: you configure your auditorium screens (Screen 1, Screen 2, Audi 3), configure row letters (A..Z) and seat numbers (1..25), and print armrest QR codes. Patrons order directly to their exact seat without needing complex movie schedules or poster configurations.'
-    }
-  ];
+  const filteredPlans = plans.filter((plan) => plan.isActive && (planFilter === 'all' || plan.tenantType === planFilter || plan.tenantType === 'all'));
+  const selectedVenue = venueData[activeTab];
+  const SelectedIcon = selectedVenue.icon;
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-slate-900 selection:bg-red-600 selection:text-white">
-      {/* Platform Top Notification Bar */}
-      <div className="bg-slate-950 text-slate-300 text-xs py-2 px-4 border-b border-slate-800">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-semibold text-white">MenuGo Hospitality Platform:</span>
-            <span className="hidden sm:inline text-slate-400">
-              Zero-commission contactless QR ordering, real-time KDS, and direct merchant settlements across India.
-            </span>
-          </div>
-          <Link
-            href="/super-admin/login"
-            className="text-[11px] font-semibold text-slate-300 hover:text-white transition flex items-center gap-1 shrink-0"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-red-500" />
-            <span>Super Admin</span>
-          </Link>
-        </div>
+    <main className="min-h-screen overflow-hidden bg-[#ffffff] text-[#0f172a] selection:bg-[#dc2626] selection:text-white">
+      <div className="bg-[#0f172a] px-4 py-2.5 text-center text-[11px] font-medium tracking-wide text-white/65 sm:text-xs">
+        <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-red-500 align-middle" />
+        One connected platform. Two distinct venue experiences.
+        <Link href="/super-admin/login" className="ml-3 hidden items-center gap-1 text-white/80 hover:text-white sm:inline-flex"><ShieldCheck className="h-3 w-3" /> Platform access</Link>
       </div>
 
-      {/* Main Navigation Header */}
-      <header className="border-b border-slate-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-2xl bg-red-600 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-red-600/20 group-hover:scale-105 transition-transform">
-              M
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-black tracking-tight text-slate-900 leading-none">
-                Menu<span className="text-red-600">Go</span>
-              </span>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mt-1">
-                Unified Hospitality Platform
-              </span>
-            </div>
-          </Link>
-
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-600">
-            <a href="#solutions" className="hover:text-red-600 transition">Solutions</a>
-            <a href="#deep-dive" className="hover:text-red-600 transition">How It Works</a>
-            <a href="#roi" className="hover:text-red-600 transition">Why MenuGo</a>
-            <a href="#pricing" className="hover:text-red-600 transition">Pricing Plans</a>
-            <a href="#faq" className="hover:text-red-600 transition">FAQ</a>
+      <header className="sticky top-0 z-40 border-b border-black/[0.06] bg-[#ffffff]/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-[76px] max-w-[1360px] items-center justify-between px-5 sm:px-8">
+          <Link href="/" aria-label="The QROS home" className="shrink-0"><Image src="/qros_logo.png" alt="The QROS" width={2172} height={724} priority sizes="220px" className="h-14 w-auto max-w-[220px] object-contain" /></Link>
+          <nav className="hidden items-center gap-8 text-[13px] font-semibold text-[#475569] lg:flex">
+            <a href="#venues" className="transition hover:text-[#b91c1c]">Solutions</a><a href="#how-it-works" className="transition hover:text-[#b91c1c]">How it works</a><a href="#pricing" className="transition hover:text-[#b91c1c]">Pricing</a><a href="#faq" className="transition hover:text-[#b91c1c]">FAQ</a>
           </nav>
-
-          {/* App Switcher Buttons */}
-          <div className="flex items-center gap-1.5 sm:gap-3">
-            <a
-              href={restaurantUrl}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-800 hover:text-red-600 bg-slate-100 hover:bg-slate-200 px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl transition shrink-0"
-              title="MenuGo for Restaurants (Port 3000)"
-            >
-              <UtensilsCrossed className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-red-600" />
-              <span><span className="hidden sm:inline">MenuGo for </span>Restaurants</span>
-              <ExternalLink className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-slate-400" />
-            </a>
-
-            <a
-              href={cinemaUrl}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-800 hover:text-red-600 bg-slate-100 hover:bg-slate-200 px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl transition shrink-0"
-              title="MenuGo for Theatres (Port 3001)"
-            >
-              <Film className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-red-600" />
-              <span><span className="hidden sm:inline">MenuGo for </span>Theatres</span>
-              <ExternalLink className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-slate-400" />
-            </a>
-
-            <Link
-              href="/super-admin"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl transition shadow-sm shrink-0"
-            >
-              <Laptop className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-red-400" />
-              <span className="hidden xs:inline">Super Admin</span>
-            </Link>
+          <div className="hidden items-center gap-3 sm:flex">
+            <a href={restaurantUrl} className="rounded-full px-3 py-2 text-xs font-semibold text-[#475569] hover:text-black">Restaurant portal</a>
+            <a href={cinemaUrl} className="rounded-full px-3 py-2 text-xs font-semibold text-[#475569] hover:text-black">Cinema portal</a>
+            <a href="#venues" className="inline-flex items-center gap-2 rounded-full bg-[#dc2626] px-5 py-3 text-[13px] font-bold text-white shadow-[0_5px_16px_rgba(216,59,48,.18)] transition hover:-translate-y-0.5 hover:bg-[#b91c1c]">Find your solution <ArrowRight className="h-4 w-4" /></a>
           </div>
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="rounded-xl p-2 sm:hidden" aria-label="Toggle menu">{mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
         </div>
+        {mobileMenuOpen && <div className="space-y-1 border-t border-black/5 bg-[#ffffff] px-5 py-4 sm:hidden"><a href="#venues" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm font-semibold">Solutions</a><a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm font-semibold">How it works</a><a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm font-semibold">Pricing</a><div className="grid grid-cols-2 gap-2 pt-2"><a href={restaurantUrl} className="rounded-xl bg-white px-3 py-3 text-center text-xs font-bold">Restaurant portal</a><a href={cinemaUrl} className="rounded-xl bg-white px-3 py-3 text-center text-xs font-bold">Cinema portal</a></div></div>}
       </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28 bg-gradient-to-b from-slate-50 via-white to-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-xs font-bold uppercase tracking-wider mb-6">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Next-Generation Contactless Operations</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-950 tracking-tight leading-[1.05] max-w-5xl mx-auto">
-            The Contactless Operating System for <span className="text-red-600">Restaurants</span> &amp; <span className="text-red-600">Theatres</span>.
-          </h1>
-
-          <p className="mt-6 text-base sm:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-            One powerful multi-tenant cloud platform engineered for two distinct industries: smart table QR ordering for dining venues, and precision in-seat armrest delivery for cinema multiplexes. Zero customer app downloads, instant direct payouts, and real-time KDS workflows.
-          </p>
-
-          {/* Social Proof Metric Counters */}
-          <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
-              <p className="text-2xl sm:text-3xl font-black text-slate-900">+35%</p>
-              <p className="text-xs text-slate-500 font-semibold mt-1">Average Order Value</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
-              <p className="text-2xl sm:text-3xl font-black text-slate-900">0 App</p>
-              <p className="text-xs text-slate-500 font-semibold mt-1">Downloads Required</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
-              <p className="text-2xl sm:text-3xl font-black text-slate-900">18 Min</p>
-              <p className="text-xs text-slate-500 font-semibold mt-1">Faster Table Turnover</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
-              <p className="text-2xl sm:text-3xl font-black text-slate-900">100%</p>
-              <p className="text-xs text-slate-500 font-semibold mt-1">Direct Merchant Payout</p>
-            </div>
-          </div>
-
-          {/* Dual Business Portals Showcase Cards */}
-          <div id="solutions" className="mt-14 grid md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto text-left">
-            {/* Restaurant Portal Card */}
-            <div className="rounded-3xl border-2 border-red-100 hover:border-red-500 bg-white p-7 sm:p-9 shadow-xl shadow-slate-900/5 transition-all group flex flex-col justify-between">
-              <div>
-                <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center mb-6 group-hover:scale-105 transition-transform">
-                  <UtensilsCrossed className="w-7 h-7" />
-                </div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 text-[11px] font-bold uppercase tracking-wider mb-2">
-                  <span>Dining &amp; Hospitality &bull; Port 3000</span>
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                  MenuGo for Restaurants
-                </h2>
-                <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-                  Transform every table into an automated digital ordering hub. Guests scan table QR stickers to explore dishes with photos and modifiers, order instantly, and call waitstaff with sound alerts.
-                </p>
-
-                <ul className="mt-6 space-y-3 text-xs text-slate-700 font-semibold">
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>Table QR ordering with categories, images &amp; cooking notes</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>Live Kitchen Display System (KDS) prep line with audible chimes</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>Waiter calling chime for water, cutlery &amp; check requests</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>Cashier table sessions: occupancy tracking, bills &amp; closeouts</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>4-digit staff PIN access for high-speed workstation handoffs</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between gap-3">
-                <a
-                  href={restaurantUrl}
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs shadow-md shadow-red-600/20 transition hover:-translate-y-0.5"
-                >
-                  <span>Launch Restaurant Portal</span>
-                  <ArrowRight className="w-4 h-4" />
-                </a>
-
-                <a
-                  href={`${restaurantUrl}/admin/login?mode=signup`}
-                  className="text-xs font-bold text-slate-600 hover:text-red-700 transition"
-                >
-                  Register Restaurant &rarr;
-                </a>
-              </div>
-            </div>
-
-            {/* Cinema Portal Card */}
-            <div className="rounded-3xl border-2 border-slate-200 hover:border-slate-900 bg-white p-7 sm:p-9 shadow-xl shadow-slate-900/5 transition-all group flex flex-col justify-between">
-              <div>
-                <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 text-white flex items-center justify-center mb-6 group-hover:scale-105 transition-transform">
-                  <Film className="w-7 h-7 text-red-500" />
-                </div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 text-[11px] font-bold uppercase tracking-wider mb-2">
-                  <span>Multiplex &amp; Theatres &bull; Port 3001</span>
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                  MenuGo for Theatres
-                </h2>
-                <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-                  Bring concessions straight to moviegoer armrests. Guests scan screen QR codes, select their exact row and seat, pay online via Razorpay or Paytm, and receive food delivered silently during the film.
-                </p>
-
-                <ul className="mt-6 space-y-3 text-xs text-slate-700 font-semibold">
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>Armrest QR seat selection with screen, row &amp; seat targeting</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>Concession combo menu: popcorn sizing, cold drinks &amp; snacks</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>Kitchen KDS with prominent Screen, Row and Seat destination badges</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>Auditorium delivery runner dashboard with printable tickets</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>Direct-to-theatre payouts with automated Razorpay &amp; Paytm settle</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between gap-3">
-                <a
-                  href={cinemaUrl}
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md shadow-slate-900/20 transition hover:-translate-y-0.5"
-                >
-                  <span>Launch Cinema Portal</span>
-                  <ArrowRight className="w-4 h-4" />
-                </a>
-
-                <a
-                  href={`${cinemaUrl}/signup`}
-                  className="text-xs font-bold text-slate-600 hover:text-red-700 transition"
-                >
-                  Register Theatre &rarr;
-                </a>
-              </div>
-            </div>
-          </div>
+      <section className="relative isolate bg-white text-slate-900">
+        <div className="mx-auto grid max-w-[1360px] items-center gap-12 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[.95fr_1.05fr] lg:gap-12 lg:py-28">
+          <div className="max-w-[620px]"><div className="mb-7 inline-flex items-center gap-2 rounded-full border border-red-100 bg-red-50 px-3.5 py-2 text-[10px] font-bold uppercase tracking-[.18em] text-red-700"><Sparkles className="h-3.5 w-3.5 text-red-600" /> The operating system for every venue</div><h1 className="text-[clamp(3rem,6vw,5.6rem)] font-semibold leading-[.98] tracking-[-.065em]">More memorable<br />moments. <span className="font-serif font-normal italic text-red-600">Smoother service.</span></h1><p className="mt-7 max-w-[540px] text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">The QROS connects guest ordering with the people serving them—built for the rhythm of a restaurant and the rush of a cinema.</p><div className="mt-9 flex flex-col gap-3 sm:flex-row"><a href="#venues" className="inline-flex items-center justify-center gap-2 rounded-full bg-[#dc2626] px-7 py-4 text-sm font-bold text-white shadow-[0_10px_35px_rgba(220,73,58,.22)] transition hover:-translate-y-0.5 hover:bg-[#ef4444]">Explore your venue solution <ArrowRight className="h-4 w-4" /></a><a href="#how-it-works" className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 px-6 py-4 text-sm font-semibold text-slate-700 transition hover:bg-white/10">See how it works</a></div><div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-xs font-medium text-slate-500"><span className="inline-flex items-center gap-2"><Check className="h-3.5 w-3.5 text-red-600" /> Guests order from their phone</span><span className="inline-flex items-center gap-2"><Check className="h-3.5 w-3.5 text-red-600" /> Orders reach the right team</span></div></div>
+          <div className="relative mx-auto w-full max-w-[650px] lg:ml-auto"><div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_35px_100px_rgba(0,0,0,.42)] sm:p-6"><div className="flex items-center justify-between border-b border-slate-200 pb-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ef4444]/15 text-red-600"><LayoutDashboard className="h-4 w-4" /></div><div><p className="text-xs font-bold">Venue operations</p><p className="mt-0.5 text-[10px] text-slate-500">One clear view of service</p></div></div><span className="flex items-center gap-1.5 rounded-full border border-red-500/20 bg-red-500/10 px-2.5 py-1.5 text-[9px] font-bold text-red-600"><span className="h-1.5 w-1.5 rounded-full bg-red-500" /> LIVE</span></div>
+            <div className="mt-5 grid grid-cols-2 gap-3"><button onClick={() => setActiveTab('restaurant')} className={`rounded-2xl border p-4 text-left transition sm:p-5 ${activeTab === 'restaurant' ? 'border-[#f87171]/60 bg-red-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}><div className="flex items-center justify-between"><UtensilsCrossed className={`h-5 w-5 ${activeTab === 'restaurant' ? 'text-red-600' : 'text-slate-500'}`} /><span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">01 / DINING</span></div><p className="mt-6 text-sm font-bold">Restaurants</p><p className="mt-1 text-[10px] text-slate-500">Table to kitchen</p></button><button onClick={() => setActiveTab('cinema')} className={`rounded-2xl border p-4 text-left transition sm:p-5 ${activeTab === 'cinema' ? 'border-[#ef4444]/60 bg-red-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}><div className="flex items-center justify-between"><Film className={`h-5 w-5 ${activeTab === 'cinema' ? 'text-red-600' : 'text-slate-500'}`} /><span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">02 / CINEMA</span></div><p className="mt-6 text-sm font-bold">Theatres</p><p className="mt-1 text-[10px] text-slate-500">Armrest to seat</p></button></div>
+            <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5"><div className="flex items-center justify-between"><div><p className="text-[9px] font-bold uppercase tracking-[.16em] text-slate-500">{selectedVenue.eyebrow}</p><p className="mt-1.5 text-lg font-semibold tracking-tight">{selectedVenue.heading}</p></div><SelectedIcon className="h-5 w-5 shrink-0 text-red-600" /></div><p className="mt-2 text-xs leading-5 text-slate-500">{selectedVenue.description}</p><div className="mt-5 space-y-2">{selectedVenue.steps.map((step, i) => <div key={step} className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-[9px] font-bold text-red-600">{i + 1}</span><span className="text-[10px] font-medium text-slate-600">{step}</span><span className="ml-auto text-slate-400">{i < 2 && <ArrowRight className="h-3 w-3" />}</span></div>)}</div></div><a href={selectedVenue.url} className="mt-3 flex items-center justify-between rounded-2xl bg-white px-4 py-3.5 text-xs font-bold text-[#1e293b] transition hover:bg-[#f8fafc]"><span>Explore {selectedVenue.label} solution</span><ArrowRight className="h-4 w-4 text-[#dc2626]" /></a>
+          </div></div>
         </div>
+        <div className="mx-auto grid max-w-[1360px] grid-cols-2 border-t border-slate-200 px-5 sm:grid-cols-4 sm:px-8">{[['01', 'Guest-first ordering'], ['02', 'Connected operations'], ['03', 'Built for your venue'], ['04', 'Your gateway, your payouts']].map(([n, text]) => <div key={n} className="flex items-center gap-3 border-b border-r border-slate-200 py-5 pl-2 last:border-r-0 sm:border-b-0 sm:py-6"><span className="font-mono text-[10px] text-red-600">{n}</span><span className="text-[10px] font-medium text-slate-600 sm:text-xs">{text}</span></div>)}</div>
       </section>
 
-      {/* Deep Dive: How It Works Comparison (Tabbed Interactive Section) */}
-      <section id="deep-dive" className="py-20 sm:py-28 bg-slate-50 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold uppercase tracking-wider mb-3">
-              <Layers className="w-3.5 h-3.5" />
-              <span>Step-by-Step Architecture</span>
-            </div>
-            <h2 className="text-3xl sm:text-5xl font-black text-slate-950 tracking-tight">
-              Built Specifically for Your Operation
-            </h2>
-            <p className="mt-4 text-base text-slate-600 leading-relaxed">
-              Explore how MenuGo streamlines hospitality for dining venues vs high-volume cinema multiplexes.
-            </p>
+      <section id="venues" className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-28"><div className="mx-auto max-w-[1360px]"><div className="max-w-2xl"><p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#dc2626]">Made for your kind of service</p><h2 className="mt-4 text-4xl font-semibold leading-[1.05] tracking-[-.05em] sm:text-6xl">Different venues.<br /><span className="font-serif font-normal italic text-[#b91c1c]">A better way to serve.</span></h2><p className="mt-5 max-w-xl text-base leading-7 text-[#475569]">Purpose-built guest journeys meet one thoughtful operations platform.</p></div>
+        <div className="mt-12 grid gap-5 lg:grid-cols-2">{(['restaurant', 'cinema'] as const).map((type) => { const venue = venueData[type]; const Icon = venue.icon; const isRestaurant = type === 'restaurant'; return <article key={type} className={`group relative overflow-hidden rounded-[28px] border p-7 transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_55px_rgba(44,32,24,.09)] sm:p-10 ${isRestaurant ? 'border-[#fecaca] bg-[#ffffff]' : 'border-[#e2e8f0] bg-[#ffffff]'}`}><div className="relative"><div className="flex items-center justify-between"><span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider ${isRestaurant ? 'bg-[#fee2e2] text-[#b91c1c]' : 'bg-[#fee2e2] text-[#b91c1c]'}`}><Icon className="h-3.5 w-3.5" /> {venue.eyebrow}</span><span className="text-xs font-mono text-black/30">0{isRestaurant ? '1' : '2'}</span></div><h3 className="mt-7 max-w-lg text-3xl font-semibold leading-tight tracking-[-.04em] sm:text-4xl">{venue.heading}</h3><p className="mt-4 max-w-lg text-sm leading-6 text-[#475569]">{venue.description}</p><div className="mt-8 flex flex-wrap gap-2">{(isRestaurant ? ['QR menu & table ordering', 'Kitchen display', 'Service team tools'] : ['Seat QR ordering', 'Concession kitchen', 'Runner dispatch']).map((tag) => <span key={tag} className="rounded-full border border-black/[.08] bg-white/70 px-3 py-2 text-[10px] font-semibold text-[#475569]">{tag}</span>)}</div><a href={venue.url} className={`mt-8 inline-flex items-center gap-2 rounded-full px-5 py-3 text-xs font-bold text-white transition group-hover:gap-3 ${isRestaurant ? 'bg-[#dc2626] hover:bg-[#b91c1c]' : 'bg-[#334155] hover:bg-[#1e293b]'}`}>Explore {venue.label} <ArrowRight className="h-4 w-4" /></a></div></article>; })}</div></div></section>
 
-            {/* Interactive Switcher */}
-            <div className="mt-8 inline-flex items-center p-1.5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-              <button
-                type="button"
-                onClick={() => setActiveTab('restaurant')}
-                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                  activeTab === 'restaurant'
-                    ? 'bg-red-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-950'
-                }`}
-              >
-                <UtensilsCrossed className="w-4 h-4" />
-                <span>Restaurant Workflow (Port 3000)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('cinema')}
-                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                  activeTab === 'cinema'
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-950'
-                }`}
-              >
-                <Film className="w-4 h-4 text-red-400" />
-                <span>Cinema Workflow (Port 3001)</span>
-              </button>
-            </div>
-          </div>
+      <section id="how-it-works" className="scroll-mt-24 bg-[#f8fafc] px-5 py-20 sm:px-8 sm:py-28"><div className="mx-auto max-w-[1360px]"><div className="grid gap-8 md:grid-cols-[.8fr_1.2fr] md:items-end"><div><p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#dc2626]">One simple journey</p><h2 className="mt-4 text-4xl font-semibold leading-[1.05] tracking-[-.05em] sm:text-6xl">From scan to service,<br />in sync.</h2></div><p className="max-w-xl text-base leading-7 text-[#475569] md:justify-self-end">A guest-friendly front end, connected to the tools your team needs to receive, prepare, and fulfill every order.</p></div><div className="mt-14 grid gap-4 md:grid-cols-3">{[{icon:QrCode,title:'Guests scan and order',body:'A quick, mobile-friendly menu opens from the table or seat QR. No app install to get started.'},{icon:ChefHat,title:'Your team gets the detail',body:'Orders arrive with the context that matters—table for dining, screen and seat for cinema.'},{icon:Truck,title:'Service moves together',body:'Kitchen, cashier, and runner workflows stay connected through a live operations view.'}].map((item,i)=>{const Icon=item.icon;return <article key={item.title} className="rounded-[24px] border border-[#e2e8f0] bg-white p-7 sm:p-8"><div className="flex items-center justify-between"><span className="font-mono text-xs text-[#94a3b8]">0{i+1} / 03</span><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fef2f2] text-[#dc2626]"><Icon className="h-5 w-5" /></div></div><h3 className="mt-9 text-xl font-semibold tracking-tight">{item.title}</h3><p className="mt-3 text-sm leading-6 text-[#64748b]">{item.body}</p></article>;})}</div></div></section>
 
-          {activeTab === 'restaurant' ? (
-            /* Restaurant Deep Dive */
-            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-in fade-in duration-300">
-              <div className="rounded-3xl bg-white border border-slate-200 p-7 shadow-sm space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center font-bold">
-                  <QrCode className="w-6 h-6" />
-                </div>
-                <span className="text-[11px] font-bold uppercase text-red-600 tracking-wider">Step 01 &bull; Guests</span>
-                <h3 className="text-xl font-black text-slate-900">Table QR Self-Ordering</h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  Diners scan physical QR stands on their table. The menu loads instantly with high-res photos, spice levels, allergens, and custom modifier notes (extra cheese, no onion).
-                </p>
-                <div className="pt-2 border-t border-slate-100 text-xs font-semibold text-slate-700">
-                  &bull; No app install &bull; Auto table binding
-                </div>
-              </div>
+      <section className="px-5 py-20 sm:px-8 sm:py-28"><div className="mx-auto grid max-w-[1360px] gap-14 lg:grid-cols-[.75fr_1.25fr] lg:items-center"><div><p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#dc2626]">Thoughtful by default</p><h2 className="mt-4 max-w-lg text-4xl font-semibold leading-[1.05] tracking-[-.05em] sm:text-6xl">Your venue stays yours.</h2><p className="mt-6 max-w-lg text-base leading-7 text-[#475569]">Give your guests a smoother way to order and your team a clearer way to serve, while keeping your own identity and payment relationships at the center.</p></div><div className="grid gap-3 sm:grid-cols-2">{[{icon:Store,title:'Your brand, front and center',body:'Present a digital ordering experience shaped around your venue.'},{icon:CircleDollarSign,title:'Transparent subscription',body:'A predictable software plan instead of a percentage of your sales.'},{icon:BarChart3,title:'A clearer view of service',body:'Bring order activity and venue workflows into one place.'},{icon:Users,title:'Tools for the whole team',body:'Give staff the screens and roles that match how your venue works.'}].map((item)=>{const Icon=item.icon;return <article key={item.title} className="rounded-[22px] border border-black/[.06] bg-white p-6 sm:p-7"><Icon className="h-5 w-5 text-[#dc2626]" /><h3 className="mt-5 font-semibold tracking-tight">{item.title}</h3><p className="mt-2 text-sm leading-6 text-[#64748b]">{item.body}</p></article>;})}</div></div></section>
 
-              <div className="rounded-3xl bg-white border border-slate-200 p-7 shadow-sm space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center font-bold">
-                  <ChefHat className="w-6 h-6" />
-                </div>
-                <span className="text-[11px] font-bold uppercase text-red-600 tracking-wider">Step 02 &bull; Kitchen</span>
-                <h3 className="text-xl font-black text-slate-900">Real-Time Kitchen KDS</h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  Chefs receive incoming orders in real-time with acoustic chimes, elapsed prep timers, and table IDs. One tap transitions orders from Received &rarr; Preparing &rarr; Ready.
-                </p>
-                <div className="pt-2 border-t border-slate-100 text-xs font-semibold text-slate-700">
-                  &bull; Eliminates lost paper tickets &bull; Prep timers
-                </div>
-              </div>
+      <section id="pricing" className="scroll-mt-24 bg-[#f8fafc] px-5 py-20 sm:px-8 sm:py-28"><div className="mx-auto max-w-[1360px]"><div className="mx-auto max-w-2xl text-center"><p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#dc2626]">Straightforward plans</p><h2 className="mt-4 text-4xl font-semibold tracking-[-.05em] sm:text-5xl">A plan for the way you serve.</h2><p className="mt-4 text-sm leading-6 text-[#475569]">Choose a plan built for your venue and scale. No commission on your orders.</p><div className="mt-7 inline-flex rounded-full border border-black/[.07] bg-white p-1"><button onClick={()=>setBillingCycle('monthly')} className={`rounded-full px-4 py-2.5 text-xs font-bold ${billingCycle==='monthly'?'bg-[#0f172a] text-white':'text-[#475569]'}`}>Monthly</button><button onClick={()=>setBillingCycle('annual')} className={`rounded-full px-4 py-2.5 text-xs font-bold ${billingCycle==='annual'?'bg-[#0f172a] text-white':'text-[#475569]'}`}>Annual</button></div><div className="mt-4 flex justify-center gap-2">{(['all','restaurant','cinema'] as const).map((filter)=> <button key={filter} onClick={()=>setPlanFilter(filter)} className={`rounded-full px-3.5 py-2 text-[10px] font-bold capitalize ${planFilter===filter?'bg-[#dc2626] text-white':'bg-white text-[#475569] hover:bg-[#e2e8f0]'}`}>{filter==='all'?'All venues':filter==='restaurant'?'Restaurants':'Cinemas'}</button>)}</div></div>
+        {loadingPlans ? <div className="py-16 text-center text-sm text-[#64748b]">Loading plans…</div> : filteredPlans.length===0 ? <div className="mx-auto mt-10 max-w-xl rounded-3xl border border-black/[.06] bg-white p-8 text-center"><p className="font-semibold">Let’s find the right plan for your venue.</p><p className="mt-2 text-sm text-[#64748b]">Choose a venue above to explore its dedicated solution.</p><div className="mt-5 flex justify-center gap-3"><a href={restaurantUrl} className="rounded-full bg-[#dc2626] px-4 py-2.5 text-xs font-bold text-white">Restaurants</a><a href={cinemaUrl} className="rounded-full bg-[#0f172a] px-4 py-2.5 text-xs font-bold text-white">Cinemas</a></div></div> : <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{filteredPlans.map((plan)=>{const isCinema=plan.tenantType==='cinema';const price=Math.round((billingCycle==='annual'?plan.priceAnnualPaise:plan.priceMonthlyPaise)/100);return <article key={plan.id} className={`flex flex-col rounded-[24px] p-6 sm:p-7 ${plan.isPopular?'bg-[#0f172a] text-white shadow-xl ring-1 ring-[#dc2626]/40':'border border-black/[.07] bg-white'}`}><div className="flex items-center justify-between"><span className={`rounded-full px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider ${plan.isPopular?'bg-white/10 text-white/70':'bg-[#f8fafc] text-[#475569]'}`}>{isCinema?'Cinema':'Restaurant'} plan</span>{plan.isPopular&&<span className="text-[9px] font-bold uppercase tracking-wider text-[#f87171]">Popular</span>}</div><h3 className="mt-5 text-2xl font-semibold tracking-tight">{plan.name}</h3><p className={`mt-2 min-h-10 text-xs leading-5 ${plan.isPopular?'text-white/55':'text-[#64748b]'}`}>{plan.description}</p><p className="mt-5 border-b border-current/10 pb-5"><span className="text-4xl font-semibold tracking-tight">₹{price.toLocaleString('en-IN')}</span><span className={`ml-1 text-xs ${plan.isPopular?'text-white/50':'text-[#64748b]'}`}>/ {billingCycle==='annual'?'year':'month'}</span></p><div className="mt-4 flex flex-wrap gap-2 text-[10px] font-semibold">{plan.maxTables&&<span className="rounded-md bg-black/[.05] px-2 py-1">Up to {plan.maxTables} tables</span>}{plan.maxScreens&&<span className="rounded-md bg-black/[.05] px-2 py-1">Up to {plan.maxScreens} screens</span>}{plan.maxStaff&&<span className="rounded-md bg-black/[.05] px-2 py-1">{plan.maxStaff} staff</span>}</div><ul className="mt-5 flex-1 space-y-2.5">{plan.features.map((feature,i)=><li key={i} className={`flex items-start gap-2 text-xs leading-5 ${plan.isPopular?'text-white/75':'text-[#475569]'}`}><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600" />{feature}</li>)}</ul><a href={`${isCinema?cinemaUrl:restaurantUrl}${isCinema?'/signup':'/admin/login?mode=signup'}`} className={`mt-7 inline-flex items-center justify-center gap-2 rounded-full px-4 py-3.5 text-xs font-bold ${plan.isPopular?'bg-[#dc2626] text-white hover:bg-[#b91c1c]':'bg-[#0f172a] text-white hover:bg-black'}`}>Choose plan <ArrowRight className="h-3.5 w-3.5" /></a></article>;})}</div>}
+      </div></section>
 
-              <div className="rounded-3xl bg-white border border-slate-200 p-7 shadow-sm space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center font-bold">
-                  <Store className="w-6 h-6" />
-                </div>
-                <span className="text-[11px] font-bold uppercase text-red-600 tracking-wider">Step 03 &bull; Cashier</span>
-                <h3 className="text-xl font-black text-slate-900">Table Billing &amp; Closeout</h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  Cashiers track table occupancy on a visual map, merge or split tabs, accept cash or card payments, and close sessions with instant thermal receipt printing.
-                </p>
-                <div className="pt-2 border-t border-slate-100 text-xs font-semibold text-slate-700">
-                  &bull; Fast session close &bull; ESC/POS printing
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Cinema Deep Dive */
-            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-in fade-in duration-300">
-              <div className="rounded-3xl bg-white border border-slate-200 p-7 shadow-sm space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-slate-900 text-red-500 flex items-center justify-center font-bold">
-                  <Armchair className="w-6 h-6" />
-                </div>
-                <span className="text-[11px] font-bold uppercase text-red-600 tracking-wider">Step 01 &bull; Moviegoers</span>
-                <h3 className="text-xl font-black text-slate-900">Armrest QR In-Seat Order</h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  Moviegoers scan the QR code affixed to their seat armrest. They select Screen, Row, and Seat number, pick popcorn combos, and pay online without missing a scene.
-                </p>
-                <div className="pt-2 border-t border-slate-100 text-xs font-semibold text-slate-700">
-                  &bull; Dark-mode menu &bull; Zero interval queues
-                </div>
-              </div>
+      <section id="faq" className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-28"><div className="mx-auto max-w-4xl"><div className="mb-10 text-center"><p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#dc2626]">Good to know</p><h2 className="mt-4 text-4xl font-semibold tracking-[-.05em] sm:text-5xl">Questions, answered.</h2></div><div className="space-y-3">{faqs.map((faq,i)=><article key={faq.q} className="overflow-hidden rounded-2xl border border-black/[.07] bg-white"><button onClick={()=>setOpenFaq(openFaq===i?null:i)} className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left text-sm font-semibold sm:px-6"><span>{faq.q}</span><ChevronDown className={`h-4 w-4 shrink-0 text-[#94a3b8] transition-transform ${openFaq===i?'rotate-180 text-[#dc2626]':''}`} /></button>{openFaq===i&&<p className="border-t border-black/[.05] px-5 pb-5 pt-4 text-sm leading-6 text-[#475569] sm:px-6">{faq.a}</p>}</article>)}</div></div></section>
 
-              <div className="rounded-3xl bg-white border border-slate-200 p-7 shadow-sm space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-slate-900 text-red-500 flex items-center justify-center font-bold">
-                  <Popcorn className="w-6 h-6" />
-                </div>
-                <span className="text-[11px] font-bold uppercase text-red-600 tracking-wider">Step 02 &bull; Kitchen</span>
-                <h3 className="text-xl font-black text-slate-900">Concession Kitchen KDS</h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  Concession cooks prepare hot popcorn, nachos, and fountain beverages with clear packaging tickets showing auditorium Screen, Row, and Seat destination.
-                </p>
-                <div className="pt-2 border-t border-slate-100 text-xs font-semibold text-slate-700">
-                  &bull; Instant order printouts &bull; Prep timers
-                </div>
-              </div>
+      <section className="px-5 pb-20 sm:px-8 sm:pb-28"><div className="mx-auto flex max-w-[1360px] flex-col items-start justify-between gap-8 rounded-[28px] bg-red-700 p-7 text-white sm:p-12 lg:flex-row lg:items-center"><div className="max-w-2xl"><p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#f87171]">Your venue, your next step</p><h2 className="mt-4 text-3xl font-semibold tracking-[-.04em] sm:text-5xl">Let’s make service feel effortless.</h2><p className="mt-4 text-sm leading-6 text-white/55">Choose your venue and see how The QROS fits the way your team works.</p></div><div className="flex flex-wrap gap-3"><a href={restaurantUrl} className="inline-flex items-center gap-2 rounded-full bg-[#dc2626] px-5 py-3.5 text-xs font-bold text-white hover:bg-[#b91c1c]">For restaurants <ArrowRight className="h-4 w-4" /></a><a href={cinemaUrl} className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-3.5 text-xs font-bold text-white hover:bg-white/10">For cinemas <ArrowRight className="h-4 w-4" /></a></div></div></section>
 
-              <div className="rounded-3xl bg-white border border-slate-200 p-7 shadow-sm space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-slate-900 text-red-500 flex items-center justify-center font-bold">
-                  <Truck className="w-6 h-6" />
-                </div>
-                <span className="text-[11px] font-bold uppercase text-red-600 tracking-wider">Step 03 &bull; Runners</span>
-                <h3 className="text-xl font-black text-slate-900">Stealth Seat Delivery</h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  Floor runners grab packed trays with seat slips and silently deliver piping hot snacks to row F, seat 12 inside the dark auditorium without disrupting other viewers.
-                </p>
-                <div className="pt-2 border-t border-slate-100 text-xs font-semibold text-slate-700">
-                  &bull; In-auditorium dispatch &bull; 100% pre-paid
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Quick Action Bar under Deep Dive */}
-          <div className="mt-12 text-center">
-            {activeTab === 'restaurant' ? (
-              <a
-                href={restaurantUrl}
-                className="inline-flex items-center gap-2 px-7 py-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs shadow-lg shadow-red-600/20 transition hover:-translate-y-0.5"
-              >
-                <span>Explore Full Restaurant Module (Port 3000)</span>
-                <ArrowRight className="w-4 h-4" />
-              </a>
-            ) : (
-              <a
-                href={cinemaUrl}
-                className="inline-flex items-center gap-2 px-7 py-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5"
-              >
-                <span>Explore Full Cinema Module (Port 3001)</span>
-                <ArrowRight className="w-4 h-4" />
-              </a>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Why MenuGo / Value Proposition Section */}
-      <section id="roi" className="py-20 sm:py-28 bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold uppercase tracking-wider mb-3">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Proven Venue ROI</span>
-            </div>
-            <h2 className="text-3xl sm:text-5xl font-black text-slate-950 tracking-tight">
-              Why Leading Venues Choose MenuGo
-            </h2>
-            <p className="mt-4 text-base text-slate-600 leading-relaxed">
-              Stop losing revenue to aggregator fees, long ordering lines, and walkouts.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            <div className="p-7 rounded-3xl bg-slate-50 border border-slate-200 shadow-sm space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
-                <Percent className="w-5 h-5" />
-              </div>
-              <h3 className="text-lg font-black text-slate-900">0% Commission Model</h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Save 15% to 30% that aggregators take from every meal. Keep 100% of your earnings with predictable, transparent SaaS subscription pricing.
-              </p>
-            </div>
-
-            <div className="p-7 rounded-3xl bg-slate-50 border border-slate-200 shadow-sm space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-800 flex items-center justify-center font-bold">
-                <CreditCard className="w-5 h-5" />
-              </div>
-              <h3 className="text-lg font-black text-slate-900">Direct Merchant Gateways</h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Money never passes through third-party escrow. Funds settle directly into your own bank account via your connected Razorpay or Paytm account.
-              </p>
-            </div>
-
-            <div className="p-7 rounded-3xl bg-slate-50 border border-slate-200 shadow-sm space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold">
-                <Printer className="w-5 h-5" />
-              </div>
-              <h3 className="text-lg font-black text-slate-900">Hardware Independence</h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Works on iPads, Android tablets, touch monitors, POS terminals, and any ESC/POS network thermal printer (80mm/58mm) without expensive proprietary hardware.
-              </p>
-            </div>
-
-            <div className="p-7 rounded-3xl bg-slate-50 border border-slate-200 shadow-sm space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <h3 className="text-lg font-black text-slate-900">Dual Database Isolation</h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Enterprise cloud architecture separates dining restaurant records and multiplex theatre records into independent Neon Serverless database clusters for absolute data sovereignty.
-              </p>
-            </div>
-
-            <div className="p-7 rounded-3xl bg-slate-50 border border-slate-200 shadow-sm space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
-                <Clock className="w-5 h-5" />
-              </div>
-              <h3 className="text-lg font-black text-slate-900">Instant 2-Minute Setup</h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Register your business, upload your menu categories and items, configure tables or screens, and download high-resolution QR stickers in minutes.
-              </p>
-            </div>
-
-            <div className="p-7 rounded-3xl bg-slate-50 border border-slate-200 shadow-sm space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-800 flex items-center justify-center font-bold">
-                <Zap className="w-5 h-5" />
-              </div>
-              <h3 className="text-lg font-black text-slate-900">99.9% Cloud Uptime</h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Cloud-native architecture handles rush-hour restaurant rushes and interval cinema surges effortlessly without server throttling or order dropping.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Subscription Plans & Pricing Section */}
-      <section id="pricing" className="py-20 sm:py-28 bg-slate-50 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold uppercase tracking-wider mb-3">
-              <Coins className="w-3.5 h-3.5" />
-              <span>Transparent SaaS Pricing</span>
-            </div>
-            <h2 className="text-3xl sm:text-5xl font-black text-slate-950 tracking-tight">
-              Subscription Plans for Every Scale
-            </h2>
-            <p className="mt-4 text-base text-slate-600 leading-relaxed">
-              Predictable pricing designed for independent cafes, full-service fine dining, single screens, and multiplex theatre chains.
-            </p>
-
-            {/* Billing Cycle Toggle */}
-            <div className="mt-8 inline-flex items-center p-1.5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-              <button
-                type="button"
-                onClick={() => setBillingCycle('monthly')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  billingCycle === 'monthly'
-                    ? 'bg-red-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-950'
-                }`}
-              >
-                Monthly Billing
-              </button>
-              <button
-                type="button"
-                onClick={() => setBillingCycle('annual')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  billingCycle === 'annual'
-                    ? 'bg-red-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-950'
-                }`}
-              >
-                <span>Annual Billing</span>
-                <span className="text-[10px] uppercase font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full">
-                  Save ~17%
-                </span>
-              </button>
-            </div>
-
-            {/* Filter Tabs */}
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPlanFilter('all')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  planFilter === 'all' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                All Plans
-              </button>
-              <button
-                type="button"
-                onClick={() => setPlanFilter('restaurant')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 ${
-                  planFilter === 'restaurant' ? 'bg-red-600 text-white' : 'text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                <UtensilsCrossed className="w-3 h-3" />
-                <span>Restaurant Plans</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPlanFilter('cinema')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 ${
-                  planFilter === 'cinema' ? 'bg-red-600 text-white' : 'text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                <Film className="w-3 h-3" />
-                <span>Cinema Plans</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Pricing Grid */}
-          {loadingPlans ? (
-            <div className="py-20 flex flex-col items-center justify-center text-slate-500">
-              <Loader2 className="w-8 h-8 animate-spin text-red-600 mb-3" />
-              <p className="text-xs font-medium">Loading subscription tiers...</p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {filteredPlans.map((plan) => {
-                const isAnnual = billingCycle === 'annual';
-                const pricePaise = isAnnual ? plan.priceAnnualPaise : plan.priceMonthlyPaise;
-                const priceRupees = Math.round(pricePaise / 100);
-                const isCinema = plan.tenantType === 'cinema';
-
-                return (
-                  <div
-                    key={plan.id}
-                    className={`rounded-3xl p-7 sm:p-8 flex flex-col justify-between transition-all ${
-                      plan.isPopular
-                        ? 'bg-slate-950 text-white shadow-2xl ring-2 ring-red-500 scale-[1.02]'
-                        : 'bg-white text-slate-900 border border-slate-200 shadow-sm hover:shadow-md'
-                    }`}
-                  >
-                    <div>
-                      {/* Badge Row */}
-                      <div className="flex items-center justify-between mb-4">
-                        <span
-                          className={`text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full ${
-                            isCinema
-                              ? 'bg-slate-800 text-red-400 border border-slate-700'
-                              : 'bg-red-50 text-red-700 border border-red-200'
-                          }`}
-                        >
-                          {isCinema ? 'Multiplex & Theatres' : 'Dining & Restaurants'}
-                        </span>
-
-                        {plan.isPopular && (
-                          <span className="text-[10px] uppercase font-black bg-red-600 text-white px-2.5 py-0.5 rounded-full shadow-sm">
-                            Most Popular
-                          </span>
-                        )}
-                      </div>
-
-                      <h3 className="text-2xl font-black tracking-tight">{plan.name}</h3>
-                      <p className={`mt-2 text-xs leading-relaxed ${plan.isPopular ? 'text-slate-400' : 'text-slate-600'}`}>
-                        {plan.description}
-                      </p>
-
-                      {/* Price Display */}
-                      <div className="mt-6 pb-6 border-b border-slate-200/20 flex items-baseline gap-1.5">
-                        <span className="text-4xl font-black">&#8377;{priceRupees.toLocaleString('en-IN')}</span>
-                        <span className={`text-xs font-semibold ${plan.isPopular ? 'text-slate-400' : 'text-slate-500'}`}>
-                          / {isAnnual ? 'year' : 'month'}
-                        </span>
-                      </div>
-
-                      {/* Capacity Limits */}
-                      <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-semibold">
-                        {plan.maxTables && (
-                          <span className={`px-2 py-0.5 rounded-md ${plan.isPopular ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                            Up to {plan.maxTables} Tables
-                          </span>
-                        )}
-                        {plan.maxScreens && (
-                          <span className={`px-2 py-0.5 rounded-md ${plan.isPopular ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                            Up to {plan.maxScreens} Screen{plan.maxScreens > 1 ? 's' : ''}
-                          </span>
-                        )}
-                        {plan.maxStaff && (
-                          <span className={`px-2 py-0.5 rounded-md ${plan.isPopular ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                            {plan.maxStaff} Staff PINs
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Features List */}
-                      <div className="mt-6 space-y-3">
-                        <p className={`text-[11px] font-bold uppercase tracking-wider ${plan.isPopular ? 'text-slate-300' : 'text-slate-800'}`}>
-                          Included with this plan:
-                        </p>
-                        <ul className="space-y-2.5 text-xs">
-                          {plan.features.map((feature, idx) => (
-                            <li key={idx} className="flex items-start gap-2.5">
-                              <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                              <span className={plan.isPopular ? 'text-slate-200' : 'text-slate-700'}>
-                                {feature}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-
-                    {/* CTA Button */}
-                    <div className="mt-8 pt-4">
-                      <a
-                        href={
-                          isCinema
-                            ? `${cinemaUrl}/signup`
-                            : `${restaurantUrl}/admin/login?mode=signup`
-                        }
-                        className={`w-full py-3.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
-                          plan.isPopular
-                            ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30'
-                            : 'bg-slate-900 hover:bg-slate-800 text-white shadow-sm'
-                        }`}
-                      >
-                        <span>Select Plan &amp; Register</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </a>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Frequently Asked Questions */}
-      <section id="faq" className="py-20 bg-white border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold uppercase tracking-wider mb-3">
-              <HelpCircle className="w-3.5 h-3.5 text-red-600" />
-              <span>Got Questions?</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-950 tracking-tight">
-              Frequently Asked Questions
-            </h2>
-          </div>
-
-          <div className="space-y-4">
-            {faqs.map((faq, idx) => (
-              <div
-                key={idx}
-                className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50/50 transition-colors"
-              >
-                <button
-                  type="button"
-                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="w-full p-5 text-left flex items-center justify-between font-bold text-slate-900 text-sm sm:text-base gap-4"
-                >
-                  <span>{faq.q}</span>
-                  <ChevronDown
-                    className={`w-5 h-5 text-slate-500 shrink-0 transition-transform ${
-                      openFaq === idx ? 'rotate-180 text-red-600' : ''
-                    }`}
-                  />
-                </button>
-                {openFaq === idx && (
-                  <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-200/60 bg-white">
-                    {faq.a}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Super Admin Teaser Section */}
-      <section id="architecture" className="py-16 sm:py-20 bg-slate-950 text-white border-t border-slate-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl bg-gradient-to-r from-slate-900 to-slate-800 border border-slate-700/80 p-8 sm:p-12 flex flex-col lg:flex-row items-center justify-between gap-8">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold uppercase tracking-wider mb-4">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>MenuGo Platform Operations</span>
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight">
-                MenuGo Super Administrator Console
-              </h2>
-              <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed">
-                Platform management for MenuGo operators. Monitor registered dining restaurants and movie multiplexes, view aggregated platform GMV and order throughput, toggle venue statuses, and manage tier pricing.
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
-              <Link
-                href="/super-admin/login"
-                className="px-6 py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-extrabold shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition"
-              >
-                <span>Enter Super Admin Console</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-12 text-slate-600 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-red-600 text-white font-black flex items-center justify-center text-sm">
-              M
-            </div>
-            <span className="font-extrabold text-slate-900">MenuGo Platform</span>
-            <span>&bull; Contactless operations for restaurants and cinemas</span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-6 font-semibold">
-            <a href={restaurantUrl} className="hover:text-red-600 transition">Restaurant App (Port 3000)</a>
-            <a href={cinemaUrl} className="hover:text-red-600 transition">Cinema App (Port 3001)</a>
-            <Link href="/super-admin" className="hover:text-red-600 transition font-semibold text-slate-800">Super Admin</Link>
-            <span className="text-slate-400 font-normal">&copy; {new Date().getFullYear()} MenuGo Technologies</span>
-          </div>
-        </div>
-      </footer>
-    </div>
+      <footer className="border-t border-black/[.07] px-5 py-8 sm:px-8"><div className="mx-auto flex max-w-[1360px] flex-col items-start justify-between gap-5 sm:flex-row sm:items-center"><div className="flex items-center gap-4"><Image src="/qros_logo.png" alt="The QROS" width={2172} height={724} sizes="160px" className="h-9 w-auto" /><span className="h-5 w-px bg-black/10" /><span className="text-xs text-[#64748b]">A better way to serve, for every venue.</span></div><div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-xs font-semibold text-[#475569]"><a href={restaurantUrl} className="hover:text-[#dc2626]">Restaurant portal <ExternalLink className="ml-1 inline h-3 w-3" /></a><a href={cinemaUrl} className="hover:text-[#dc2626]">Cinema portal <ExternalLink className="ml-1 inline h-3 w-3" /></a><Link href="/super-admin" className="hover:text-[#dc2626]">Platform access</Link><span className="font-normal text-[#94a3b8]">© {new Date().getFullYear()} The QROS</span></div></div></footer>
+    </main>
   );
 }

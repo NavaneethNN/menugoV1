@@ -147,7 +147,7 @@ function LoginForm() {
     }
   };
 
-  const productName = isCinema ? 'MenuGo for Theatres' : 'MenuGo for Restaurants';
+  const productName = isCinema ? 'The QROS for Theatres' : 'The QROS for Restaurants';
   const benefits = isCinema
     ? [
         { icon: CalendarDays, title: 'Plan every show', detail: 'Manage screens, seating and daily schedules together.' },
@@ -171,8 +171,8 @@ function LoginForm() {
 
         <div>
           <Link href="/" className="inline-flex items-center gap-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/70">
-            <span className="w-11 h-11 rounded-2xl bg-white text-red-700 flex items-center justify-center font-black text-2xl shadow-lg">M</span>
-            <span className="text-2xl font-black tracking-tight">MenuGo</span>
+            <img src="/qros_logo.png" alt="The QROS" className="w-36 h-12 rounded-lg bg-white object-contain shadow-lg" />
+            <span className="sr-only">The QROS Restaurant Portal</span>
           </Link>
           <div className="mt-8 sm:mt-10 lg:mt-7 xl:mt-9 max-w-xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3.5 py-2 text-xs font-bold text-white/95 backdrop-blur-sm">
@@ -194,7 +194,7 @@ function LoginForm() {
                   : 'Pick up where your team left off. Manage your theatre profile, show schedule, kitchen orders and auditorium delivery from one workspace.'
                 : mode === 'signup'
                   ? 'Turn table QR codes into a smoother ordering experience. Guests browse at their own pace while your team receives clear orders and keeps service personal.'
-                  : 'Your menu, table orders and kitchen workflow are ready when you are. Sign in to continue serving guests with MenuGo.'}
+                  : 'Your menu, table orders and kitchen workflow are ready when you are. Sign in to continue serving guests with The QROS.'}
             </p>
           </div>
         </div>
@@ -220,7 +220,7 @@ function LoginForm() {
       <section className="flex items-center justify-center px-4 py-8 sm:px-8 sm:py-10 lg:min-h-[100svh] lg:px-8 xl:px-12 2xl:px-16 lg:py-4">
         <div className="w-full max-w-md">
           <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-red-700 transition-colors mb-5 lg:mb-4">
-            <ArrowLeft className="w-4 h-4" /> Back to MenuGo
+            <ArrowLeft className="w-4 h-4" /> Back to The QROS
           </Link>
           <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-7 lg:p-6 xl:p-7 shadow-xl shadow-slate-900/5">
             <div className="mb-5">
@@ -313,7 +313,7 @@ function LoginForm() {
                 {mode === 'signup' && <p className="mt-1.5 text-xs text-slate-500">Use at least 8 characters.</p>}
               </div>
               <button type="submit" disabled={loading} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-red-600/20 transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:opacity-60">
-                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><span>{mode === 'signup' ? 'Create account & continue' : 'Sign in to MenuGo'}</span><ArrowRight className="h-4 w-4" /></>}
+                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><span>{mode === 'signup' ? 'Create account & continue' : 'Sign in to The QROS'}</span><ArrowRight className="h-4 w-4" /></>}
               </button>
             </form>
 
@@ -321,14 +321,14 @@ function LoginForm() {
               {mode === 'signup' ? (
                 <p>Already have an account? <button type="button" onClick={() => setMode('signin')} className="font-bold text-red-700 hover:text-red-800">Sign in</button></p>
               ) : (
-                <p>New to MenuGo? <button type="button" onClick={() => setMode('signup')} className="font-bold text-red-700 hover:text-red-800">Create your account</button></p>
+                <p>New to The QROS? <button type="button" onClick={() => setMode('signup')} className="font-bold text-red-700 hover:text-red-800">Create your account</button></p>
               )}
             </div>
 
             <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-4 text-center text-xs">
               <Link href={`/admin/login${mode === 'signup' ? '?mode=signup&business=' + (isCinema ? 'restaurant' : 'cinema') + (isCinema ? '' : '&redirect=/cinema/onboarding') : '?business=' + (isCinema ? 'restaurant' : 'cinema')}`} className="inline-flex items-center justify-center gap-1.5 font-semibold text-slate-600 hover:text-red-700">
                 {isCinema ? <UtensilsCrossed className="h-3.5 w-3.5" /> : <Film className="h-3.5 w-3.5" />}
-                {isCinema ? 'MenuGo for Restaurants' : 'MenuGo for Theatres'}
+                {isCinema ? 'The QROS for Restaurants' : 'The QROS for Theatres'}
               </Link>
               {!isCinema && <Link href="/staff/login" className="inline-flex items-center justify-center gap-1.5 font-semibold text-slate-500 hover:text-red-700"><KeyRound className="h-3.5 w-3.5" />Staff PIN sign in</Link>}
             </div>

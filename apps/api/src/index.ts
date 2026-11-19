@@ -25,6 +25,9 @@ import memberRoutes from './routes/member.routes';
 import cashierRoutes from './routes/cashier.routes';
 import cinemaRoutes from './routes/cinema.routes';
 import { superAdminRouter, getPublicSubscriptionPlans } from './routes/super-admin.routes';
+import { subscriptionRouter } from './routes/subscription.routes';
+import { ensureSuperAdminExists } from './lib/super-admin-seed';
+import { syncSubscriptionExpirations } from './lib/subscription-service';
 
 import path from 'path';
 
@@ -98,14 +101,30 @@ app.use(
     allowedHeaders: [
       'Content-Type',
       'Authorization',
+      'x-super-admin-key',
+      'X-Super-Admin-Key',
       'x-restaurant-id',
+      'X-Restaurant-Id',
       'x-theatre-id',
+      'X-Theatre-Id',
       'x-tenant-id',
+      'X-Tenant-Id',
+      'x-tenant-type',
+      'X-Tenant-Type',
       'x-table-session-token',
       'X-Table-Session-Token',
+      'x-cinema-cart-token',
+      'X-Cinema-Cart-Token',
+      'x-status-token',
+      'X-Status-Token',
       'idempotency-key',
       'Idempotency-Key',
-      'x-test-rate-limit'
+      'x-test-rate-limit',
+      'X-Test-Rate-Limit',
+      'x-paytm-event-id',
+      'x-paytm-signature',
+      'x-provider-event-id',
+      'x-provider-signature'
     ],
     exposedHeaders: [
       'X-Total-Count',
@@ -180,6 +199,7 @@ app.use('/api/tables', tableRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/cashier', cashierRoutes);
 app.use('/api/cinema', cinemaRoutes);
+app.use('/api/subscriptions', subscriptionRouter);
 app.use('/api/super-admin', superAdminRouter);
 
 // Global Error Handler
@@ -239,6 +259,22 @@ if (!isTestEnv && !process.env.VERCEL) {
     console.log(`[WEBSOCKET] WebSocket server active on port ${PORT}`);
     console.log(`[AUTH] Better Auth mounted at /api/auth/*`);
     console.log(`================================================`);
+
+    // Auto-provision initial Super Admin if not already existing
+    ensureSuperAdminExists().catch((err) => {
+      console.warn('[SUPER ADMIN] Auto-provisioning notice:', err.message || err);
+    });
+
+    // Initial check of subscription expirations across tenants
+    syncSubscriptionExpirations().catch((err) => {
+      console.warn('[SUBSCRIPTIONS] Expiration sync notice:', err.message || err);
+    });
+
+    // Periodic subscription duration and expiration check (runs every 15 minutes)
+    const expiryInterval = setInterval(() => {
+      syncSubscriptionExpirations().catch(() => {});
+    }, 15 * 60 * 1000);
+    expiryInterval.unref(); // Allows process to terminate cleanly without holding event loop
   });
 }
 

@@ -40,7 +40,7 @@ export default function RestaurantHomePage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-semibold text-white">MenuGo Restaurants:</span>
+            <span className="font-semibold text-white">The QROS Restaurants:</span>
             <span className="hidden sm:inline text-slate-400">
               Smart table QR ordering, real-time Kitchen Display System (KDS), waiter calling, and cashier billing sessions.
             </span>
@@ -49,7 +49,7 @@ export default function RestaurantHomePage() {
             href={mainPlatformUrl}
             className="text-slate-400 hover:text-white transition flex items-center gap-1 text-[11px] font-semibold"
           >
-            <span>Back to MenuGo Platform</span>
+            <span>Back to The QROS Platform</span>
             <ExternalLink className="w-3 h-3 text-slate-500" />
           </a>
         </div>
@@ -60,18 +60,8 @@ export default function RestaurantHomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-3">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-3 group shrink-0">
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-red-600 text-white font-black text-2xl shadow-lg shadow-red-600/20 group-hover:scale-105 transition-transform">
-              M
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-black tracking-tight text-slate-900 leading-none">
-                Menu<span className="text-red-600">Go</span>
-              </span>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-red-600 mt-1 flex items-center gap-1">
-                <UtensilsCrossed className="w-2.5 h-2.5" />
-                Restaurant Portal
-              </span>
-            </div>
+            <img src="/qros_logo.png" alt="The QROS" className="h-16 w-auto max-w-[250px] object-contain transition-transform group-hover:scale-[1.02]" />
+            <span className="sr-only">Restaurant Portal</span>
           </Link>
 
           {/* Navigation Links */}
@@ -179,7 +169,7 @@ export default function RestaurantHomePage() {
                 href={mainPlatformUrl}
                 className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-100 text-xs font-bold text-slate-800"
               >
-                <span>Back to MenuGo Platform</span>
+                <span>Back to The QROS Platform</span>
                 <ExternalLink className="w-3 h-3 text-slate-400" />
               </a>
 
@@ -570,16 +560,16 @@ export default function RestaurantHomePage() {
             <div className="w-7 h-7 rounded-lg bg-red-600 text-white font-black flex items-center justify-center text-sm">
               M
             </div>
-            <span className="font-extrabold text-slate-900">MenuGo for Restaurants</span>
+            <span className="font-extrabold text-slate-900">The QROS for Restaurants</span>
             <span>&bull; Contactless Table Dining POS &amp; KDS</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-6 font-semibold">
-            <a href={mainPlatformUrl} className="hover:text-red-600 transition">MenuGo Platform Home</a>
+            <a href={mainPlatformUrl} className="hover:text-red-600 transition">The QROS Platform Home</a>
             <Link href="/staff/login" className="hover:text-red-600 transition">Staff PIN Login</Link>
             <Link href="/admin/login" className="hover:text-red-600 transition">Admin Login</Link>
             <Link href="/menu/hotel" className="hover:text-red-600 transition">Live Demo</Link>
-            <span className="text-slate-400 font-normal">&copy; {new Date().getFullYear()} MenuGo Technologies</span>
+            <span className="text-slate-400 font-normal">&copy; {new Date().getFullYear()} The QROS Technologies</span>
           </div>
         </div>
       </footer>

@@ -150,7 +150,7 @@ export default function CinemaAdminLayout({
           <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-100 text-red-700 flex items-center justify-center mx-auto mb-5">
             <Film className="w-8 h-8" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900">Welcome to MenuGo for Theatres</h2>
+          <h2 className="text-xl font-bold text-slate-900">Welcome to The QROS for Theatres</h2>
           <p className="text-slate-600 text-sm mt-3 leading-relaxed">
             You haven&apos;t registered any cinema theatres yet. Complete theatre setup to configure screens, rows, seats and daily movie show schedules.
           </p>

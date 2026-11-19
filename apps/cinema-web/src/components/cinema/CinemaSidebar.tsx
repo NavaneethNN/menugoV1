@@ -110,6 +110,12 @@ export function CinemaSidebar({
       title: 'SETUP',
       items: [
         {
+          label: 'Plan & Billing',
+          href: '/admin/billing',
+          icon: CreditCard,
+          match: (path: string) => path.startsWith('/admin/billing') || path.startsWith('/cinema/admin/billing')
+        },
+        {
           label: 'Payments',
           href: '/admin/payments',
           icon: CreditCard,
@@ -140,12 +146,10 @@ export function CinemaSidebar({
           onClick={handleLinkClick}
           className="flex items-center gap-3 group min-w-0"
         >
-          <div className="w-10 h-10 rounded-xl bg-red-700 text-white font-black flex items-center justify-center group-hover:bg-red-800 transition-colors shrink-0">
-            <Film className="w-5 h-5 text-white" />
-          </div>
+          <img src="/qros_logo.png" alt="The QROS" className="w-24 h-10 rounded bg-white object-contain shrink-0" />
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="font-black text-lg text-slate-900 tracking-tight leading-tight">MenuGo</span>
+              <span className="font-black text-lg text-slate-900 tracking-tight leading-tight">The QROS</span>
               <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-50 text-red-700 border border-red-100 uppercase tracking-wider">
                 Cinema
               </span>

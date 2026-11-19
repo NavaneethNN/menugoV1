@@ -390,7 +390,7 @@ export default function CinemaPaymentSettingsPage() {
               </span>
             </h3>
             <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              Customer payments settle directly into your cinema theatre&apos;s registered merchant account. MenuGo never acts as an intermediary or custodian of theatre customer funds.
+              Customer payments settle directly into your cinema theatre&apos;s registered merchant account. The QROS never acts as an intermediary or custodian of theatre customer funds.
             </p>
           </div>
         </div>

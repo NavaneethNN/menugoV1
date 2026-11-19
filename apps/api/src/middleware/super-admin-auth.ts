@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { auth } from '../lib/auth';
+import { auth, cinemaAuth } from '../lib/auth';
 import { AuthenticatedUser } from './auth';
 
 /**
@@ -15,8 +15,9 @@ export async function requireSuperAdmin(
   next: NextFunction
 ): Promise<void> {
   try {
-    const configuredKey = process.env.SUPER_ADMIN_KEY || 'menugo-superadmin-secret-2026';
-    const providedKey = req.headers['x-super-admin-key'] as string;
+    const configuredKey = (process.env.SUPER_ADMIN_KEY || '').trim();
+    const rawProvidedKey = req.headers['x-super-admin-key'] as string | undefined;
+    const providedKey = rawProvidedKey ? rawProvidedKey.trim() : undefined;
 
     // Check 1: Master Admin Key bypass
     if (providedKey && providedKey === configuredKey) {
@@ -33,12 +34,26 @@ export async function requireSuperAdmin(
       return next();
     }
 
-    // Check 2: Better Auth Session
-    const sessionData = await auth.api.getSession({
+    // Check 2: Better Auth Session (Primary db with fallback to Cinema db)
+    let sessionData = await auth.api.getSession({
       headers: req.headers as any
     });
 
+    if (!sessionData?.user) {
+      sessionData = await cinemaAuth.api.getSession({
+        headers: req.headers as any
+      });
+    }
+
     if (!sessionData || !sessionData.user) {
+      if (providedKey) {
+        res.status(401).json({
+          error: 'Unauthorized',
+          message: 'Invalid master administration key. Please verify the key.'
+        });
+        return;
+      }
+
       res.status(401).json({
         error: 'Unauthorized',
         message: 'Super admin authentication required. Please sign in.'
@@ -52,19 +67,25 @@ export async function requireSuperAdmin(
 
     // Check 3: Role is 'super_admin' or 'superadmin'
     if (userRole === 'super_admin' || userRole === 'superadmin') {
-      req.user = user as AuthenticatedUser;
+      req.user = {
+        ...user,
+        role: 'super_admin'
+      } as AuthenticatedUser;
       req.session = sessionData.session;
       return next();
     }
 
     // Check 4: Email is listed in SUPER_ADMIN_EMAILS
-    const adminEmails = (process.env.SUPER_ADMIN_EMAILS || 'admin@menugo.in,navaneeth@menugo.in')
+    const adminEmails = (process.env.SUPER_ADMIN_EMAILS || '')
       .split(',')
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean);
 
     if (adminEmails.includes(userEmail)) {
-      req.user = user as AuthenticatedUser;
+      req.user = {
+        ...user,
+        role: 'super_admin'
+      } as AuthenticatedUser;
       req.session = sessionData.session;
       return next();
     }

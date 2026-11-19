@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'MenuGo | Contactless Ordering Platform for Restaurants & Theatres',
+  title: 'The QROS | Operating System for Every Venue',
   description:
     'Powering smart table ordering for dining restaurants and seamless in-seat delivery for cinema theatres across India.',
   icons: {
-    icon: '/icon.svg'
+    icon: '/qros_logo.png'
   }
 };
 

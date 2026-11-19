@@ -61,11 +61,21 @@ export async function apiRequest<T = any>(
     } catch {}
   }
 
-  const res = await fetch(url, {
-    credentials: 'include',
-    headers: customHeaders,
-    ...rest
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      credentials: 'include',
+      headers: customHeaders,
+      ...rest
+    });
+  } catch (netErr: any) {
+    if (netErr?.name === 'TypeError' || netErr?.message?.includes('fetch')) {
+      throw new Error(
+        `Unable to connect to The QROS API at ${baseUrl || 'http://localhost:5001'}. Please verify the backend service is running.`
+      );
+    }
+    throw netErr;
+  }
 
   const data = await res.json().catch(() => ({}));
 

@@ -1,5 +1,5 @@
 /**
- * MenuGo V1 - Customer Cart Domain Logic & Scoping
+ * The QROS V1 - Customer Cart Domain Logic & Scoping
  *
  * Implements pure, unit-testable cart calculations, restaurant & table scoping,
  * item instruction limits, and out-of-stock item reconciliation.
