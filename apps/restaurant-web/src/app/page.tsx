@@ -42,7 +42,7 @@ export default function RestaurantHomePage() {
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="font-semibold text-white">The QROS Restaurants:</span>
             <span className="hidden sm:inline text-slate-400">
-              Smart table QR ordering, real-time Kitchen Display System (KDS), waiter calling, and cashier billing sessions.
+              100% Pay-As-You-Go • Zero Monthly Subscriptions • Keep 100% of Food &amp; Beverage Sales Revenue.
             </span>
           </div>
           <a
@@ -210,9 +210,9 @@ export default function RestaurantHomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-[1fr_0.9fr] gap-12 lg:gap-16 items-center">
               <div className="max-w-2xl">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white border border-red-200 px-3.5 py-1.5 text-xs font-bold text-red-800 shadow-sm mb-6">
-                  <UtensilsCrossed className="w-4 h-4 text-red-600" />
-                  <span>Dine-In QR Ordering &amp; Operations</span>
+                <div className="inline-flex items-center gap-2 rounded-full bg-white border border-emerald-200 px-3.5 py-1.5 text-xs font-bold text-emerald-800 shadow-sm mb-6">
+                  <Zap className="w-4 h-4 text-emerald-600" />
+                  <span>100% Pay-As-You-Go • No Monthly Subscription Fees</span>
                 </div>
 
                 <h1 className="text-4xl sm:text-6xl font-black text-slate-950 tracking-tight leading-[1.05] mb-6">
@@ -220,7 +220,7 @@ export default function RestaurantHomePage() {
                 </h1>
 
                 <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-8">
-                  Guests scan table QR codes to browse photo-rich menus, customize dishes, and call waitstaff. Real-time tickets route directly to your kitchen KDS and cashier workstation.
+                  Guests scan table QR codes to browse photo-rich menus, customize dishes, and call waitstaff. Real-time tickets route directly to your kitchen KDS and cashier workstation. Pay only for metered usage—never pay a fixed monthly fee or order commission.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-3 mb-8">
@@ -228,7 +228,7 @@ export default function RestaurantHomePage() {
                     href="/admin/login?mode=signup&business=restaurant"
                     className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-extrabold px-6 py-3.5 rounded-xl shadow-lg shadow-red-600/20 transition-all hover:-translate-y-0.5"
                   >
-                    <span>Set up your restaurant free</span>
+                    <span>Start free with Pay-As-You-Go</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
 
@@ -243,13 +243,13 @@ export default function RestaurantHomePage() {
 
                 <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs sm:text-sm font-semibold text-slate-600">
                   <span className="inline-flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600" /> Zero guest app downloads
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Zero subscription lock-in
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600" /> Automatic table binding
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> 0% commission on orders
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600" /> Staff stays in control
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Direct merchant bank payouts
                   </span>
                 </div>
               </div>
@@ -265,8 +265,8 @@ export default function RestaurantHomePage() {
                       </p>
                       <p className="font-extrabold text-slate-900 mt-0.5">Guest Menu &rarr; Kitchen KDS</p>
                     </div>
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 text-red-700 px-3 py-1 text-xs font-bold">
-                      <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 text-xs font-bold">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
                       Live Order
                     </span>
                   </div>
@@ -346,8 +346,8 @@ export default function RestaurantHomePage() {
             {/* Quick Metrics Strip */}
             <div className="mt-14 grid grid-cols-2 lg:grid-cols-4 gap-px rounded-2xl overflow-hidden border border-slate-200 bg-slate-200 shadow-sm">
               <div className="bg-white p-5 text-center">
-                <p className="text-xs text-slate-500 font-semibold">Every Table</p>
-                <p className="text-sm font-extrabold text-slate-900 mt-1">Tamper-Proof QR Codes</p>
+                <p className="text-xs text-emerald-600 font-bold uppercase tracking-wider">Pricing Model</p>
+                <p className="text-sm font-extrabold text-slate-900 mt-1">100% Pay-As-You-Go</p>
               </div>
               <div className="bg-white p-5 text-center">
                 <p className="text-xs text-slate-500 font-semibold">Every Guest</p>
@@ -358,8 +358,8 @@ export default function RestaurantHomePage() {
                 <p className="text-sm font-extrabold text-slate-900 mt-1">Live KDS Timers &amp; Chimes</p>
               </div>
               <div className="bg-white p-5 text-center">
-                <p className="text-xs text-slate-500 font-semibold">Your Cashier</p>
-                <p className="text-sm font-extrabold text-slate-900 mt-1">Single-Click Bill &amp; Close</p>
+                <p className="text-xs text-slate-500 font-semibold">Zero Commission</p>
+                <p className="text-sm font-extrabold text-slate-900 mt-1">Keep 100% of Revenue</p>
               </div>
             </div>
           </div>
@@ -398,14 +398,14 @@ export default function RestaurantHomePage() {
                   Built for Speed, Hospitality &amp; Accuracy.
                 </h2>
                 <p className="text-base text-slate-600 leading-relaxed mt-5">
-                  Set up your menu and table layout, then provide front-of-house, kitchen, and cashier stations with synchronized live order views.
+                  Set up your menu and table layout, then provide front-of-house, kitchen, and cashier stations with synchronized live order views. Pure pay-as-you-go billing means you never pay for software on slow days.
                 </p>
                 <div className="mt-8 space-y-3">
                   <Link
                     href="/admin/login?mode=signup&business=restaurant"
                     className="inline-flex items-center gap-2 font-extrabold text-sm text-red-600 hover:text-red-700"
                   >
-                    <span>Start your 14-day free setup</span>
+                    <span>Get started with Pay-As-You-Go</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                   <div className="pt-2">
@@ -459,8 +459,8 @@ export default function RestaurantHomePage() {
                   },
                   {
                     icon: BarChart3,
-                    title: 'Sales & Item Analytics',
-                    body: 'Track gross turnover, top-selling dishes, peak dining hours, and average table turn times in one dashboard.'
+                    title: 'Sales & Usage Analytics',
+                    body: 'Track gross turnover, top-selling dishes, peak dining hours, and metered compute usage in one dashboard.'
                   }
                 ].map((feature) => {
                   const Icon = feature.icon;
@@ -494,7 +494,7 @@ export default function RestaurantHomePage() {
                 Go Live in Under 10 Minutes.
               </h2>
               <p className="text-base text-slate-600 mt-4 leading-relaxed">
-                Step-by-step setup guides you through adding dishes, generating table QRs, and inviting your floor staff.
+                Step-by-step setup guides you through adding dishes, generating table QRs, and inviting your floor staff. Zero upfront fees required.
               </p>
             </div>
 
@@ -521,14 +521,14 @@ export default function RestaurantHomePage() {
             {/* CTA Banner */}
             <div className="mt-12 max-w-5xl mx-auto rounded-3xl bg-slate-950 text-white p-8 sm:p-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl">
               <div>
-                <p className="text-xs font-extrabold uppercase tracking-wider text-red-400 mb-2">
-                  Ready for Faster Service?
+                <p className="text-xs font-extrabold uppercase tracking-wider text-emerald-400 mb-2">
+                  100% Pay-As-You-Go • No Subscriptions
                 </p>
                 <h3 className="text-2xl sm:text-3xl font-black tracking-tight">
                   Start Taking Table Orders Today.
                 </h3>
                 <p className="text-sm text-slate-300 mt-2 max-w-xl">
-                  Register your restaurant and transform the dining experience for your patrons and team.
+                  Register your restaurant for free. Pay only for the metered usage your venue consumes—keep 100% of your food sales revenue.
                 </p>
               </div>
 
@@ -561,7 +561,7 @@ export default function RestaurantHomePage() {
               M
             </div>
             <span className="font-extrabold text-slate-900">The QROS for Restaurants</span>
-            <span>&bull; Contactless Table Dining POS &amp; KDS</span>
+            <span>&bull; 100% Pay-As-You-Go Contactless Table POS &amp; KDS</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-6 font-semibold">

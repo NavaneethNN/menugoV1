@@ -25,7 +25,8 @@ import {
   Menu,
   X,
   Layers,
-  KeyRound
+  KeyRound,
+  Zap
 } from 'lucide-react';
 import { HowItWorksSlider } from '@/components/home/HowItWorksSlider';
 
@@ -42,7 +43,7 @@ export default function CinemaHomePage() {
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="font-semibold text-white">The QROS Theatres:</span>
             <span className="hidden sm:inline text-slate-400">
-              In-seat armrest QR ordering, concession kitchen KDS, and stealth runner delivery for movie multiplexes.
+              100% Pay-As-You-Go • Zero Monthly Subscriptions • Keep 100% of Concession Revenue.
             </span>
           </div>
           <a
@@ -184,8 +185,8 @@ export default function CinemaHomePage() {
             <div className="grid lg:grid-cols-[1fr_0.9fr] gap-12 lg:gap-16 items-center">
               <div className="max-w-2xl">
                 <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 border border-slate-800 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm mb-6">
-                  <Film className="w-4 h-4 text-red-400" />
-                  <span>Multiplex In-Seat Concession Ordering</span>
+                  <Zap className="w-4 h-4 text-emerald-400" />
+                  <span>100% Pay-As-You-Go • Zero Monthly Subscription Fees</span>
                 </div>
 
                 <h1 className="text-4xl sm:text-6xl font-black text-slate-950 tracking-tight leading-[1.05] mb-6">
@@ -193,7 +194,7 @@ export default function CinemaHomePage() {
                 </h1>
 
                 <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-8">
-                  Guests scan the QR code on their armrest, pick signature popcorn &amp; drinks, and pay online. Kitchen receives live tickets on KDS, and runners deliver directly to their screen, row, and seat.
+                  Guests scan the QR code on their armrest, pick signature popcorn &amp; drinks, and pay online. Kitchen receives live tickets on KDS, and runners deliver directly to their screen, row, and seat. Pure pay-as-you-go service—zero monthly subscriptions, zero commission on your concession sales.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-3 mb-8">
@@ -215,13 +216,13 @@ export default function CinemaHomePage() {
 
                 <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs sm:text-sm font-semibold text-slate-600">
                   <span className="inline-flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600" /> Zero moviegoer app downloads
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Zero subscription lock-in
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600" /> Direct merchant settlements
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> 0% commission on concessions
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-red-600" /> Precision seat targeting
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Direct merchant bank payouts
                   </span>
                 </div>
               </div>
@@ -320,8 +321,8 @@ export default function CinemaHomePage() {
             {/* Quick Metrics Strip */}
             <div className="mt-14 grid grid-cols-2 lg:grid-cols-4 gap-px rounded-2xl overflow-hidden border border-slate-200 bg-slate-200 shadow-sm">
               <div className="bg-white p-5 text-center">
-                <p className="text-xs text-slate-500 font-semibold">In-Seat Concessions</p>
-                <p className="text-sm font-extrabold text-slate-900 mt-1">100% Contactless QR</p>
+                <p className="text-xs text-emerald-600 font-bold uppercase tracking-wider">Pricing Model</p>
+                <p className="text-sm font-extrabold text-slate-900 mt-1">100% Pay-As-You-Go</p>
               </div>
               <div className="bg-white p-5 text-center">
                 <p className="text-xs text-slate-500 font-semibold">Auditorium Targeting</p>
@@ -332,8 +333,8 @@ export default function CinemaHomePage() {
                 <p className="text-sm font-extrabold text-slate-900 mt-1">Razorpay &amp; Paytm Gateways</p>
               </div>
               <div className="bg-white p-5 text-center">
-                <p className="text-xs text-slate-500 font-semibold">Zero Interval Queue</p>
-                <p className="text-sm font-extrabold text-slate-900 mt-1">Doubles Concession Revenue</p>
+                <p className="text-xs text-slate-500 font-semibold">Zero Commission</p>
+                <p className="text-sm font-extrabold text-slate-900 mt-1">Keep 100% of Concessions</p>
               </div>
             </div>
           </div>
@@ -371,7 +372,7 @@ export default function CinemaHomePage() {
                 Built Specifically for Cinema Teams.
               </h2>
               <p className="text-base text-slate-600 mt-4 leading-relaxed">
-                Purpose-built terminals for screen layout administrators, kitchen concession cooks, and auditorium floor runners.
+                Purpose-built terminals for screen layout administrators, kitchen concession cooks, and auditorium floor runners. Pay strictly for actual usage—no subscriptions.
               </p>
             </div>
 
@@ -452,14 +453,14 @@ export default function CinemaHomePage() {
                   High-Volume Concessions, Zero Chaos.
                 </h2>
                 <p className="text-base text-slate-600 leading-relaxed mt-5">
-                  Designed for the fast-paced rush of cinema intervals and continuous screenings. Keeps cashiers, cooks, and runners in continuous sync.
+                  Designed for the fast-paced rush of cinema intervals and continuous screenings. Keeps cashiers, cooks, and runners in continuous sync with 100% pay-as-you-go infrastructure billing.
                 </p>
                 <div className="mt-8 space-y-3">
                   <Link
                     href="/signup"
                     className="inline-flex items-center gap-2 font-extrabold text-sm text-red-600 hover:text-red-700"
                   >
-                    <span>Register your theatre</span>
+                    <span>Register your theatre with Pay-As-You-Go</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
@@ -536,10 +537,10 @@ export default function CinemaHomePage() {
                 <span>Streamlined Onboarding</span>
               </div>
               <h2 className="text-3xl sm:text-5xl font-black text-slate-950 tracking-tight">
-                Simple Setup. No Complex Scheduling.
+                Simple Setup. No Subscriptions.
               </h2>
               <p className="text-base text-slate-600 mt-4 leading-relaxed">
-                Add your screens, configure rows and seats, upload your concession menu, connect your payment gateway, and print armrest QR codes.
+                Add your screens, configure rows and seats, upload your concession menu, connect your payment gateway, and print armrest QR codes. Zero upfront commitment.
               </p>
             </div>
 
@@ -567,14 +568,14 @@ export default function CinemaHomePage() {
             {/* CTA Banner */}
             <div className="mt-12 max-w-5xl mx-auto rounded-3xl bg-slate-950 text-white p-8 sm:p-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl">
               <div>
-                <p className="text-xs font-extrabold uppercase tracking-wider text-red-400 mb-2">
-                  Transform Your Theatre Concessions
+                <p className="text-xs font-extrabold uppercase tracking-wider text-emerald-400 mb-2">
+                  100% Pay-As-You-Go • No Monthly Plans
                 </p>
                 <h3 className="text-2xl sm:text-3xl font-black tracking-tight">
                   Launch In-Seat Ordering in Your Auditoriums.
                 </h3>
                 <p className="text-sm text-slate-300 mt-2 max-w-xl">
-                  Eliminate interval queues and bring food directly to moviegoer seats.
+                  Eliminate interval queues and bring food directly to moviegoer seats. Pay only for actual metered usage—keep 100% of your concession sales.
                 </p>
               </div>
 
@@ -606,7 +607,7 @@ export default function CinemaHomePage() {
               <Film className="w-3.5 h-3.5 text-red-500" />
             </div>
             <span className="font-extrabold text-slate-900">The QROS for Theatres</span>
-            <span>&bull; Multiplex In-Seat Ordering &amp; Concessions</span>
+            <span>&bull; 100% Pay-As-You-Go Multiplex In-Seat Ordering</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-6 font-semibold">
